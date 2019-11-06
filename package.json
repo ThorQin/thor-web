@@ -1,0 +1,10 @@
+{
+  "name": "thor-web",
+  "version": "1.0.0",
+  "description": "An light weight web framework for node-js.",
+  "main": "index.js",
+  "repository": "https://gitee.com/thor.qin/thor-web.git",
+  "author": "Thor Qin",
+  "license": "MIT",
+  "private": false
+}
