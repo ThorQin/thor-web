@@ -24,6 +24,7 @@ async function loadScript(baseDir, api) {
 /**
  * Create controller middleware.
  * @param {string} baseDir The root directory of the controllers.
+ * @returns {(ctx, req, rsp) => boolean}
  */
 function create(baseDir) {
 
@@ -31,11 +32,8 @@ function create(baseDir) {
 		baseDir = path.resolve(path.dirname(require.main.filename), 'controllers');
 	}
 
-	/**
-	 * @param {IncomingMessage} req
-	 */
 	return async function (ctx, req, rsp) {
-		let fn = await loadScript(baseDir, ctx.url.pathname);
+		let fn = await loadScript(baseDir, ctx.path);
 		if (fn) {
 			if (typeof fn !== 'function') {
 				fn = fn[req.method.toLowerCase()];

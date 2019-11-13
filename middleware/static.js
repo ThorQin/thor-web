@@ -38,6 +38,7 @@ function getMimeType(suffix) {
  * @param {string} baseDir Root directory of static resources.
  * @param {string[]} suffix Which suffix can be visit as static resource.
  * @param {number} cachedFileSize File can be cached when size less this setting.
+ * @returns {(ctx, req, rsp) => boolean}
  */
 function create(baseDir, suffix = null, cachedFileSize = 1024 * 100) {
 	if (!baseDir) {
@@ -69,7 +70,7 @@ function create(baseDir, suffix = null, cachedFileSize = 1024 * 100) {
 	}
 
 	return async function (ctx, req, rsp) {
-		let page = ctx.url.pathname;
+		let page = ctx.path;
 		if (page.endsWith('/')) {
 			page += 'index.html';
 		}

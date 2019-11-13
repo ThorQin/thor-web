@@ -109,7 +109,7 @@ function createSession(ctx, { serverKey, cookieName, expire = null, domain = nul
 			}
 			ctx.setResponseCookie(cookieName, token, options);
 		},
-		over: function() {
+		delete: function() {
 			ctx.removeResponseCookie(cookieName);
 		},
 		toString: function() {
@@ -152,6 +152,7 @@ function generateKey() {
  * Create session manager middleware
  * @param {string} serverKey Server key for AES128 encryption encoded by BASE64 (key = 16 bytes raw data -> base64)
  * @param {Object} options Options
+ * @returns {(ctx, req, rsp) => boolean}
  */
 function create(
 	serverKey = generateKey(),

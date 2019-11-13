@@ -1,11 +1,41 @@
 const http = require('http');
 
 class Context {
+	/**
+	 * Construct Context
+	 * @param {http.IncomingMessage} req
+	 * @param {http.ServerResponse} rsp
+	 */
 	constructor(req, rsp) {
 		this.req = req;
 		this.rsp = rsp;
-		let url = new URL(req.url, 'http://localhost/');
-		this.url = url;
+		let url = new URL(req.url, `http://${req.headers.host}/`);
+		this.url = url.href;
+		this.ip = req.connection.remoteAddress;
+		this.method = req.method;
+		this.path = url.pathname;
+		this.query = url.search;
+		this.params = url.searchParams;
+	}
+
+	getRequestHeader(key = null) {
+		if (key) {
+			return this.req.headers[key];
+		} else {
+			return this.req.headers;
+		}
+	}
+
+	getResponseHeader(key = null) {
+		if (key) {
+			return this.rsp.getHeader(key);
+		} else {
+			return this.rsp.getHeaders();
+		}
+	}
+
+	setResponseHeader(key, value) {
+		this.rsp.setHeader(key, value);
 	}
 
 	getRequestCookies() {
@@ -130,18 +160,51 @@ class Context {
 	}
 
 	/**
+	 * Send 401 need authentication
+	 * @param {string} domain Http basic authentication domain name
+	 */
+	needBasicAuth(domain) {
+		this.rsp.writeHead(401, {
+			'Content-Type': 'text/plain; charset=utf-8',
+			'WWW-Authenticate': `Basic realm=${JSON.stringify(domain)}`
+		});
+		return this.end();
+	}
+
+	/**
+	 * Verify http basic authentication
+	 * @param {(username:string, password:string) => boolean} authCallback Callback handler function
+	 */
+	checkBasicAuth(authCallback) {
+		let auth = this.getRequestHeader('authorization');
+		if (!auth) {
+			return false;
+		} else {
+			auth = auth.slice(6, auth.length);
+			auth = Buffer.from(auth, 'base64').toString();
+			let [username] = auth.split(':');
+			let password = auth.substring(username.length + 1);
+			if (typeof authCallback === 'function' && authCallback(username, password)) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+	}
+
+	/**
 	 * Send 400 bad request
 	 * @param {string} message
 	 */
 	errorBadRequest() {
-		return this.error(400, 'Bad Request!\n');
+		return this.error(400, 'Bad request!\n');
 	}
 
 	/**
 	 * Send 401 need authenticate
 	 */
 	errorNeedAuth() {
-		return this.error(401, 'Need Authentication!\n');
+		return this.error(401, 'Need authentication!\n');
 	}
 
 	/**
@@ -155,14 +218,18 @@ class Context {
 	 * Send 404 not found
 	 */
 	errorNotFound() {
-		return this.error(404, 'Not Found!\n');
+		return this.error(404, 'Not found!\n');
 	}
 
 	/**
 	 * Send 405 bad method
 	 */
 	errorBadMethod() {
-		return this.error(405, 'Method Not Allowed!\n');
+		return this.error(405, 'Method not allowed!\n');
+	}
+
+	errorTooLarge() {
+		return this.error(413, 'Request entity too large!\n');
 	}
 
 	/**
@@ -170,7 +237,7 @@ class Context {
 	 * @param {string} message Error message
 	 */
 	errorUnknown(message) {
-		return this.error(500, `Unexpected Server Error: ${message}\n`);
+		return this.error(500, `Unexpected server error: ${message}\n`);
 	}
 
 	/**
@@ -181,7 +248,7 @@ class Context {
 	error(code, message) {
 		if (typeof message === 'undefined' || message === null) {
 			if (typeof code === 'number') {
-				message = 'Unexpected Server Error!\n';
+				message = 'Unexpected server error!\n';
 			}
 		}
 		this.rsp.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -207,6 +274,13 @@ class Context {
 				this.rsp.end(callback);
 			}
 		});
+	}
+
+	/**
+	 * Close underlying socket connection
+	 */
+	close() {
+		this.req.connection.destroy();
 	}
 }
 
@@ -259,14 +333,59 @@ class App {
 	}
 }
 
+const
+	session = require('./middleware/session'),
+	static = require('./middleware/static'),
+	controller = require('./middleware/controller'),
+	bodyParser = require('./middleware/body-parser'),
+	security = require('./middleware/security'),
+	template = require('./middleware/template');
+
+/**
+ * Instead use App constructor to create a server instance,
+ * this function create a simple server instance that add most commonly used middlewares to the instance.
+ * @param {string} serverKey Server key
+ * @param {(param: {ctx:Context,username:string,passowrd:string,session,cookie,path: string,method: string,ip: string}) => boolean|'allow'|'deny'|'redirect:'|'auth:'} securityHandler Security handler function
+ * @param {Object} env Any environment variables
+ * @param {(ctx: Context) => boolean} securityHandler
+ * @returns {App} App instance
+ */
+function simpleServer(port, serverKey = null, securityHandler = null, env = {}) {
+	let app = new App();
+	let middlewares = [
+		session.create(serverKey),
+		static.create(),
+		bodyParser.create(),
+		template.create(),
+		controller.create()
+	];
+	if (typeof securityHandler === 'function') {
+		middlewares.splice(1, 0, security.create(securityHandler));
+	}
+	app.use(
+		...middlewares
+	);
+	if (env) {
+		for (let k in env) {
+			if (!app[k]) {
+				app[k] = env[k];
+			}
+		}
+	}
+	app.start(port);
+	return app;
+}
+
 module.exports = {
 	App: App,
+	simpleServer: simpleServer,
 	middlewares: {
-		session: require('./middleware/session'),
-		static: require('./middleware/static'),
-		controller: require('./middleware/controller'),
-		bodyParser: require('./middleware/body-parser'),
-		template: require('./middleware/template')
+		security: security,
+		session: session,
+		static: static,
+		controller: controller,
+		bodyParser: bodyParser,
+		template: template
 	},
 	time: require('./utils/time')
 };

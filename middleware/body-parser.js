@@ -445,6 +445,7 @@ function createParser(req) {
 
 /**
  * Create body-parser middleware.
+ * @returns {(ctx, req, rsp) => boolean}
  */
 function create() {
 	return async function (ctx, req) {

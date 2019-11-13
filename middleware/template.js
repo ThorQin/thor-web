@@ -8,6 +8,7 @@ const
 /**
  * Create template render engin middleware.
  * @param {string} baseDir The root directory of the controllers.
+ * @returns {(ctx, req, rsp) => boolean}
  */
 function create(baseDir = null, isDebug = false) {
 	const cache = {};
