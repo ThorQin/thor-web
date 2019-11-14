@@ -56,6 +56,7 @@ interface RenderFunc {
 }
 
 interface Context {
+	app: App;
 	req: http.IncomingMessage;
 	rsp: http.ServerResponse;
 	url: string;
@@ -101,6 +102,7 @@ class App {
 	use(...middleware: Middleware[]): App;
 	start(port: number): void;
 	stop(): void;
+	[index: string]: any;
 }
 
 interface SecurityHandlerParam {
