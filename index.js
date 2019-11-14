@@ -321,6 +321,7 @@ class App {
 		if (middleware instanceof Array) {
 			this.middlewares = this.middlewares.concat(...middleware);
 		}
+		return this;
 	}
 	start(port) {
 		this.server = http.createServer((req, rsp) => {
@@ -350,7 +351,7 @@ const
  * @param {(ctx: Context) => boolean} securityHandler
  * @returns {App} App instance
  */
-function simpleServer(port, serverKey = null, securityHandler = null, env = {}) {
+function simpleApp(port, serverKey = null, securityHandler = null, env = {}) {
 	let app = new App();
 	let middlewares = [
 		session.create(serverKey),
@@ -378,7 +379,8 @@ function simpleServer(port, serverKey = null, securityHandler = null, env = {}) 
 
 module.exports = {
 	App: App,
-	simpleServer: simpleServer,
+	Context: Context,
+	simpleApp: simpleApp,
 	middlewares: {
 		security: security,
 		session: session,

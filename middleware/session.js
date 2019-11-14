@@ -145,7 +145,8 @@ function createSession(ctx, { serverKey, cookieName, expire = null, domain = nul
 function generateKey() {
 	let id = uuidv1().replace(/-/g, '');
 	let buffer = Buffer.from(id, 'hex');
-	console.log(buffer.toString('base64'));
+	let key = buffer.toString('base64');
+	return key;
 }
 
 /**
@@ -168,7 +169,7 @@ function create(
 	let _expire = expire ? getTimeDef(expire) : null;
 	let _interval = interval ? getTimeDef(interval) : null;
 
-	return async function (ctx, req, rsp) {
+	return async function (ctx, req) {
 		req.cookies = ctx.getRequestCookies(req);
 		let content = req.cookies && req.cookies[cookieName];
 		let sessionInfo = content && await getSessionInfo(content, {
