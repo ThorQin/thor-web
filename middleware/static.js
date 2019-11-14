@@ -89,7 +89,7 @@ function create(baseDir, suffix = null, cachedFileSize = 1024 * 100) {
 						let f;
 						try {
 							f = await fs.open(file);
-							if (stat.size <= cachedFileSize) {
+							if (stat.size <= cachedFileSize && process.env.NODE_ENV !== 'development') {
 								let data = await f.readFile();
 								cache.set(file, data);
 								rsp.writeHead(200, { 'Content-Type': mime});

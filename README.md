@@ -1,4 +1,4 @@
-# Thor-Web framework
+# Thor-Web Framework
 
 This framework is a light-weight, easy to use library. It provided most commonly used middlewares to let you can develop a full featured web application.
 
@@ -8,31 +8,31 @@ This framework is a light-weight, easy to use library. It provided most commonly
 
 ```
 Workspace
- - package.json
- - index.js
+   package.json
+   index.js
  + www
-	 + assets
-	   - main.css
-   - index.html
- + controller
-   - about.js
- + template
-   - about.html  
+   + assets
+       main.css
+     index.html
+ + controllers
+     about.js
+ + templates
+     about.html  
 ```
 
 ## Edit package.json
 ```json
 {
- "name": "web-demo",
- "version": "1.0.0",
- "main": "index.js",
- "dependencies": {
-	"thor-web": "1.0.0"
- }
+  "name": "web-demo",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+	  "thor-web": "1.0.0"
+  }
 }
 ```
 
-## yarn install
+## Install
 ```
 yarn install
 ```
@@ -43,56 +43,56 @@ const web = require('thor-web');
 web.simpleApp(8080);
 ``` 
 
-## Create static file: index.html
+## Edit static file: index.html
 ```html
 <DOCTTYPE html>
 <html>
-<head>
-<meta charset="utf-8">
-<title>Thor Web Demo</title>
-<link ref="stylesheet" href="/assets/main.css">
-</head>
-<body>
-	<h1>Demo</h1>
-	<p>
-		<a href="/about">Show About</a>
-	</p>
-</body>
+  <head>
+    <meta charset="utf-8">
+    <title>Thor Web Demo</title>
+    <link ref="stylesheet" href="/assets/main.css">
+  </head>
+  <body>
+    <h1>Demo</h1>
+    <p>
+      <a href="/about">Show About</a>
+    </p>
+  </body>
 </html>
 ```
 
-## Create static CSS resource: main.css
+## Edit static CSS resource: main.css
 ```css
 body {
-	font: 18pt;
+  font: 18pt;
 }
 ```
 
-## Create template file: about.html
+## Edit template file: about.html
 ```html
 <DOCTTYPE html>
 <html>
-<head>
-<meta charset="utf-8">
-<title>About</title>
-<link ref="stylesheet" href="/assets/main.css">
-</head>
-<body>
-	<h1>About</h1>
-	<p>
-		Version: {{version}}
-	</p>
-</body>
+  <head>
+    <meta charset="utf-8">
+    <title>About</title>
+    <link ref="stylesheet" href="/assets/main.css">
+  </head>
+  <body>
+    <h1>About</h1>
+    <p>
+      Version: {{version}}
+  </p>
+  </body>
 </html>
 ```
 
-## Create controller file: about.js
+## Edit controller file: about.js
 ```js
 console pkg = require('../package.json')
 exports.get = async function (ctx) {
-	await ctx.render('about.html', {
-		version: pkg.version
-	});
+  await ctx.render('about.html', {
+    version: pkg.version
+  });
 };
 ```
 
@@ -108,4 +108,4 @@ node .
 * Body Parser: Provide methods to access request contents
 * Controller: Route request to controller js file
 * Static: Provide static resources access
-* Template: Provide js template render method (powered by thor-tpl)
+* Template: Provide js template render method (Powered by thor-tpl)

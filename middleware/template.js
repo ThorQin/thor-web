@@ -35,7 +35,9 @@ function create(baseDir = null, isDebug = false) {
 				if (isDebug) {
 					console.log('compile template: ', jsFile);
 				}
-				cache[file] = fn;
+				if (process.env.NODE_ENV !== 'development') {
+					cache[file] = fn;
+				}
 			}
 		};
 		let fn = cache[file];
