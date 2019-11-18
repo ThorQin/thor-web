@@ -76,6 +76,8 @@ interface Context {
 	removeResponseCookie(name: string): void;
 	getResponseCookies(): string[];
 	write(buffer: Buffer|string): Promise<void>;
+	writeHead(statusCode: number, reasonPhrase?: string, headers?: http.OutgoingHttpHeaders): void;
+  writeHead(statusCode: number, headers?: http.OutgoingHttpHeaders): void;
 	sendText(text: string, contentType: string = 'text/plain; charset=utf-8'): Promise<void>;
 	sendHtml(html: string): Promise<void>;
 	sendJson(html: string): Promise<void>;
@@ -224,9 +226,9 @@ namespace middlewares {
 		 * @param baseDir Root directory of static resources.
 		 * @param rootPath Root url path of static resource.
 		 * @param suffix Which suffix can be visit as static resource.
-		 * @param cachedFileSize File can be cached when size less this setting.
+		 * @param cachedFileSize File can be cached when size less this setting, default is 1MB (1024*1024).
 		 */
-		function create(baseDir: string = null, rootPath: string = '/', suffix: string[] = null, cachedFileSize = 1024 * 100): Middleware;
+		function create(baseDir: string = null, rootPath: string = '/', suffix: string[] = null, cachedFileSize = 1024 * 1024): Middleware;
 		/**
 		 * Get default allowed suffix list
 		 */
