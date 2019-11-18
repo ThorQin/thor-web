@@ -1,4 +1,6 @@
 const
+	// eslint-disable-next-line no-unused-vars
+	// Context = require('../context'),
 	path = require('path'),
 	tools = require('../utils/tool');
 
@@ -24,16 +26,29 @@ async function loadScript(baseDir, api) {
 /**
  * Create controller middleware.
  * @param {string} baseDir The root directory of the controllers.
- * @returns {(ctx, req, rsp) => boolean}
+ * @param {string} rootPath The root url path of the controllers.
+ * @returns {(ctx: Context, req, rsp) => boolean}
  */
-function create(baseDir) {
-
+function create(baseDir, rootPath = '/') {
+	if (!rootPath) {
+		rootPath = '/';
+	}
+	if (!rootPath.endsWith('/')) {
+		rootPath += '/';
+	}
 	if (!baseDir) {
 		baseDir = path.resolve(path.dirname(require.main.filename), 'controllers');
+	} else if (baseDir.endsWith('/')) {
+		baseDir = baseDir.substring(0, baseDir.length - 1);
 	}
 
 	return async function (ctx, req, rsp) {
-		let fn = await loadScript(baseDir, ctx.path);
+		let page = ctx.path;
+		if (!page.startsWith(rootPath)) {
+			return false;
+		}
+		page = page.substring(rootPath.length - 1);
+		let fn = await loadScript(baseDir, page);
 		if (fn) {
 			if (typeof fn !== 'function') {
 				fn = fn[req.method.toLowerCase()];

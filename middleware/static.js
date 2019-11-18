@@ -1,4 +1,6 @@
 const
+	// eslint-disable-next-line no-unused-vars
+	// Context = require('../context'),
 	path = require('path'),
 	tools = require('../utils/tool'),
 	mime = require('mime'),
@@ -36,13 +38,23 @@ function getMimeType(suffix) {
 /**
  *
  * @param {string} baseDir Root directory of static resources.
+ * @param {string} rootPath Root url path of static resource.
  * @param {string[]} suffix Which suffix can be visit as static resource.
  * @param {number} cachedFileSize File can be cached when size less this setting.
- * @returns {(ctx, req, rsp) => boolean}
+ * @returns {(ctx: Context, req, rsp) => boolean}
  */
-function create(baseDir, suffix = null, cachedFileSize = 1024 * 100) {
+function create(baseDir = null, rootPath = '/', suffix = null, cachedFileSize = 1024 * 100) {
+	if (!rootPath) {
+		rootPath = '/';
+	}
+	if (!rootPath.endsWith('/')) {
+		rootPath += '/';
+	}
+
 	if (!baseDir) {
 		baseDir = path.resolve(path.dirname(require.main.filename), 'www');
+	} else if (baseDir.endsWith('/')) {
+		baseDir = baseDir.substring(0, baseDir.length - 1);
 	}
 
 	let suffixSet;
@@ -69,8 +81,13 @@ function create(baseDir, suffix = null, cachedFileSize = 1024 * 100) {
 		}
 	}
 
-	return async function (ctx, req, rsp) {
+	return async function (ctx) {
 		let page = ctx.path;
+		if (!page.startsWith(rootPath)) {
+			return false;
+		}
+		page = page.substring(rootPath.length - 1);
+
 		if (page.endsWith('/')) {
 			page += 'index.html';
 		}
@@ -80,8 +97,8 @@ function create(baseDir, suffix = null, cachedFileSize = 1024 * 100) {
 				let file = baseDir + page;
 				let mime = getMimeType(m[1]);
 				if (cache.has(file)) {
-					rsp.writeHead(200, { 'Content-Type': mime});
-					rsp.end(cache.get(file));
+					ctx.writeHead(200, { 'Content-Type': mime});
+					await ctx.end(cache.get(file));
 					return true;
 				} else {
 					let stat = await tools.fileStat(file);
@@ -92,16 +109,16 @@ function create(baseDir, suffix = null, cachedFileSize = 1024 * 100) {
 							if (stat.size <= cachedFileSize && process.env.NODE_ENV !== 'development') {
 								let data = await f.readFile();
 								cache.set(file, data);
-								rsp.writeHead(200, { 'Content-Type': mime});
-								rsp.end(data);
+								ctx.writeHead(200, { 'Content-Type': mime});
+								await ctx.end(data);
 								return true;
 							} else {
-								rsp.writeHead(200, { 'Content-Type': mime});
+								ctx.writeHead(200, { 'Content-Type': mime});
 								let buffer = Buffer.alloc(4096);
 								for await (let _ of write(f, buffer, ctx)) {
 									// console.log(`write size: ${size}`);
 								}
-								rsp.end();
+								await ctx.end();
 								return true;
 							}
 						} finally {

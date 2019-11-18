@@ -7,7 +7,7 @@ This framework is a light-weight, easy to use library. It provided most commonly
 ## Create a deme project like this:
 
 ```
-Workspace
+ProjectFolder
    package.json
    index.js
  + www
@@ -40,7 +40,7 @@ yarn install
 ## Edit index.js
 ```js
 const web = require('thor-web');
-web.simpleApp(8080);
+web.start(8080);
 ``` 
 
 ## Edit static file: index.html

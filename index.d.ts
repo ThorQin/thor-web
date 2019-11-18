@@ -90,7 +90,7 @@ interface Context {
 	errorTooLarge(): Promise<void>;
 	errorUnknown(message): Promise<void>;
 	error(code: number, message: string): Promise<void>;
-	end(message: string = null): Promise<void>;
+	end(message: Buffer|string = null): Promise<void>;
 	close(): void;
 }
 
@@ -128,7 +128,7 @@ interface ServerEnv {
  * Instead use App constructor to create a server instance,
  * this function create a simple server instance that add most commonly used middlewares to the instance.
  */
-function simpleApp(port: number, serverKey: string = null, securityHandler: SecurityHandler = null, env:ServerEnv = {}): App;
+function start(port: number, serverKey: string = null, securityHandler: SecurityHandler = null, env:ServerEnv = {}): App;
 
 namespace time {
 	function now(): Date;
@@ -222,10 +222,11 @@ namespace middlewares {
 		/**
 		 * Create static resources middleware instance
 		 * @param baseDir Root directory of static resources.
+		 * @param rootPath Root url path of static resource.
 		 * @param suffix Which suffix can be visit as static resource.
 		 * @param cachedFileSize File can be cached when size less this setting.
 		 */
-		function create(baseDir: string, suffix: string[] = null, cachedFileSize = 1024 * 100): Middleware;
+		function create(baseDir: string = null, rootPath: string = '/', suffix: string[] = null, cachedFileSize = 1024 * 100): Middleware;
 		/**
 		 * Get default allowed suffix list
 		 */
@@ -235,7 +236,7 @@ namespace middlewares {
 		/**
 		 * Create js controller middleware instance
 		 */
-		function create(baseDir: string = null): Middleware;
+		function create(baseDir: string = null, rootPath: string = '/'): Middleware;
 	}
 	module bodyParser {
 		/**
