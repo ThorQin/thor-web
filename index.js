@@ -71,7 +71,7 @@ const
 function start(port, serverKey = null, securityHandler = null, env = {}) {
 	let app = new App();
 	let middlewares = [
-		session.create(serverKey),
+		session.create({serverKey: serverKey}),
 		static.create(),
 		bodyParser.create(),
 		template.create(),

@@ -6,11 +6,16 @@ const
 
 
 /**
+ * @typedef TemplateOptions
+ * @property {string} baseDir The root directory of the controllers.
+ * @property {boolean} isDebug Use debug mode
+ */
+/**
  * Create template render engin middleware.
- * @param {string} baseDir The root directory of the controllers.
+ * @param {TemplateOptions} options
  * @returns {(ctx, req, rsp) => boolean}
  */
-function create(baseDir = null, isDebug = false) {
+function create({baseDir = null, isDebug = false} = {}) {
 	const cache = {};
 
 	if (!baseDir) {

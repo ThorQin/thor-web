@@ -150,21 +150,30 @@ function generateKey() {
 }
 
 /**
+ * Create session middleware options
+ * @typedef SessionOptions
+ * @property {string} serverKey Server key for AES128 encryption encoded by BASE64 (key = 16 bytes raw data -> base64)
+ * @property {string} cookieName
+ * @property {(sessionInfo: any) => boolean} renew
+ * @property {string} expire
+ * @property {string} interval
+ * @property {string} domain
+ * @property {boolean} httpOnly
+ */
+/**
  * Create session manager middleware
- * @param {string} serverKey Server key for AES128 encryption encoded by BASE64 (key = 16 bytes raw data -> base64)
- * @param {Object} options Options
+ * @param {SessionOptions} options Options
  * @returns {(ctx, req, rsp) => boolean}
  */
-function create(
+function create({
 	serverKey = generateKey(),
-	{
-		cookieName = 'ez_app',
-		renew = null,
-		expire = null,
-		interval = '15d',
-		domain = null,
-		httpOnly = true
-	} = {}) {
+	cookieName = 'ez_app',
+	renew = null,
+	expire = null,
+	interval = '15d',
+	domain = null,
+	httpOnly = true
+} = {}) {
 	let key = Buffer.from(serverKey, 'base64');
 	let _expire = expire ? getTimeDef(expire) : null;
 	let _interval = interval ? getTimeDef(interval) : null;

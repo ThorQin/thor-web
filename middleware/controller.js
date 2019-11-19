@@ -24,12 +24,16 @@ async function loadScript(baseDir, api) {
 }
 
 /**
+ * @typedef ControllerOptions
+ * @property {string} baseDir The root directory of the controllers.
+ * @property {string} rootPath The root url path of the controllers.
+ */
+/**
  * Create controller middleware.
- * @param {string} baseDir The root directory of the controllers.
- * @param {string} rootPath The root url path of the controllers.
+ * @param {ControllerOptions} options
  * @returns {(ctx: Context, req, rsp) => boolean}
  */
-function create(baseDir, rootPath = '/') {
+function create({baseDir, rootPath = '/'} = {}) {
 	if (!rootPath) {
 		rootPath = '/';
 	}

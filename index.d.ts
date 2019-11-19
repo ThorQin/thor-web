@@ -183,37 +183,38 @@ namespace time {
 
 namespace middlewares {
 
-	interface SessionData {
-		[index: string]: any
-	}
-
-	interface SessionInfo {
-		accessTime: number;
-		createTime: number;
-		expireTime: number;
-		info: SessionData;
-	}
-
-	interface SessionOptions {
-		cookieName: string = 'ez_app',
-		renew: (info: SessionInfo) => Promise<boolean> = null,
-		expire: string = null,
-		interval: string = '15d',
-		domain: string = null,
-		httpOnly: boolean = true
-	}
-
 	module security {
 		/**
 		 * Create security middleware instance
 		 */
 		function create(securityHandler: SecurityHandler): Middleware;
 	}
+
 	module session {
+		interface SessionData {
+			[index: string]: any
+		}
+
+		interface SessionInfo {
+			accessTime: number;
+			createTime: number;
+			expireTime: number;
+			info: SessionData;
+		}
+
+		interface SessionOptions {
+			serverKey: string?,
+			cookieName: string = 'ez_app',
+			renew: (info: SessionInfo) => Promise<boolean> = null,
+			expire: string = null,
+			interval: string = '15d',
+			domain: string = null,
+			httpOnly: boolean = true
+		}
 		/**
 		 * Create distributed session middleware instance
 		 */
-		function create(serverKey: string = null, options: SessionOptions = {}): Middleware;
+		function create(options: SessionOptions): Middleware;
 
 		/**
 		 * Generate a new server key
@@ -221,24 +222,42 @@ namespace middlewares {
 		function generateKey(): string;
 	}
 	module static {
+		interface StaticOptions {
+			/**
+			 * Root directory of static resources.
+			 */
+			baseDir: string = null,
+			/**
+			 * Root url path of static resource.
+			 */
+			rootPath: string = '/',
+			/**
+			 * Extra suffix can be visit as static resource.
+			 */
+			suffix: string[] = null,
+			/**
+			 * File can be cached when size less this setting, default is 1MB (1024*1024).
+			 */
+			cachedFileSize: number = 1024 * 1024
+		}
 		/**
 		 * Create static resources middleware instance
-		 * @param baseDir Root directory of static resources.
-		 * @param rootPath Root url path of static resource.
-		 * @param suffix Which suffix can be visit as static resource.
-		 * @param cachedFileSize File can be cached when size less this setting, default is 1MB (1024*1024).
 		 */
-		function create(baseDir: string = null, rootPath: string = '/', suffix: string[] = null, cachedFileSize = 1024 * 1024): Middleware;
+		function create(options: StaticOptions): Middleware;
 		/**
 		 * Get default allowed suffix list
 		 */
 		function defaultSuffix(): string[];
 	}
 	module controller {
+		interface ControllerOptions {
+			baseDir: string = null,
+			rootPath: string = '/'
+		}
 		/**
 		 * Create js controller middleware instance
 		 */
-		function create(baseDir: string = null, rootPath: string = '/'): Middleware;
+		function create(options: ControllerOptions): Middleware;
 	}
 	module bodyParser {
 		/**
@@ -247,9 +266,16 @@ namespace middlewares {
 		function create(): Middleware;
 	}
 	module template {
+		interface TemplateOptions {
+			baseDir: string = null,
+			/**
+			 * Whether use debug mode
+			 */
+			isDebug: boolean = false
+		}
 		/**
 		 * Create template renderer middleware instance
 		 */
-		function create(baseDir: string = null, isDebug = false): Middleware;
+		function create(options: TemplateOptions): Middleware;
 	}
 }
