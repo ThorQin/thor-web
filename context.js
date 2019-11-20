@@ -219,6 +219,13 @@ class Context {
 	}
 
 	/**
+	 * Send 401 Authenticate failed
+	 */
+	errorAuthFailed() {
+		return this.error(401, 'Authenticate failed!\n');
+	}
+
+	/**
 	 * Send 403 forbidden
 	 */
 	errorForbidden() {

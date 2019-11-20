@@ -20,24 +20,47 @@ function create(securityHandler) {
 			method: ctx.method,
 			ip: ctx.ip
 		});
-		if (result === true) {
-			return false;
-		} else if (result === 'deny' || !result) {
-			await ctx.errorForbidden();
+		if (typeof result === 'object' && result) {
+			let headers = {};
+			Object.keys(result).filter(k => k != 'code' && k != 'body').forEach(k => {
+				headers[k.toLowerCase()] = result[k];
+			});
+			let code = 403;
+			if (typeof result.code === 'number') {
+				code = result.code;
+			}
+			let body = null;
+			if (typeof result.body === 'object') {
+				body = JSON.stringify(result.body);
+				headers['content-type'] = 'application/json; charset=utf-8';
+			}
+			ctx.writeHead(code, result);
+			await ctx.end(body);
 			return true;
+		} else if (typeof result === 'string') {
+			if (result === 'allow') {
+				return false;
+			} else {
+				let m = /^redirect:(.+)$/.exec(result);
+				if (m) {
+					await ctx.redirect(m[1]);
+					return true;
+				}
+				m = /^auth:(.+)$/.exec(result);
+				if (m) {
+					await ctx.needBasicAuth(m[1]);
+					return true;
+				}
+				await ctx.errorForbidden();
+				return true;
+			}
 		} else {
-			let m = /^redirect:(.+)$/.exec(result);
-			if (m) {
-				await ctx.redirect(m[1]);
+			if (result) {
+				return false;
+			} else {
+				await ctx.errorForbidden();
 				return true;
 			}
-			m = /^auth:(.+)$/.exec(result);
-			if (m) {
-				await ctx.needBasicAuth(m[1]);
-				return true;
-			}
-			await ctx.errorForbidden();
-			return true;
 		}
 	};
 }

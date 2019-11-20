@@ -1,6 +1,6 @@
 {
 	"name": "thor-web",
-	"version": "1.0.5",
+	"version": "1.0.6",
 	"description": "An light weight web framework for node-js.",
 	"main": "index.js",
 	"repository": "https://gitee.com/thor.qin/thor-web.git",
