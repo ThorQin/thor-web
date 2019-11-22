@@ -69,8 +69,8 @@ class Context {
 	 * @param {{[key:string]: string}} options Cookie options: HttpOnly, Exprie, Domain, Path
 	 */
 	setResponseCookie(name, value, options) {
-		this.removeResponseCookie(this.rsp, name);
-		let cookies = this.getResponseCookies(this.rsp);
+		this.removeResponseCookie(name);
+		let cookies = this.getResponseCookies();
 		let cookie = name + '=' + value;
 		if (options) {
 			for (let k in options) {
@@ -89,7 +89,7 @@ class Context {
 	 * @param {string} name Cookie name
 	 */
 	removeResponseCookie(name) {
-		let cookies = this.getResponseCookies(this.rsp);
+		let cookies = this.getResponseCookies();
 		cookies = cookies.filter(c =>
 			c.split(';').filter(p =>
 				p.trim().startsWith(name+'=')
@@ -133,14 +133,14 @@ class Context {
 	}
 
 	/**
-	 * Send text content to client
-	 * @param {string} text
+	 * Send content to client
+	 * @param {string|Buffer} data
 	 */
-	sendText(text, contentType = 'text/plain; charset=utf-8') {
+	send(data, contentType = 'text/plain; charset=utf-8') {
 		this.rsp.writeHead(200, {
 			'Content-Type': contentType
 		});
-		return this.end(text);
+		return this.end(data);
 	}
 
 	/**
@@ -148,7 +148,7 @@ class Context {
 	 * @param {string} html
 	 */
 	sendHtml(html) {
-		return this.sendText(html, 'text/html; charset=utf-8');
+		return this.send(html, 'text/html; charset=utf-8');
 	}
 
 	/**
@@ -156,7 +156,7 @@ class Context {
 	 * @param {any} obj
 	 */
 	sendJson(obj) {
-		return this.sendText(JSON.stringify(obj));
+		return this.send(JSON.stringify(obj), 'application/json; charset=utf-8');
 	}
 
 	/**

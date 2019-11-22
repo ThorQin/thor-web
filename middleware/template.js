@@ -62,7 +62,7 @@ function create({baseDir = null, isDebug = false} = {}) {
 				return;
 			}
 			let html = await renderFile(file, data);
-			await ctx.sendText(html, 'text/html; charset=utf-8');
+			await ctx.sendHtml(html);
 		};
 		return false;
 	};

@@ -78,9 +78,9 @@ interface Context {
 	write(buffer: Buffer|string): Promise<void>;
 	writeHead(statusCode: number, reasonPhrase?: string, headers?: http.OutgoingHttpHeaders): void;
   writeHead(statusCode: number, headers?: http.OutgoingHttpHeaders): void;
-	sendText(text: string, contentType: string = 'text/plain; charset=utf-8'): Promise<void>;
+	send(data: string, contentType: string = 'text/plain; charset=utf-8'): Promise<void>;
 	sendHtml(html: string): Promise<void>;
-	sendJson(html: string): Promise<void>;
+	sendJson(obj: any): Promise<void>;
 	redirect(url: string): Promise<void>;
 	needBasicAuth(domain: string): Promise<void>;
 	checkBasicAuth(authCallback: (username: string, password: string) => boolean): boolean;

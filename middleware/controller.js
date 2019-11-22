@@ -58,9 +58,19 @@ function create({baseDir, rootPath = '/'} = {}) {
 				fn = fn[req.method.toLowerCase()];
 			}
 			if (fn) {
-				await fn(ctx, req, rsp);
-				if (!rsp.finished) {
-					await ctx.end();
+				try {
+					let result = await fn(ctx, req, rsp);
+					if (typeof result !== 'undefined') {
+						await ctx.sendJson(result);
+					} else if (!rsp.finished) {
+						await ctx.end();
+					}
+				} catch (e) {
+					if (!e || !e.handled) {
+						if (!rsp.finished) {
+							await ctx.errorUnknown();
+						}
+					}
 				}
 			} else {
 				await ctx.errorBadMethod();

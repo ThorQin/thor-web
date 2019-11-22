@@ -60,7 +60,7 @@ async function getSessionInfo(content, { serverKey, renew, expire, interval }) {
 	}
 }
 
-function createSession(ctx, { serverKey, cookieName, expire = null, domain = null, httpOnly = true, info = null }) {
+function createSession(ctx, { serverKey, cookieName, expire = null, path = null, domain = null, httpOnly = true, info = null }) {
 	let data = info ? info.data : {};
 	if (!(data instanceof Object)) {
 		data = {};
@@ -104,6 +104,7 @@ function createSession(ctx, { serverKey, cookieName, expire = null, domain = nul
 			if (domain) {
 				options.Domain = domain;
 			}
+			options.Path = '/';
 			if (httpOnly) {
 				options['HttpOnly'] = null;
 			}
