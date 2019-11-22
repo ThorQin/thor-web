@@ -263,11 +263,17 @@ class Context {
 	 * @param {number|string} code Default is 500
 	 * @param {string} message Default is 'Unexpected Server Error!'
 	 */
-	error(code, message) {
+	error(code = 500, message) {
 		if (typeof message === 'undefined' || message === null) {
 			if (typeof code === 'number') {
 				message = 'Unexpected server error!\n';
+			} else if (typeof code === 'string') {
+				message = code;
+				code = 500;
 			}
+		}
+		if (typeof code !== 'number') {
+			code = 500;
 		}
 		this.rsp.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' });
 		return this.end(message);

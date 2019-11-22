@@ -41,12 +41,12 @@ interface BodyParser {
 interface Session {
 	accessTime: number;
 	createTime: number;
-	expireTime: number;
+	validTime: number;
 	get(key: string): any;
 	set(key: string, value: any): void;
 	remove(key: string): void;
 	clear(): void;
-	save(): void;
+	save(maxAge:number = null): void;
 	delete(): void;
 	toString(): string;
 }
@@ -90,7 +90,7 @@ interface Context {
 	errorNotFound(): Promise<void>;
 	errorBadMethod(): Promise<void>;
 	errorTooLarge(): Promise<void>;
-	errorUnknown(message): Promise<void>;
+	errorUnknown(message:string): Promise<void>;
 	error(code: number, message: string): Promise<void>;
 	end(message: Buffer|string = null): Promise<void>;
 	close(): void;
@@ -198,15 +198,19 @@ namespace middlewares {
 		interface SessionInfo {
 			accessTime: number;
 			createTime: number;
-			expireTime: number;
+			validTime: number;
 			info: SessionData;
 		}
 
 		interface SessionOptions {
 			serverKey: string?,
 			cookieName: string = 'ez_app',
+			maxAge: number = -1,
 			renew: (info: SessionInfo) => Promise<boolean> = null,
-			expire: string = null,
+			/**
+			 * timespan (e.g. 1d,2h,3m,100s, etc..)
+			 */
+			validTime: string = null,
 			interval: string = '15d',
 			domain: string = null,
 			httpOnly: boolean = true

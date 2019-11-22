@@ -68,7 +68,11 @@ function create({baseDir, rootPath = '/'} = {}) {
 				} catch (e) {
 					if (!e || !e.handled) {
 						if (!rsp.finished) {
-							await ctx.errorUnknown();
+							if (process.env.NODE_ENV == 'prodction') {
+								await ctx.error();
+							} else {
+								await ctx.errorUnknown(e);
+							}
 						}
 					}
 				}

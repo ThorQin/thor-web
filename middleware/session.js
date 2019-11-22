@@ -22,8 +22,11 @@ function getTimeDef(str) {
 	return info;
 }
 
-async function getSessionInfo(content, { serverKey, renew, expire, interval }) {
+async function getSessionInfo(content, { serverKey, renew, validTime, interval }) {
 	try {
+		if (!content) {
+			return null;
+		}
 		let encData = Buffer.from(content, 'base64');
 		let decipher = crypto.createDecipheriv('aes-128-ecb', serverKey, '');
 		decipher.setAutoPadding(true);
@@ -33,7 +36,7 @@ async function getSessionInfo(content, { serverKey, renew, expire, interval }) {
 		let rawData = zlib.gunzipSync(zipData).toString('utf8');
 		let sessionInfo = JSON.parse(rawData);
 		let now = time.now();
-		if (!sessionInfo.expireTime || now < sessionInfo.expireTime) {
+		if (!sessionInfo.validTime || now < sessionInfo.validTime) {
 			if (interval) {
 				if (now < time.dateAdd(sessionInfo.accessTime, interval.value, interval.unit)) {
 					return sessionInfo;
@@ -46,7 +49,7 @@ async function getSessionInfo(content, { serverKey, renew, expire, interval }) {
 		} else {
 			if (typeof renew === 'function') {
 				if (await renew(sessionInfo)) {
-					sessionInfo.expireTime = expire ? time.dateAdd(now, expire.value, expire.unit).getTime() : null;
+					sessionInfo.validTime = validTime ? time.dateAdd(now, validTime.value, validTime.unit).getTime() : null;
 					return sessionInfo;
 				} else {
 					return null;
@@ -60,7 +63,7 @@ async function getSessionInfo(content, { serverKey, renew, expire, interval }) {
 	}
 }
 
-function createSession(ctx, { serverKey, cookieName, expire = null, path = null, domain = null, httpOnly = true, info = null }) {
+function createSession(ctx, { serverKey, cookieName, maxAge = -1, validTime = null, path = '/', domain = null, httpOnly = true, info = null }) {
 	let data = info ? info.data : {};
 	if (!(data instanceof Object)) {
 		data = {};
@@ -69,7 +72,7 @@ function createSession(ctx, { serverKey, cookieName, expire = null, path = null,
 	let session = {
 		accessTime: new Date().getTime(),
 		createTime: createTime,
-		expireTime: info ? info.expireTime : (expire ? time.dateAdd(createTime, expire.value, expire.unit).getTime() : null ),
+		validTime: info ? info.validTime : (validTime ? time.dateAdd(createTime, validTime.value, validTime.unit).getTime() : null ),
 		get: function(key) {
 			return data[key];
 		},
@@ -95,23 +98,30 @@ function createSession(ctx, { serverKey, cookieName, expire = null, path = null,
 			}
 			this.save();
 		},
-		save: function() {
+		save: function(mx) {
 			let token = this.toString();
 			let options = {};
-			if (this.expireTime) {
-				options.Expires = time.formatDate(this.expireTime, 'EEE, dd-MMM-yyyy HH:mm:ss Z').replace('Z', 'GMT');
-			}
+			options.maxAge = typeof mx === 'number' ? mx : maxAge;
 			if (domain) {
-				options.Domain = domain;
+				options.domain = domain;
 			}
-			options.Path = '/';
+			options.path = path;
 			if (httpOnly) {
 				options['HttpOnly'] = null;
 			}
 			ctx.setResponseCookie(cookieName, token, options);
 		},
 		delete: function() {
-			ctx.removeResponseCookie(cookieName);
+			let options = {};
+			options.maxAge = 0;
+			if (domain) {
+				options.domain = domain;
+			}
+			options.path = path;
+			if (httpOnly) {
+				options['HttpOnly'] = null;
+			}
+			ctx.setResponseCookie(cookieName, '', options);
 		},
 		toString: function() {
 			try {
@@ -155,8 +165,9 @@ function generateKey() {
  * @typedef SessionOptions
  * @property {string} serverKey Server key for AES128 encryption encoded by BASE64 (key = 16 bytes raw data -> base64)
  * @property {string} cookieName
+ * @property {number} maxAge -1: not store, 0: delete cookie, >0: how long the cookie will be kept(in seconds)
  * @property {(sessionInfo: any) => boolean} renew
- * @property {string} expire
+ * @property {string} validTime 3d, 1m, etc..
  * @property {string} interval
  * @property {string} domain
  * @property {boolean} httpOnly
@@ -169,14 +180,15 @@ function generateKey() {
 function create({
 	serverKey = generateKey(),
 	cookieName = 'ez_app',
+	maxAge = -1,
+	validTime = null,
 	renew = null,
-	expire = null,
 	interval = '15d',
 	domain = null,
 	httpOnly = true
 } = {}) {
 	let key = Buffer.from(serverKey, 'base64');
-	let _expire = expire ? getTimeDef(expire) : null;
+	let _expire = validTime ? getTimeDef(validTime) : null;
 	let _interval = interval ? getTimeDef(interval) : null;
 
 	return async function (ctx, req) {
@@ -184,9 +196,8 @@ function create({
 		let content = req.cookies && req.cookies[cookieName];
 		let sessionInfo = content && await getSessionInfo(content, {
 			serverKey: key,
-			cookieName: cookieName,
 			renew: renew,
-			expire: _expire,
+			validTime: _expire,
 			interval: _interval
 		});
 
@@ -195,7 +206,8 @@ function create({
 			info: sessionInfo,
 			serverKey: key,
 			cookieName: cookieName,
-			expire: _expire,
+			maxAge: maxAge,
+			validTime: _expire,
 			domain: domain,
 			httpOnly: httpOnly
 		});
