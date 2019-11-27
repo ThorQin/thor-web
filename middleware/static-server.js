@@ -115,7 +115,8 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 					if (ctx.method === 'HEAD') {
 						ctx.writeHead(200, {
 							'Content-Type': mime,
-							'Content-Length': stat.length,
+							'Content-Length': stat.size,
+							'Cache-Control':'no-cache',
 							'Last-Modified': stat.mtime.toUTCString()
 						});
 						await ctx.end();
@@ -131,7 +132,7 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 					if (modifySince) {
 						let lastTime = time.parseDate(modifySince);
 						if (lastTime) {
-							if (stat.ctime.getTime() <= lastTime) {
+							if (time.parseDate(stat.ctime.toUTCString()).getTime() <= lastTime.getTime()) {
 								await ctx.notModified();
 								return true;
 							}
@@ -142,7 +143,7 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 					if (cache.has(file)) {
 						let cachedFile = cache.get(file);
 						if (cachedFile.mtime >= stat.mtime) {
-							ctx.writeHead(200, { 'Content-Type': mime, 'Last-Modified': stat.mtime.toUTCString()});
+							ctx.writeHead(200, {'Cache-Control':'no-cache', 'Content-Type': mime, 'Last-Modified': stat.mtime.toUTCString()});
 							await ctx.end(cachedFile.data);
 							return true;
 						} else {
@@ -156,11 +157,11 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 						if (stat.size <= cachedFileSize && process.env.NODE_ENV !== 'development') {
 							let data = await f.readFile();
 							cache.set(file, {mtime: stat.mtime, data: data});
-							ctx.writeHead(200, { 'Content-Type': mime, 'Last-Modified': stat.mtime.toUTCString()});
+							ctx.writeHead(200, {'Cache-Control':'no-cache', 'Content-Type': mime, 'Last-Modified': stat.mtime.toUTCString()});
 							await ctx.end(data);
 							return true;
 						} else {
-							ctx.writeHead(200, { 'Content-Type': mime, 'Last-Modified': stat.mtime.toUTCString()});
+							ctx.writeHead(200, {'Cache-Control':'no-cache', 'Content-Type': mime, 'Last-Modified': stat.mtime.toUTCString()});
 							let buffer = Buffer.alloc(4096);
 							for await (let _ of write(f, buffer, ctx)) {
 								// console.log(`write size: ${size}`);
