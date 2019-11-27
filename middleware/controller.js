@@ -67,6 +67,7 @@ function create({baseDir, rootPath = '/'} = {}) {
 					}
 				} catch (e) {
 					if (!e || !e.handled) {
+						console.error(`[${req.method} : ${page}] `, e);
 						if (!rsp.finished) {
 							if (process.env.NODE_ENV == 'prodction') {
 								await ctx.error();

@@ -36,7 +36,7 @@ async function getSessionInfo(content, { serverKey, renew, validTime, interval }
 		let rawData = zlib.gunzipSync(zipData).toString('utf8');
 		let sessionInfo = JSON.parse(rawData);
 		let now = time.now();
-		if (!sessionInfo.validTime || now < sessionInfo.validTime) {
+		if (!sessionInfo.validTime || now.getTime() < sessionInfo.validTime) {
 			if (interval) {
 				if (now < time.dateAdd(sessionInfo.accessTime, interval.value, interval.unit)) {
 					return sessionInfo;

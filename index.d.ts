@@ -51,8 +51,16 @@ interface Session {
 	toString(): string;
 }
 
+/**
+ * Render page by template file
+ */
 interface RenderFunc {
-	(file: string, data: any): Promise<void>
+	/**
+	 * @param {string} file File path
+	 * @param {any} data Data content to render
+	 * @param {boolean} returnText If true, only return rendered content to caller instead send to client.
+	 */
+	(file: string, data: any, returnText: boolean = false): Promise<void|string>
 }
 
 interface Context {
@@ -102,7 +110,7 @@ interface Middleware {
 
 class App {
 	use(...middleware: Middleware[]): App;
-	start(port: number): void;
+	start(port: number = 8080): void;
 	stop(): void;
 	[index: string]: any;
 }
@@ -130,7 +138,7 @@ interface ServerEnv {
  * Instead use App constructor to create a server instance,
  * this function create a simple server instance that add most commonly used middlewares to the instance.
  */
-function start(port: number, serverKey: string = null, securityHandler: SecurityHandler = null, env:ServerEnv = {}): App;
+function start(port: number = 8080, serverKey: string = null, securityHandler: SecurityHandler = null, env:ServerEnv = {}): App;
 
 namespace time {
 	function now(): Date;
@@ -211,6 +219,9 @@ namespace middlewares {
 			 * timespan (e.g. 1d,2h,3m,100s, etc..)
 			 */
 			validTime: string = null,
+			/**
+			 * timespan (e.g. 1d,2h,3m,100s, etc..)
+			 */
 			interval: string = '15d',
 			domain: string = null,
 			httpOnly: boolean = true
@@ -225,7 +236,7 @@ namespace middlewares {
 		 */
 		function generateKey(): string;
 	}
-	module static {
+	module staticServer {
 		interface StaticOptions {
 			/**
 			 * Root directory of static resources.
@@ -245,7 +256,7 @@ namespace middlewares {
 			cachedFileSize: number = 1024 * 1024
 		}
 		/**
-		 * Create static resources middleware instance
+		 * Create static server middleware instance
 		 */
 		function create(options: StaticOptions): Middleware;
 		/**

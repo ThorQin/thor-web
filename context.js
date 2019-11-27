@@ -203,6 +203,11 @@ class Context {
 		}
 	}
 
+	notModified() {
+		this.rsp.writeHead(304, 'Not Modified');
+		return this.end();
+	}
+
 	/**
 	 * Send 400 bad request
 	 * @param {string} message

@@ -1,8 +1,9 @@
 const
 	// eslint-disable-next-line no-unused-vars
-	// Context = require('../context'),
+	Context = require('../context'),
 	path = require('path'),
 	tools = require('../utils/tool'),
+	time = require('../utils/time'),
 	mime = require('mime'),
 	fs = require('fs').promises;
 
@@ -92,6 +93,9 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 		}
 	}
 
+	/**
+	 * @param {Context} ctx
+	 */
 	return async function (ctx) {
 		let page = ctx.path;
 		if (!page.startsWith(rootPath)) {
@@ -106,38 +110,71 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 		if (m) {
 			if (suffixSet.has(m[1])) {
 				let file = baseDir + page;
-				let mime = getMimeType(m[1]);
-				if (cache.has(file)) {
-					ctx.writeHead(200, { 'Content-Type': mime});
-					await ctx.end(cache.get(file));
-					return true;
-				} else {
-					let stat = await tools.fileStat(file);
-					if (stat.isFile) {
-						let f;
-						try {
-							f = await fs.open(file);
-							if (stat.size <= cachedFileSize && process.env.NODE_ENV !== 'development') {
-								let data = await f.readFile();
-								cache.set(file, data);
-								ctx.writeHead(200, { 'Content-Type': mime});
-								await ctx.end(data);
+				let stat = await tools.fileStat(file);
+				if (stat.isFile) {
+					if (ctx.method === 'HEAD') {
+						ctx.writeHead(200, {
+							'Content-Type': mime,
+							'Content-Length': stat.length,
+							'Last-Modified': stat.mtime.toUTCString()
+						});
+						await ctx.end();
+						return true;
+					}
+
+					if (ctx.method !== 'GET') {
+						ctx.errorBadMethod();
+						return true;
+					}
+
+					let modifySince = ctx.getRequestHeader('if-modified-since');
+					if (modifySince) {
+						let lastTime = time.parseDate(modifySince);
+						if (lastTime) {
+							if (stat.ctime.getTime() <= lastTime) {
+								await ctx.notModified();
 								return true;
-							} else {
-								ctx.writeHead(200, { 'Content-Type': mime});
-								let buffer = Buffer.alloc(4096);
-								for await (let _ of write(f, buffer, ctx)) {
-									// console.log(`write size: ${size}`);
-								}
-								await ctx.end();
-								return true;
-							}
-						} finally {
-							if (f) {
-								await f.close();
 							}
 						}
 					}
+
+					let mime = getMimeType(m[1]);
+					if (cache.has(file)) {
+						let cachedFile = cache.get(file);
+						if (cachedFile.mtime >= stat.mtime) {
+							ctx.writeHead(200, { 'Content-Type': mime, 'Last-Modified': stat.mtime.toUTCString()});
+							await ctx.end(cachedFile.data);
+							return true;
+						} else {
+							cache.delete(file);
+						}
+					}
+
+					let f;
+					try {
+						f = await fs.open(file);
+						if (stat.size <= cachedFileSize && process.env.NODE_ENV !== 'development') {
+							let data = await f.readFile();
+							cache.set(file, {mtime: stat.mtime, data: data});
+							ctx.writeHead(200, { 'Content-Type': mime, 'Last-Modified': stat.mtime.toUTCString()});
+							await ctx.end(data);
+							return true;
+						} else {
+							ctx.writeHead(200, { 'Content-Type': mime, 'Last-Modified': stat.mtime.toUTCString()});
+							let buffer = Buffer.alloc(4096);
+							for await (let _ of write(f, buffer, ctx)) {
+								// console.log(`write size: ${size}`);
+							}
+							await ctx.end();
+							return true;
+						}
+					} finally {
+						if (f) {
+							await f.close();
+						}
+					}
+				} else {
+					cache.delete(file);
 				}
 			}
 		}

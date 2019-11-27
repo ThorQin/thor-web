@@ -754,10 +754,10 @@ text-table@^0.2.0:
   resolved "https://registry.npm.taobao.org/text-table/download/text-table-0.2.0.tgz#7f5ee823ae805207c00af2df4a84ec3fcfa570b4"
   integrity sha1-f17oI66AUgfACvLfSoTsP8+lcLQ=
 
-thor-tpl@^1.0.2:
-  version "1.0.3"
-  resolved "https://registry.npm.taobao.org/thor-tpl/download/thor-tpl-1.0.3.tgz#07805cc8c04068a3fe55c250833e42d05c99f807"
-  integrity sha1-B4BcyMBAaKP+VcJQgz5C0FyZ+Ac=
+thor-tpl@^1.0.3:
+  version "1.0.4"
+  resolved "https://registry.npm.taobao.org/thor-tpl/download/thor-tpl-1.0.4.tgz#0c7e4c0bf49fec94e8055030e6ef174c6b49598e"
+  integrity sha1-DH5MC/Sf7JToBVAw5u8XTGtJWY4=
 
 through@^2.3.6:
   version "2.3.8"

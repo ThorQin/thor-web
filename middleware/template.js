@@ -56,13 +56,21 @@ function create({baseDir = null, isDebug = false} = {}) {
 
 	return async function (ctx) {
 		// eslint-disable-next-line require-atomic-updates
-		ctx.render = async function(file, data) {
+		ctx.render = async function(file, data, returnText = false) {
 			if (!await tools.isFile(path.join(baseDir, file))) {
-				await ctx.errorNotFound();
+				if (returnText) {
+					throw new Error(`Template file not found! ${file}`);
+				} else {
+					await ctx.errorNotFound();
+				}
 				return;
 			}
 			let html = await renderFile(file, data);
-			await ctx.sendHtml(html);
+			if (returnText) {
+				return html;
+			} else {
+				await ctx.sendHtml(html);
+			}
 		};
 		return false;
 	};

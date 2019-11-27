@@ -40,7 +40,7 @@ class App {
 		}
 		return this;
 	}
-	start(port) {
+	start(port = 8080) {
 		this.server = http.createServer((req, rsp) => {
 			processRequest(this, req, rsp, this.middlewares);
 		}).listen(port);
@@ -53,7 +53,7 @@ class App {
 
 const
 	session = require('./middleware/session'),
-	static = require('./middleware/static'),
+	staticServer = require('./middleware/static-server'),
 	controller = require('./middleware/controller'),
 	bodyParser = require('./middleware/body-parser'),
 	security = require('./middleware/security'),
@@ -62,17 +62,17 @@ const
 /**
  * Instead use App constructor to create a server instance,
  * this function create a simple server instance that add most commonly used middlewares to the instance.
+ * @param {number} [port = 8080] Listen port default 8080
  * @param {string} serverKey Server key
  * @param {(param: {ctx:Context,username:string,passowrd:string,session,cookie,path: string,method: string,ip: string}) => boolean|'allow'|'deny'|'redirect:'|'auth:'} securityHandler Security handler function
  * @param {Object} env Any environment variables
- * @param {(ctx: Context) => boolean} securityHandler
  * @returns {App} App instance
  */
-function start(port, serverKey = null, securityHandler = null, env = {}) {
+function start(port = 8080, serverKey = null, securityHandler = null, env = {}) {
 	let app = new App();
 	let middlewares = [
 		session.create({serverKey: serverKey}),
-		static.create(),
+		staticServer.create(),
 		bodyParser.create(),
 		template.create(),
 		controller.create()
@@ -101,7 +101,7 @@ module.exports = {
 	middlewares: {
 		security: security,
 		session: session,
-		static: static,
+		staticServer: staticServer,
 		controller: controller,
 		bodyParser: bodyParser,
 		template: template
