@@ -70,6 +70,7 @@ body {
 
 ## Edit template file: about.html
 ```html
+{{@arg:version}}
 <DOCTTYPE html>
 <html>
   <head>
@@ -96,7 +97,7 @@ exports.get = async function (ctx) {
 };
 ```
 
-## Enjoy it
+## Run
 ```
 node .
 ```

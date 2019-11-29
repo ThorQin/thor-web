@@ -76,7 +76,7 @@ class Context {
 			for (let k in options) {
 				if (Object.prototype.hasOwnProperty.call(options, k)) {
 					let v = options[k];
-					cookie += '; ' + k + (v ? '=' + v : '');
+					cookie += '; ' + k + (v !== undefined && v !== null ? '=' + v : '');
 				}
 			}
 		}

@@ -101,11 +101,11 @@ function createSession(ctx, { serverKey, cookieName, maxAge = -1, validTime = nu
 		save: function(mx) {
 			let token = this.toString();
 			let options = {};
-			options.maxAge = typeof mx === 'number' ? mx : maxAge;
+			options['Max-Age'] = typeof mx === 'number' ? mx : maxAge;
 			if (domain) {
-				options.domain = domain;
+				options.Domain = domain;
 			}
-			options.path = path;
+			options.Path = path;
 			if (httpOnly) {
 				options['HttpOnly'] = null;
 			}
@@ -113,11 +113,11 @@ function createSession(ctx, { serverKey, cookieName, maxAge = -1, validTime = nu
 		},
 		delete: function() {
 			let options = {};
-			options.maxAge = 0;
+			options['Max-Age'] = 0;
 			if (domain) {
-				options.domain = domain;
+				options.Domain = domain;
 			}
-			options.path = path;
+			options.Path = path;
 			if (httpOnly) {
 				options['HttpOnly'] = null;
 			}
