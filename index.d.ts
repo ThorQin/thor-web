@@ -188,6 +188,24 @@ namespace time {
 	function formatDate(dt:Date, dateFmt = 'yyyy-MM-ddTHH:mm:sszzz'): string;
 }
 
+namespace enc {
+
+	/**
+	 * Encrypt data
+	 * @param {string} key Base64 format server key
+	 * @param {any} value Any data will be enc
+	 * @returns {string} Encrypted data encoding with base64.
+	 */
+	function encrypt(key: string, value: any): string;
+
+	/**
+	 * Decrypt data
+	 * @param {string} key Base64 format server key
+	 * @param {string} base64data Encrypted base64 string
+	 * @returns {any} Decrypted data
+	 */
+	function decrypt(key: string, base64data: string): any;
+}
 
 namespace middlewares {
 

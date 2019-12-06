@@ -106,6 +106,7 @@ module.exports = {
 		bodyParser: bodyParser,
 		template: template
 	},
-	time: require('./utils/time')
+	time: require('./utils/time'),
+	enc: require('./utils/enc')
 };
 
