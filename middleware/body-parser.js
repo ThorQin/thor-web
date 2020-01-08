@@ -187,7 +187,7 @@ function Parser({boundary, maxLength, storeDir, onPart, onError, onEnd, onEmpty}
 				}
 				let filename = cd['filename*'] || cd['filename'] || null;
 				partInfo.filename = filename;
-				if (ct != null && storeDir) {
+				if (filename != null && storeDir) {
 					return generateFile(storeDir).then(function(file) {
 						partInfo.file = file;
 						return new Promise(function(resolve, reject) {
