@@ -105,7 +105,7 @@ function paserHeaders(lines) {
 
 function generateFile(storeDir) {
 	let id = uuidv1().replace(/-/g,'');
-	let path = storeDir + id.substring(0, 15).replace(/.{3}/g,function(v){return v+'/';});
+	let path = storeDir + id.substring(0, 6).replace(/.{3}/g,function(v){return v+'/';});
 	return new Promise((resolve, reject) => {
 		fs.mkdir(path, {
 			recursive: true
@@ -113,7 +113,7 @@ function generateFile(storeDir) {
 			if (err) {
 				return reject(err);
 			}
-			let file = path + id.substring(15) + '.data';
+			let file = path + id.substring(6) + '.data';
 			return resolve(file);
 		});
 	});
@@ -287,7 +287,6 @@ function Parser({boundary, maxLength, storeDir, onPart, onError, onEnd, onEmpty}
 				break;
 			}
 		}
-		onEmpty();
 	}
 
 	async function parseBuffer() {
@@ -297,12 +296,15 @@ function Parser({boundary, maxLength, storeDir, onPart, onError, onEnd, onEmpty}
 			parsing = false;
 			if (finished || noMoreData) {
 				onEnd();
+			} else {
+				onEmpty();
 			}
+		} else {
+			// console.log('reenter parseBuffer...');
 		}
 	}
 
 	this.push = function(chunk) {
-		// console.log('data push: ', chunk.length);
 		buffer = Buffer.concat([buffer, chunk], buffer.length + chunk.length);
 		parseBuffer().catch(function(err) {
 			onError(err);
@@ -310,10 +312,12 @@ function Parser({boundary, maxLength, storeDir, onPart, onError, onEnd, onEmpty}
 	};
 
 	this.end = function() {
-		// console.log('data end');
+		console.log('data end');
 		noMoreData = true;
-		if (!parsing) {
-			onEnd();
+		if (!finished && !parsing) {
+			parseBuffer().catch(function(err) {
+				onError(err);
+			});
 		}
 	};
 
@@ -321,7 +325,7 @@ function Parser({boundary, maxLength, storeDir, onPart, onError, onEnd, onEmpty}
 
 function createParser(req) {
 	let finished = false;
-	let cl = req.headers['content-length'];
+	// let cl = req.headers['content-length'];
 	return {
 		isJSON: function() {
 			let ct = req.headers['content-type'];
@@ -402,33 +406,49 @@ function createParser(req) {
 			} else {
 				storeDir = null;
 			}
+
 			let parts = [];
 			return new Promise((resolve, reject) => {
+				let empty = true;
+
+				function readData() {
+					if (empty) {
+						let buffer = req.read();
+						if (buffer != null) {
+							empty = false;
+							// console.log('push data: ', buffer.length);
+							parser.push(buffer);
+						}
+					}
+				}
+
 				let parser = new Parser({
 					boundary: this.getMultipartBoundary(),
 					maxLength: maxLength,
 					storeDir: storeDir,
 					onPart: (part) => {
+						// console.log('multipart onPart()');
 						parts.push(part);
 					},
 					onError: (err) => {
 						finished = true;
-						// console.log(`onError: ${err}`);
+						// console.error(`multipart onError: ${err}`);
 						reject(err);
 					},
 					onEnd: () => {
 						finished = true;
-						// console.log('onEnd()');
+						// console.log('multipart onEnd()');
 						resolve(parts);
 					},
 					onEmpty: () => {
-						// console.log('onEmpty()');
-						cl && req.resume();
+						empty = true;
+						// console.log('multipart onEmpty()');
+						readData();
 					}
 				});
-				req.on('data', chunk => {
-					parser.push(chunk);
-					cl && req.pause();
+				req.on('readable', () => {
+					// console.log('on readable.');
+					readData();
 				});
 				req.on('error', err => {
 					// console.log('on req error:', err);
@@ -436,6 +456,7 @@ function createParser(req) {
 					reject(err);
 				});
 				req.on('end', () => {
+					// console.log('data upload end');
 					parser.end();
 				});
 			});
