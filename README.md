@@ -4,7 +4,7 @@ This framework is a light-weight, easy to use library. It provided most commonly
 
 # Example
 
-## Create a deme project like this:
+## Create a deme project:
 
 ```
 ProjectFolder
@@ -37,13 +37,13 @@ ProjectFolder
 yarn install
 ```
 
-## Edit index.js
+## index.js
 ```js
 const web = require('thor-web');
 web.start(8080);
 ``` 
 
-## Edit static file: index.html
+## index.html
 ```html
 <DOCTTYPE html>
 <html>
@@ -61,14 +61,14 @@ web.start(8080);
 </html>
 ```
 
-## Edit static CSS resource: main.css
+## main.css
 ```css
 body {
   font: 18pt;
 }
 ```
 
-## Edit template file: about.html
+## about.html
 ```html
 {{@arg:version}}
 <DOCTTYPE html>
@@ -87,7 +87,7 @@ body {
 </html>
 ```
 
-## Edit controller file: about.js
+## about.js
 ```js
 console pkg = require('../package.json')
 exports.get = async function (ctx) {
@@ -110,3 +110,4 @@ node .
 * Controller: Route request to controller js file
 * Static: Provide static resources access
 * Template: Provide js template render method (Powered by thor-tpl)
+
