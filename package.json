@@ -1,6 +1,10 @@
 {
 	"name": "thor-web",
-	"version": "1.0.9",
+	"keywords": [
+		"web",
+		"framework"
+	],
+	"version": "1.0.11",
 	"description": "An light weight web framework for node-js.",
 	"main": "index.js",
 	"repository": "https://gitee.com/thor.qin/thor-web.git",
@@ -8,7 +12,7 @@
 	"license": "MIT",
 	"private": false,
 	"dependencies": {
-		"iconv": "^2.3.5",
+		"iconv-lite": "^0.5.0",
 		"mime": "^2.4.4",
 		"thor-tpl": "^1.0.3",
 		"uuid": "^3.3.3"

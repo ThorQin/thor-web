@@ -63,6 +63,14 @@ interface RenderFunc {
 	(file: string, data: any, returnText: boolean = false): Promise<void|string>
 }
 
+interface SendFileOption {
+	statusCode: number = 200;
+	contentType: string = 'application/octet-stream';
+	headers: {[key: string]: string} = {};
+	filename: string = null;
+	inline: boolean = false;
+}
+
 interface Context {
 	app: App;
 	req: http.IncomingMessage;
@@ -89,6 +97,7 @@ interface Context {
 	send(data: string, contentType: string = 'text/plain; charset=utf-8'): Promise<void>;
 	sendHtml(html: string): Promise<void>;
 	sendJson(obj: any): Promise<void>;
+	sendFile(file: string, options: SendFileOption = {}): Promise<void>;
 	redirect(url: string): Promise<void>;
 	needBasicAuth(domain: string): Promise<void>;
 	checkBasicAuth(authCallback: (username: string, password: string) => boolean): boolean;

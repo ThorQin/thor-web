@@ -1,6 +1,7 @@
 
 const qs = require('querystring');
-const Iconv = require('iconv').Iconv;
+// const Iconv = require('iconv').Iconv;
+const iconv = require('iconv-lite');
 const uuidv1 = require('uuid/v1');
 const fs = require('fs');
 
@@ -8,7 +9,7 @@ const STATE_BEGIN = 0;
 const STATE_HEADER = 1;
 const STATE_CONTENT = 2;
 
-const gb2utf8 = new Iconv('gb18030', 'utf8');
+//const gb2utf8 = new Iconv('gb18030', 'utf8');
 function decodeURIComponentGB(str) {
 	let buffer = Buffer.alloc(str.length);
 	let state = 0;
@@ -35,7 +36,8 @@ function decodeURIComponentGB(str) {
 			}
 		}
 	}
-	return gb2utf8.convert(buffer.slice(0, len)).toString('utf-8');
+	// return gb2utf8.convert(buffer.slice(0, len)).toString('utf-8');
+	return iconv.decode(buffer.slice(0, len), 'gb18030');
 }
 
 function parseHeaderLine(headers, line) {

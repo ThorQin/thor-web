@@ -1,5 +1,16 @@
 // eslint-disable-next-line no-unused-vars
-const http = require('http');
+const http = require('http'),
+	path = require('path'),
+	mime = require('mime'),
+	fs = require('fs').promises;
+
+async function* readFile(fd, buffer) {
+	let rd = await fd.read(buffer, 0, buffer.length);
+	while (rd.bytesRead > 0) {
+		yield rd;
+		rd = await fd.read(buffer, 0, buffer.length);
+	}
+}
 
 class Context {
 	/**
@@ -157,6 +168,62 @@ class Context {
 	 */
 	sendJson(obj) {
 		return this.send(JSON.stringify(obj), 'application/json; charset=utf-8');
+	}
+
+	/**
+	 * @typedef SendFileOption
+	 * @prop {number} statusCode
+	 * @prop {string} contentType
+	 * @prop {{[key:string]:string}} headers
+	 * @prop {string} filename
+	 * @prop {boolean} inline
+	 *
+	 * @param {string} file File path
+	 * @param {SendFileOption} options File download options
+	 */
+	async sendFile(file, options) {
+		if (!options) {
+			options = {};
+		}
+		if (typeof options.statusCode !== 'number' || isNaN(options.statusCode)) {
+			options.statusCode = 200;
+		}
+		if (!options.filename) {
+			options.filename = path.basename(file);
+		}
+		if (!/^[^/]+\/[^/]+$/.test(options.contentType) ) {
+			let ct = mime.getType(options.filename);
+			options.contentType = ct || 'application/octet-stream';
+		}
+		let headers = options.headers || {};
+		let hs = {};
+		Object.keys(headers).forEach(k => {
+			let v = headers[k];
+			let key = k.replace(/(?<=^|-)./g, c => c.toUpperCase());
+			hs[key] = v;
+		});
+
+		hs['Content-Type'] = options.contentType;
+		if (options.inline) {
+			hs['Content-Disposition'] = 'inline';
+		} else {
+			hs['Content-Disposition'] = 'attachment; filename*=utf-8\'\'' + encodeURIComponent(options.filename);
+		}
+
+		this.rsp.writeHead(options.statusCode, hs);
+
+		let handler = await fs.open(file, 'r');
+		try {
+			let buffer = Buffer.alloc(4096);
+			for await (let rd of readFile(handler, buffer)) {
+				// totalSize += rd.bytesRead;
+				// console.log(`Read: ${rd.bytesRead}, total: ${totalSize}`);
+				await this.write(rd.buffer.slice(0, rd.bytesRead));
+			}
+		} finally {
+			await handler.close();
+		}
+		await this.end();
 	}
 
 	/**
