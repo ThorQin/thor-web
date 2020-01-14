@@ -69,10 +69,14 @@ function create({baseDir, rootPath = '/'} = {}) {
 					if (!e || !e.handled) {
 						console.error(`[${req.method} : ${page}] `, e);
 						if (!rsp.finished) {
-							if (process.env.NODE_ENV == 'prodction') {
-								await ctx.error();
+							if (e && e.message === 'ERR_HTTP_HEADERS_SENT') {
+								await ctx.end();
 							} else {
-								await ctx.errorUnknown(e);
+								if (process.env.NODE_ENV == 'prodction') {
+									await ctx.error();
+								} else {
+									await ctx.errorUnknown(e);
+								}
 							}
 						}
 					}

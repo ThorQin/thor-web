@@ -210,10 +210,10 @@ class Context {
 			hs['Content-Disposition'] = 'attachment; filename*=utf-8\'\'' + encodeURIComponent(options.filename);
 		}
 
-		this.rsp.writeHead(options.statusCode, hs);
-
 		let handler = await fs.open(file, 'r');
+
 		try {
+			this.rsp.writeHead(options.statusCode, hs);
 			let buffer = Buffer.alloc(4096);
 			for await (let rd of readFile(handler, buffer)) {
 				// totalSize += rd.bytesRead;

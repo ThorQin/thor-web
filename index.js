@@ -42,7 +42,11 @@ class App {
 	}
 	start(port = 8080) {
 		this.server = http.createServer((req, rsp) => {
-			processRequest(this, req, rsp, this.middlewares);
+			try {
+				processRequest(this, req, rsp, this.middlewares);
+			} catch (e) {
+				console.error('processRequest exception: ', e);
+			}
 		}).listen(port);
 		console.log(`Server running at http://127.0.0.1:${port}/`);
 	}
