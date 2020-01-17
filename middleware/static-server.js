@@ -5,6 +5,7 @@ const
 	tools = require('../utils/tool'),
 	time = require('../utils/time'),
 	mime = require('mime'),
+	zlib = require('zlib'),
 	fs = require('fs').promises;
 
 function defaultSuffix() {
@@ -14,6 +15,7 @@ function defaultSuffix() {
 		'html',
 		'css',
 		'js',
+		'json',
 		'eot',
 		'otf',
 		'woff',
@@ -43,6 +45,50 @@ function getMimeType(suffix) {
 	return mime.getType(suffix);
 }
 
+function compressible(suffix) {
+	return /^(txt|html?|css|js|json)$/.test(suffix);
+}
+
+function gzip(buffer) {
+	return new Promise(function (resolve, reject) {
+		zlib.gzip(buffer, function(err, result) {
+			if (err) {
+				reject(err);
+				return;
+			}
+			resolve(result);
+		});
+	});
+}
+
+
+async function* readFile(fd, buffer) {
+	let rd = await fd.read(buffer, 0, buffer.length);
+	while (rd.bytesRead > 0) {
+		yield rd;
+		rd = await fd.read(buffer, 0, buffer.length);
+	}
+}
+
+function flushStream(stream) {
+	return new Promise((resolve) => {
+		stream.flush(() => {
+			resolve();
+		});
+	});
+}
+
+function writeStream(stream, buffer) {
+	if (buffer.length <= 0) {
+		return Promise.resolve();
+	}
+	return new Promise( (resolve) => {
+		stream.write(buffer, () => {
+			resolve();
+		});
+	});
+}
+
 
 /**
  * @typedef StaticOptions
@@ -55,7 +101,7 @@ function getMimeType(suffix) {
  * @param {StaticOptions} options
  * @returns {(ctx: Context, req, rsp) => boolean}
  */
-function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize = 1024 * 1024} = {}) {
+function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize = 1024 * 1024, enableGzipSize = 100 * 1024} = {}) {
 	if (!rootPath) {
 		rootPath = '/';
 	}
@@ -77,22 +123,6 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 	}
 	let cache = new Map();
 
-	async function* write(f, buffer, ctx) {
-		for (;;) {
-			let result = await f.read(buffer, 0, 4096);
-			if (result.bytesRead > 0) {
-				if (result.buffer.length != result.bytesRead) {
-					await ctx.write(result.buffer.slice(0, result.bytesRead));
-				} else {
-					await ctx.write(result.buffer);
-				}
-				yield result.bytesRead;
-			} else {
-				break;
-			}
-		}
-	}
-
 	/**
 	 * @param {Context} ctx
 	 */
@@ -109,12 +139,13 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 		let m = /\.([a-z0-9]+)$/i.exec(page);
 		if (m) {
 			if (suffixSet.has(m[1])) {
+				let contentType = getMimeType(m[1]);
 				let file = baseDir + page;
 				let stat = await tools.fileStat(file);
 				if (stat.isFile) {
 					if (ctx.method === 'HEAD') {
 						ctx.writeHead(200, {
-							'Content-Type': mime,
+							'Content-Type': contentType,
 							'Content-Length': stat.size,
 							'Cache-Control':'no-cache',
 							'Last-Modified': stat.mtime.toUTCString()
@@ -139,39 +170,87 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 						}
 					}
 
-					let mime = getMimeType(m[1]);
+
 					if (cache.has(file)) {
 						let cachedFile = cache.get(file);
 						if (cachedFile.mtime >= stat.mtime) {
-							ctx.writeHead(200, {'Cache-Control':'no-cache', 'Content-Type': mime, 'Last-Modified': stat.mtime.toUTCString()});
-							await ctx.end(cachedFile.data);
+							let canGzip = compressible(m[1]);
+							if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
+								ctx.writeHead(200, {
+									'Cache-Control':'no-cache',
+									'Content-Type': contentType,
+									'Last-Modified': stat.mtime.toUTCString(),
+									'Content-Encoding': 'gzip',
+									'Transfer-Encoding': 'chunked'
+								});
+								// Send Gzip Data
+								await ctx.end(cachedFile.gzipData);
+							} else {
+								ctx.writeHead(200, {'Cache-Control':'no-cache', 'Content-Type': contentType, 'Last-Modified': stat.mtime.toUTCString()});
+								await ctx.end(cachedFile.data);
+							}
 							return true;
 						} else {
 							cache.delete(file);
 						}
 					}
 
-					let f;
+					let fd;
 					try {
-						f = await fs.open(file);
+						let canGzip = compressible(m[1]);
+						fd = await fs.open(file);
 						if (stat.size <= cachedFileSize && process.env.NODE_ENV !== 'development') {
-							let data = await f.readFile();
-							cache.set(file, {mtime: stat.mtime, data: data});
-							ctx.writeHead(200, {'Cache-Control':'no-cache', 'Content-Type': mime, 'Last-Modified': stat.mtime.toUTCString()});
-							await ctx.end(data);
+							let data = await fd.readFile();
+							let cacheItem = {mtime: stat.mtime, data: data};
+							if (stat.size >= enableGzipSize && canGzip) {
+								let gziped = await gzip(data);
+								cacheItem.gzipData = gziped;
+							}
+							cache.set(file, cacheItem);
+							if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
+								ctx.writeHead(200, {
+									'Cache-Control':'no-cache',
+									'Content-Type': contentType,
+									'Last-Modified': stat.mtime.toUTCString(),
+									'Content-Encoding': 'gzip',
+									'Transfer-Encoding': 'chunked'
+								});
+								// Send Gzip Data
+								await ctx.end(cacheItem.gzipData);
+							} else {
+								ctx.writeHead(200, {'Cache-Control':'no-cache', 'Content-Type': contentType, 'Last-Modified': stat.mtime.toUTCString()});
+								await ctx.end(data);
+							}
 							return true;
 						} else {
-							ctx.writeHead(200, {'Cache-Control':'no-cache', 'Content-Type': mime, 'Last-Modified': stat.mtime.toUTCString()});
 							let buffer = Buffer.alloc(4096);
-							for await (let _ of write(f, buffer, ctx)) {
-								// console.log(`write size: ${size}`);
+							if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
+								let zstream = zlib.createGzip();
+								zstream.pipe(ctx.rsp);
+								ctx.writeHead(200, {
+									'Cache-Control':'no-cache',
+									'Content-Type': contentType,
+									'Last-Modified': stat.mtime.toUTCString(),
+									'Content-Encoding': 'gzip',
+									'Transfer-Encoding': 'chunked'
+								});
+
+								for await (let rd of readFile(fd, buffer)) {
+									await writeStream(zstream, rd.buffer.slice(0, rd.bytesRead));
+								}
+								await flushStream(zstream);
+							} else {
+								ctx.writeHead(200, {'Cache-Control':'no-cache', 'Content-Type': contentType, 'Last-Modified': stat.mtime.toUTCString()});
+								for await (let rd of readFile(fd, buffer)) {
+									await ctx.write(rd.buffer.slice(0, rd.bytesRead));
+								}
 							}
 							await ctx.end();
 							return true;
 						}
 					} finally {
-						if (f) {
-							await f.close();
+						if (fd) {
+							await fd.close();
 						}
 					}
 				} else {

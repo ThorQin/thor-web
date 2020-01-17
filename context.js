@@ -2,6 +2,7 @@
 const http = require('http'),
 	path = require('path'),
 	mime = require('mime'),
+	zlib = require('zlib'),
 	fs = require('fs').promises;
 
 async function* readFile(fd, buffer) {
@@ -10,6 +11,25 @@ async function* readFile(fd, buffer) {
 		yield rd;
 		rd = await fd.read(buffer, 0, buffer.length);
 	}
+}
+
+function writeStream(stream, buffer) {
+	if (buffer.length <= 0) {
+		return Promise.resolve();
+	}
+	return new Promise( (resolve) => {
+		stream.write(buffer, () => {
+			resolve();
+		});
+	});
+}
+
+function flushStream(stream) {
+	return new Promise((resolve) => {
+		stream.flush(() => {
+			resolve();
+		});
+	});
 }
 
 class Context {
@@ -73,6 +93,14 @@ class Context {
 		return cookies;
 	}
 
+	supportGZip() {
+		let acceptEncoding = this.req.headers['accept-encoding'];
+		if (!acceptEncoding) {
+			return false;
+		}
+		return acceptEncoding.split(',').filter(ec => ec.trim().toLowerCase() === 'gzip').length > 0;
+	}
+
 	/**
 	 * Set response cookie
 	 * @param {string} name Cookie name
@@ -133,14 +161,7 @@ class Context {
 	 * @param {string|Buffer} buffer
 	 */
 	write(buffer) {
-		if (buffer.length <= 0) {
-			return Promise.resolve();
-		}
-		return new Promise( (resolve) => {
-			this.rsp.write(buffer, () => {
-				resolve();
-			});
-		});
+		return writeStream(this.rsp, buffer);
 	}
 
 	/**
@@ -177,6 +198,7 @@ class Context {
 	 * @prop {{[key:string]:string}} headers
 	 * @prop {string} filename
 	 * @prop {boolean} inline
+	 * @prop {boolean} gzip
 	 *
 	 * @param {string} file File path
 	 * @param {SendFileOption} options File download options
@@ -210,18 +232,31 @@ class Context {
 			hs['Content-Disposition'] = 'attachment; filename*=utf-8\'\'' + encodeURIComponent(options.filename);
 		}
 
-		let handler = await fs.open(file, 'r');
-
+		let fd = await fs.open(file, 'r');
 		try {
-			this.rsp.writeHead(options.statusCode, hs);
 			let buffer = Buffer.alloc(4096);
-			for await (let rd of readFile(handler, buffer)) {
-				// totalSize += rd.bytesRead;
-				// console.log(`Read: ${rd.bytesRead}, total: ${totalSize}`);
-				await this.write(rd.buffer.slice(0, rd.bytesRead));
+			if (options.gzip) {
+				hs['Content-Encoding'] = 'gzip';
+				hs['Transfer-Encoding'] = 'chunked';
+				this.rsp.writeHead(options.statusCode, hs);
+				let zstream = zlib.createGzip();
+				zstream.pipe(this.rsp);
+				for await (let rd of readFile(fd, buffer)) {
+					// totalSize += rd.bytesRead;
+					// console.log(`Read: ${rd.bytesRead}, total: ${totalSize}`);
+					await writeStream(zstream, rd.buffer.slice(0, rd.bytesRead));
+				}
+				await flushStream(zstream);
+			} else {
+				this.rsp.writeHead(options.statusCode, hs);
+				for await (let rd of readFile(fd, buffer)) {
+					// totalSize += rd.bytesRead;
+					// console.log(`Read: ${rd.bytesRead}, total: ${totalSize}`);
+					await this.write(rd.buffer.slice(0, rd.bytesRead));
+				}
 			}
 		} finally {
-			await handler.close();
+			await fd.close();
 		}
 		await this.end();
 	}
