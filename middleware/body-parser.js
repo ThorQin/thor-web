@@ -314,7 +314,7 @@ function Parser({boundary, maxLength, storeDir, onPart, onError, onEnd, onEmpty}
 	};
 
 	this.end = function() {
-		console.log('data end');
+		// console.log('data end');
 		noMoreData = true;
 		if (!finished && !parsing) {
 			parseBuffer().catch(function(err) {
