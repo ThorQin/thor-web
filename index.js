@@ -1,5 +1,13 @@
-const http = require('http');
-const Context = require('./context');
+import http from 'http';
+import Context from './context.js';
+import {
+	session,
+	staticServer,
+	controller,
+	bodyParser,
+	security,
+	template
+} from './middleware/index.js'
 
 async function processRequest(app, req, rsp, middlewares) {
 	async function* exec(ctx, req, rsp) {
@@ -55,14 +63,6 @@ class App {
 	}
 }
 
-const
-	session = require('./middleware/session'),
-	staticServer = require('./middleware/static-server'),
-	controller = require('./middleware/controller'),
-	bodyParser = require('./middleware/body-parser'),
-	security = require('./middleware/security'),
-	template = require('./middleware/template');
-
 /**
  * Instead use App constructor to create a server instance,
  * this function create a simple server instance that add most commonly used middlewares to the instance.
@@ -98,19 +98,16 @@ function start(port = 8080, serverKey = null, securityHandler = null, env = {}) 
 	return app;
 }
 
-module.exports = {
-	App: App,
-	Context: Context,
-	start: start,
-	middlewares: {
-		security: security,
-		session: session,
-		staticServer: staticServer,
-		controller: controller,
-		bodyParser: bodyParser,
-		template: template
-	},
-	time: require('./utils/time'),
-	enc: require('./utils/enc')
-};
+import time from './utils/time.js';
+import enc from './utils/enc.js';
 
+export const middleware = {
+	session,
+	staticServer,
+	controller,
+	bodyParser,
+	security,
+	template
+}
+
+export { App, Context, start, time, enc }

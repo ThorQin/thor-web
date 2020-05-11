@@ -1,9 +1,7 @@
-
-const qs = require('querystring');
-// const Iconv = require('iconv').Iconv;
-const iconv = require('iconv-lite');
-const uuidv1 = require('uuid/v1');
-const fs = require('fs');
+import qs from 'querystring';
+import iconv from 'iconv-lite';
+import uuidv1 from 'uuid/v1.js';
+import fs from 'fs';
 
 const STATE_BEGIN = 0;
 const STATE_HEADER = 1;
@@ -477,6 +475,6 @@ function create() {
 	};
 }
 
-module.exports = {
-	create: create
-};
+export default {
+	create
+}

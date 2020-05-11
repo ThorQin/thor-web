@@ -1,9 +1,7 @@
-
-const
-	uuidv1 = require('uuid/v1'),
-	time = require('../utils/time'),
-	zlib = require('zlib'),
-	crypto = require('crypto');
+import uuidv1 from 'uuid/v1.js';
+import time from '../utils/time.js';
+import zlib from 'zlib';
+import crypto from 'crypto';
 
 function getTimeDef(str) {
 	let info;
@@ -187,7 +185,7 @@ function create({
 	domain = null,
 	httpOnly = true
 } = {}) {
-	let key = Buffer.from(serverKey, 'base64');
+	let key = Buffer.from(serverKey || generateKey(), 'base64');
 	let _expire = validTime ? getTimeDef(validTime) : null;
 	let _interval = interval ? getTimeDef(interval) : null;
 
@@ -220,9 +218,8 @@ function create({
 	};
 }
 
+export default {
+	create,
+	generateKey
+}
 
-
-module.exports = {
-	create: create,
-	generateKey: generateKey
-};

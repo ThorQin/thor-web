@@ -1,6 +1,5 @@
-const
-	zlib = require('zlib'),
-	crypto = require('crypto');
+import zlib from 'zlib';
+import crypto from 'crypto';
 
 /**
  * Encrypt data
@@ -8,7 +7,7 @@ const
  * @param {any} value Any data will be enc
  * @returns {string} Encrypted data encoding with base64.
  */
-exports.encrypt = function (key, value) {
+function encrypt(key, value) {
 	let serverKey = Buffer.from(key, 'base64');
 	let s = JSON.stringify(value);
 	let zipData = zlib.gzipSync(Buffer.from(s, 'utf-8'));
@@ -26,7 +25,7 @@ exports.encrypt = function (key, value) {
  * @param {string} base64data Encrypted base64 string
  * @returns {any} Decrypted data
  */
-exports.decrypt = function (key, base64data) {
+function decrypt(key, base64data) {
 	let serverKey = Buffer.from(key, 'base64');
 	let encData = Buffer.from(base64data, 'base64');
 	let decipher = crypto.createDecipheriv('aes-128-ecb', serverKey, '');
@@ -37,3 +36,7 @@ exports.decrypt = function (key, base64data) {
 	let rawData = zlib.gunzipSync(zipData).toString('utf8');
 	return JSON.parse(rawData);
 };
+
+export default {
+	encrypt, decrypt
+}

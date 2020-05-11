@@ -1,9 +1,7 @@
-const
-	path = require('path'),
-	tools = require('../utils/tool'),
-	fs = require('fs').promises,
-	tpl = require('thor-tpl');
-
+import { promises as fs } from 'fs';
+import path from 'path';
+import tools from '../utils/tools.js';
+import tpl from 'thor-tpl';
 
 /**
  * @typedef TemplateOptions
@@ -19,7 +17,7 @@ function create({baseDir = null, isDebug = false} = {}) {
 	const cache = {};
 
 	if (!baseDir) {
-		baseDir = path.resolve(path.dirname(require.main.filename), 'templates');
+		baseDir = path.resolve(tools.getRootDir(), 'templates');
 	}
 
 	async function renderFile(file, data) {
@@ -76,6 +74,6 @@ function create({baseDir = null, isDebug = false} = {}) {
 	};
 }
 
-module.exports = {
-	create: create
-};
+export default {
+	create
+}

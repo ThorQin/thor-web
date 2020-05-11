@@ -1,4 +1,5 @@
-const fs = require('fs').promises;
+import { promises as fs } from 'fs';
+import path from 'path';
 
 async function fileStat(file) {
 	try {
@@ -14,7 +15,20 @@ async function isFile(file) {
 	return stat.isFile;
 }
 
-module.exports = {
-	fileStat: fileStat,
-	isFile: isFile
-};
+function getRootDir() {
+	let js = process.argv[1];
+	if (!js) {
+		return process.cwd();
+	}
+	if (/\.(c|m)?js$/.test(js)) {
+		return js.substring(0, js.lastIndexOf(path.sep));
+	} else {
+		return js;
+	}
+}
+
+export default {
+	fileStat,
+	isFile,
+	getRootDir
+}

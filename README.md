@@ -7,15 +7,13 @@ This framework is a light-weight, easy to use library. It provided most commonly
 ## Create a deme project:
 
 ```
-ProjectFolder
+demo-project
    package.json
-   index.js
+   index.mjs
  + www
-   + assets
-       main.css
      index.html
  + controllers
-     about.js
+     about.mjs
  + templates
      about.html  
 ```
@@ -25,22 +23,23 @@ ProjectFolder
 {
   "name": "web-demo",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "index.mjs",
+  "type": "module",
   "dependencies": {
-	  "thor-web": "1.0.0"
+    "thor-web": "1.0.0"
   }
 }
 ```
 
 ## Install
 ```
-yarn install
+npm install
 ```
 
-## index.js
+## index.mjs
 ```js
-const web = require('thor-web');
-web.start(8080);
+import { start } from 'thor-web';
+start();
 ``` 
 
 ## index.html
@@ -49,52 +48,45 @@ web.start(8080);
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Thor Web Demo</title>
-    <link ref="stylesheet" href="/assets/main.css">
+    <title>Web Demo</title>
   </head>
   <body>
     <h1>Demo</h1>
     <p>
-      <a href="/about">Show About</a>
+      <a href="about">Show Server Info</a>
     </p>
   </body>
 </html>
 ```
 
-## main.css
-```css
-body {
-  font: 18pt;
-}
-```
-
 ## about.html
 ```html
-{{@arg:version}}
+{{@arg:info}}
 <DOCTTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
-    <title>About</title>
-    <link ref="stylesheet" href="/assets/main.css">
+    <title>Server Info</title>
   </head>
   <body>
-    <h1>About</h1>
-    <p>
-      Version: {{version}}
-  </p>
+    <h1>Server Info</h1>
+    <pre>
+      {{info}}
+    </pre>
   </body>
 </html>
 ```
 
-## about.js
+## about.mjs
 ```js
-console pkg = require('../package.json')
-exports.get = async function (ctx) {
+export async function get(ctx) {
+  let info = Object.entries(process.env)
+    .map(item => item[0] + ':' + item[1])
+    .reduce((p,c) => p + '\n' + c, '');
   await ctx.render('about.html', {
-    version: pkg.version
+    info: info
   });
-};
+}
 ```
 
 ## Run

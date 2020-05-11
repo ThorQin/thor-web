@@ -1,19 +1,18 @@
-const
-	// eslint-disable-next-line no-unused-vars
-	// Context = require('../context'),
-	path = require('path'),
-	tools = require('../utils/tool');
+import path from 'path';
+import tools from '../utils/tools.js';
 
 const API = {};
+
 async function loadScript(baseDir, api) {
 	let fn = API[api];
 	if (fn) {
 		return fn;
 	}
-	let file = baseDir + (api.endsWith('/') ? api + 'index' : api) + '.js';
+	let file = baseDir + (api.endsWith('/') ? api + 'index' : api) + '.mjs';
 	let stat = await tools.fileStat(file);
 	if (stat.isFile) {
-		fn = require(file);
+		// fn = require(file);
+		fn = await import(file);
 		if (fn && (typeof fn === 'function' || typeof fn === 'object')) {
 			//eslint-disable-next-line require-atomic-updates
 			API[api] = fn;
@@ -41,7 +40,7 @@ function create({baseDir, rootPath = '/'} = {}) {
 		rootPath += '/';
 	}
 	if (!baseDir) {
-		baseDir = path.resolve(path.dirname(require.main.filename), 'controllers');
+		baseDir = path.resolve(tools.getRootDir(), 'controllers');
 	} else if (baseDir.endsWith('/')) {
 		baseDir = baseDir.substring(0, baseDir.length - 1);
 	}
@@ -91,6 +90,6 @@ function create({baseDir, rootPath = '/'} = {}) {
 	};
 }
 
-module.exports = {
-	create: create
-};
+export default {
+	create
+}

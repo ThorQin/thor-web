@@ -65,6 +65,6 @@ function create(securityHandler) {
 	};
 }
 
-module.exports = {
-	create: create
-};
+export default {
+	create
+}

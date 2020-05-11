@@ -1,9 +1,8 @@
-// eslint-disable-next-line no-unused-vars
-const http = require('http'),
-	path = require('path'),
-	mime = require('mime'),
-	zlib = require('zlib'),
-	fs = require('fs').promises;
+import http from 'http';
+import path from 'path';
+import mime from 'mime';
+import zlib from 'zlib';
+import fs from 'fs';
 
 async function* readFile(fd, buffer) {
 	let rd = await fd.read(buffer, 0, buffer.length);
@@ -32,7 +31,7 @@ function flushStream(stream) {
 	});
 }
 
-class Context {
+export default class Context {
 	/**
 	 * Construct Context
 	 * @param {http.IncomingMessage} req
@@ -418,5 +417,3 @@ class Context {
 		this.req.connection.destroy();
 	}
 }
-
-module.exports = Context;

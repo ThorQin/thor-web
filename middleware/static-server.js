@@ -1,12 +1,10 @@
-const
-	// eslint-disable-next-line no-unused-vars
-	Context = require('../context'),
-	path = require('path'),
-	tools = require('../utils/tool'),
-	time = require('../utils/time'),
-	mime = require('mime'),
-	zlib = require('zlib'),
-	fs = require('fs').promises;
+import Context from '../context.js';
+import {promises as fs} from 'fs';
+import path from 'path';
+import tools from '../utils/tools.js';
+import time from '../utils/time.js';
+import mime from 'mime';
+import zlib from 'zlib';
 
 function defaultSuffix() {
 	let suffix = [
@@ -110,7 +108,7 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 	}
 
 	if (!baseDir) {
-		baseDir = path.resolve(path.dirname(require.main.filename), 'www');
+		baseDir = path.resolve(tools.getRootDir(), 'www');
 	} else if (baseDir.endsWith('/')) {
 		baseDir = baseDir.substring(0, baseDir.length - 1);
 	}
@@ -262,7 +260,6 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 	};
 }
 
-module.exports ={
-	create: create,
-	defaultSuffix: defaultSuffix
-};
+export default {
+	create, defaultSuffix
+}

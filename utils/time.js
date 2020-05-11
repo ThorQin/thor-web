@@ -546,13 +546,13 @@ function formatDate(dt, dateFmt = 'yyyy-MM-ddTHH:mm:sszzz') {
 	});
 }
 
-module.exports = {
-	now: now,
-	timespan: timespan,
-	dateDiff: dateDiff,
-	dateAdd: dateAdd,
-	dayOfYear: dayOfYear,
-	totalDaysOfMonth: totalDaysOfMonth,
-	parseDate: parseDate,
-	formatDate: formatDate
+export default {
+	now,
+	timespan,
+	dateDiff,
+	dateAdd,
+	dayOfYear,
+	totalDaysOfMonth,
+	parseDate,
+	formatDate
 };
