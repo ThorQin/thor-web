@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 var project = process.argv[2];
 
 if (!project) {
