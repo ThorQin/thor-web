@@ -51,10 +51,11 @@ async function run() {
         return;
     }
     if (stderr) {
-        console.log(`stderr: ${stderr}`);
+        console.error(`${stderr}`);
         return;
     }
-    console.log(`stdout: ${stdout}`);
+		console.log(`${stdout}`);
+		console.log(`Project '${project}' created!`);
 });
 }
 
