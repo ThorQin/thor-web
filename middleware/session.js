@@ -61,7 +61,7 @@ async function getSessionInfo(content, { serverKey, renew, validTime, interval }
 	}
 }
 
-function createSession(ctx, { serverKey, cookieName, maxAge = -1, validTime = null, path = '/', domain = null, httpOnly = true, info = null }) {
+function createSession(ctx, { serverKey, cookieName, maxAge = -1, validTime = null, path = '/', domain = null, httpOnly = true, info = null, sameSite = 'Lax', secure = false }) {
 	let data = info ? info.data : {};
 	if (!(data instanceof Object)) {
 		data = {};
@@ -107,6 +107,10 @@ function createSession(ctx, { serverKey, cookieName, maxAge = -1, validTime = nu
 			if (httpOnly) {
 				options['HttpOnly'] = null;
 			}
+			if (secure) {
+				options['Secure'] = null;
+			}
+			options.SameSite = sameSite;
 			ctx.setResponseCookie(cookieName, token, options);
 		},
 		delete: function() {
@@ -119,6 +123,10 @@ function createSession(ctx, { serverKey, cookieName, maxAge = -1, validTime = nu
 			if (httpOnly) {
 				options['HttpOnly'] = null;
 			}
+			if (secure) {
+				options['Secure'] = null;
+			}
+			options.SameSite = sameSite;
 			ctx.setResponseCookie(cookieName, '', options);
 		},
 		toString: function() {
@@ -169,6 +177,8 @@ function generateKey() {
  * @property {string} interval
  * @property {string} domain
  * @property {boolean} httpOnly
+ * @property {boolean} secure
+ * @property {'Lax'|'None'|'Strict'} sameSite
  */
 /**
  * Create session manager middleware
@@ -183,7 +193,9 @@ function create({
 	renew = null,
 	interval = '15d',
 	domain = null,
-	httpOnly = true
+	httpOnly = true,
+	secure = false,
+	sameSite = 'Lax'
 } = {}) {
 	let key = Buffer.from(serverKey || generateKey(), 'base64');
 	let _expire = validTime ? getTimeDef(validTime) : null;
@@ -207,7 +219,9 @@ function create({
 			maxAge: maxAge,
 			validTime: _expire,
 			domain: domain,
-			httpOnly: httpOnly
+			httpOnly: httpOnly,
+			secure: secure,
+			sameSite: sameSite
 		});
 
 		if (ctx.session) {

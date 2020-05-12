@@ -1,0 +1,13 @@
+{
+	"description": "Web site project powered by thor-web",
+	"version": "1.0.0",
+	"main": "index.mjs",
+	"type": "module",
+	"license": "MIT",
+	"repository": {
+	},
+	"private": true,
+	"scripts": {
+		"start": "NODE_ENV=production node ."
+	}
+}

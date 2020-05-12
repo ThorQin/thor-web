@@ -12,7 +12,6 @@ function loadScript(baseDir, api) {
 		let file = baseDir + (api.endsWith('/') ? api + 'index' : api) + '.mjs';
 		tools.fileStat(file).then(stat => {
 			if (stat.isFile) {
-				// fn = require(file);
 				import(file).then(fn => {
 					if (fn && (typeof fn === 'function' || typeof fn === 'object')) {
 						return resolve(fn);
@@ -27,7 +26,7 @@ function loadScript(baseDir, api) {
 			} else {
 				resolve(null);
 			}
-		}.catch(cause => {
+		}).catch(cause => {
 			console.error(`stat file failed: ${cause}`);
 			resolve(null);
 		});

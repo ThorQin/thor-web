@@ -38,17 +38,32 @@ function create({baseDir = null, isDebug = false} = {}) {
 				if (isDebug) {
 					console.log('compile template: ', jsFile);
 				}
-				if (process.env.NODE_ENV !== 'development') {
-					cache[file] = fn;
-				}
 			}
 		};
-		let fn = cache[file];
-		if (fn) {
-			return await tpl.renderAsync(fn, data, options);
+		let fnPromise = cache[file];
+		if (fnPromise) {
+			return await tpl.renderAsync(await fnPromise, data, options);
 		} else {
-			let content = await fs.readFile(file);
-			return await tpl.renderAsync(content.toString(), data, options);
+			if (process.env.NODE_ENV !== 'development') {
+				console.log('compile template: ', file);
+				fnPromise = new Promise((resolve, reject) => {
+					fs.readFile(file, 'utf8').then(content => {
+						try {
+							let fn = tpl.compile(content, options);
+							resolve(fn);
+						} catch (e) {
+							reject(e.message || e);
+						}
+					}).catch(cause => {
+						reject(cause);
+					});
+				});
+				cache[file] = fnPromise;
+				return await tpl.renderAsync(await fnPromise, data, options);
+			} else {
+				let content = await fs.readFile(file, 'utf8');
+				return await tpl.renderAsync(content, data, options);
+			}
 		}
 	}
 

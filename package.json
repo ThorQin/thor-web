@@ -6,6 +6,9 @@
 	],
 	"version": "1.1.0",
 	"description": "An light weight web framework for node-js.",
+	"bin": {
+		"thor-web": "./bin/thor-web"
+	},
 	"main": "./index.js",
 	"exports": {
 		".": "./index.js"

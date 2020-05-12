@@ -2,96 +2,38 @@
 
 This framework is a light-weight, easy to use library. It provided most commonly used middlewares to let you can develop a full featured web application.
 
-# Example
 
-## Create a deme project:
+# Getting start:
+
+## Create web project
+
+```npx thor-web <project-name>```
+
+
+## Generated project structure:
 
 ```
-demo-project
+project-folder
    package.json
+   README.md
+   LICENSE
    index.mjs
  + www
      index.html
  + controllers
      about.mjs
+     echo.mjs
  + templates
      about.html  
 ```
 
-## Edit package.json
-```json
-{
-  "name": "web-demo",
-  "version": "1.0.0",
-  "main": "index.mjs",
-  "type": "module",
-  "dependencies": {
-    "thor-web": "1.0.0"
-  }
-}
-```
-
-## Install
-```
-npm install
-```
-
-## index.mjs
-```js
-import { start } from 'thor-web';
-start();
-``` 
-
-## index.html
-```html
-<DOCTTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>Web Demo</title>
-  </head>
-  <body>
-    <h1>Demo</h1>
-    <p>
-      <a href="about">Show Server Info</a>
-    </p>
-  </body>
-</html>
-```
-
-## about.html
-```html
-{{@arg:info}}
-<DOCTTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>Server Info</title>
-  </head>
-  <body>
-    <h1>Server Info</h1>
-    <pre>
-      {{info}}
-    </pre>
-  </body>
-</html>
-```
-
-## about.mjs
-```js
-export async function get(ctx) {
-  let info = Object.entries(process.env)
-    .map(item => item[0] + ':' + item[1])
-    .reduce((p,c) => p + '\n' + c, '');
-  await ctx.render('about.html', {
-    info: info
-  });
-}
-```
-
-## Run
+## Start the project
 ```
 node .
+```
+or
+```
+npm start
 ```
 
 # Middlewares

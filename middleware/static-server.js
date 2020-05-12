@@ -88,18 +88,20 @@ function writeStream(stream, buffer) {
 }
 
 
+
 /**
  * @typedef StaticOptions
  * @property {string} baseDir Root directory of static resources.
  * @property {string} rootPath Root url path of static resource.
  * @property {string[]} suffix Which suffix can be visit as static resource.
  * @property {number} cachedFileSize File can be cached when size less this setting, default is 1MB (1024 * 1024).
+ * @property {number} enableGzipSize File can be gziped when size larger then this setting, default is 50K (50 * 1024)
  */
 /**
  * @param {StaticOptions} options
  * @returns {(ctx: Context, req, rsp) => boolean}
  */
-function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize = 1024 * 1024, enableGzipSize = 100 * 1024} = {}) {
+function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize = 1024 * 1024, enableGzipSize = 50 * 1024} = {}) {
 	if (!rootPath) {
 		rootPath = '/';
 	}
@@ -120,6 +122,27 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 		suffixSet = new Set(defaultSuffix().concat(...suffix));
 	}
 	let cache = new Map();
+
+	/**
+	 *
+	 * @param {string} file Filename
+	 * @param {{isFile: false, size: 0, mtime: null, ctime: null}} stat File stat info
+	 * @param {boolean} canGzip
+	 */
+	async function loadCache(file, stat, canGzip) {
+		let fd = await fs.open(file);
+		try {
+			let data = await fd.readFile();
+			let cacheItem = {mtime: stat.mtime, data: data, gzipData: null};
+			if (stat.size >= enableGzipSize && canGzip) {
+				let gziped = await gzip(data);
+				cacheItem.gzipData = gziped;
+			}
+			return cacheItem;
+		} finally {
+			await fd.close();
+		}
+	}
 
 	/**
 	 * @param {Context} ctx
@@ -161,7 +184,7 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 					if (modifySince) {
 						let lastTime = time.parseDate(modifySince);
 						if (lastTime) {
-							if (time.parseDate(stat.ctime.toUTCString()).getTime() <= lastTime.getTime()) {
+							if (time.parseDate(stat.mtime.toUTCString()).getTime() <= lastTime.getTime()) {
 								await ctx.notModified();
 								return true;
 							}
@@ -170,7 +193,13 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 
 
 					if (cache.has(file)) {
-						let cachedFile = cache.get(file);
+						let cachedFile;
+						try {
+							cachedFile = await cache.get(file);
+						} catch (e) {
+							cache.delete(file);
+							throw e;
+						}
 						if (cachedFile.mtime >= stat.mtime) {
 							let canGzip = compressible(m[1]);
 							if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
@@ -193,18 +222,13 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 						}
 					}
 
-					let fd;
+					let fd = null;
 					try {
 						let canGzip = compressible(m[1]);
-						fd = await fs.open(file);
 						if (stat.size <= cachedFileSize && process.env.NODE_ENV !== 'development') {
-							let data = await fd.readFile();
-							let cacheItem = {mtime: stat.mtime, data: data};
-							if (stat.size >= enableGzipSize && canGzip) {
-								let gziped = await gzip(data);
-								cacheItem.gzipData = gziped;
-							}
-							cache.set(file, cacheItem);
+							let promise = loadCache(file, stat, canGzip)
+							cache.set(file, promise);
+							let cacheItem = await promise;
 							if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
 								ctx.writeHead(200, {
 									'Cache-Control':'no-cache',
@@ -217,10 +241,11 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 								await ctx.end(cacheItem.gzipData);
 							} else {
 								ctx.writeHead(200, {'Cache-Control':'no-cache', 'Content-Type': contentType, 'Last-Modified': stat.mtime.toUTCString()});
-								await ctx.end(data);
+								await ctx.end(cacheItem.data);
 							}
 							return true;
 						} else {
+							fd = await fs.open(file);
 							let buffer = Buffer.alloc(4096);
 							if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
 								let zstream = zlib.createGzip();
