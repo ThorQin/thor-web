@@ -52,10 +52,8 @@ async function run() {
     }
     if (stderr) {
         console.error(`${stderr}`);
-        return;
     }
-		console.log(`${stdout}`);
-		console.log(`Project '${project}' created!`);
+		console.log(`Project '${project}' created!!\n`);
 });
 }
 
