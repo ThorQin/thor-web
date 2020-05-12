@@ -3,23 +3,37 @@ import tools from '../utils/tools.js';
 
 const API = {};
 
-async function loadScript(baseDir, api) {
-	let fn = API[api];
-	if (fn) {
-		return fn;
+function loadScript(baseDir, api) {
+	let p = API[api];
+	if (p) {
+		return p;
 	}
-	let file = baseDir + (api.endsWith('/') ? api + 'index' : api) + '.mjs';
-	let stat = await tools.fileStat(file);
-	if (stat.isFile) {
-		// fn = require(file);
-		fn = await import(file);
-		if (fn && (typeof fn === 'function' || typeof fn === 'object')) {
-			//eslint-disable-next-line require-atomic-updates
-			API[api] = fn;
-			return fn;
-		}
-	}
-	return null;
+	p = new Promise((resolve, reject) => {
+		let file = baseDir + (api.endsWith('/') ? api + 'index' : api) + '.mjs';
+		tools.fileStat(file).then(stat => {
+			if (stat.isFile) {
+				// fn = require(file);
+				import(file).then(fn => {
+					if (fn && (typeof fn === 'function' || typeof fn === 'object')) {
+						return resolve(fn);
+					} else {
+						console.error('Invalid API handler: must export a function or an object');
+						resolve(null);
+					}
+				}).catch(cause => {
+					console.error(`Load module failed: ${cause}`);
+					resolve(null);
+				});
+			} else {
+				resolve(null);
+			}
+		}.catch(cause => {
+			console.error(`stat file failed: ${cause}`);
+			resolve(null);
+		});
+	});
+	API[api] = p;
+	return p;
 }
 
 /**
