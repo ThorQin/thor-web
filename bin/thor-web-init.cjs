@@ -21,6 +21,21 @@ async function copy(...pathname) {
 
 const { exec } = require("child_process");
 
+function execCmd(cmdLine) {
+	return new Promise((resolve, reject) => {
+		exec(cmdLine, (error, stdout, stderr) => {
+			if (error) {
+				reject(error.message || error);
+				return;
+			}
+			console.log(stdout);
+			if (stderr) {
+				console.error(`${stderr}`);
+			}
+			resolve();
+		});
+	});
+}
 
 
 async function run() {
@@ -28,6 +43,7 @@ async function run() {
 	await mkdir(project, 'controllers');
 	await mkdir(project, 'templates');
 	await mkdir(project, 'www');
+	await mkdir(project, '.vscode');
 	await copy('package.json');
 	await copy('index.mjs');
 	await copy('LICENSE');
@@ -36,6 +52,7 @@ async function run() {
 	await copy('templates','about.html');
 	await copy('controllers','about.mjs');
 	await copy('controllers','echo.mjs');
+	await copy('.vscode', 'launch.json');
 
 	let packageFile = path.resolve(project, 'package.json');
 	let json = await fs.readFile(packageFile, 'utf8');
@@ -45,16 +62,9 @@ async function run() {
 
 	process.chdir(project);
 
-	exec("npm i thor-web @types/node", (error, stdout, stderr) => {
-    if (error) {
-        console.log(`error: ${error.message}`);
-        return;
-    }
-    if (stderr) {
-        console.error(`${stderr}`);
-    }
-		console.log(`Project '${project}' created!!\n`);
-});
+	await execCmd("npm install thor-web @types/node");
+	await execCmd("npm install --save-dev cross-env nodemon");
+	console.log(`Project '${project}' created!!\n`);
 }
 
 run();

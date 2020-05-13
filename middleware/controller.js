@@ -1,5 +1,6 @@
 import path from 'path';
 import tools from '../utils/tools.js';
+import url from 'url';
 
 const API = {};
 
@@ -12,7 +13,8 @@ function loadScript(baseDir, api) {
 		let file = baseDir + (api.endsWith('/') ? api + 'index' : api) + '.mjs';
 		tools.fileStat(file).then(stat => {
 			if (stat.isFile) {
-				import(file).then(fn => {
+				let fileUrl = url.pathToFileURL(file);
+				import(fileUrl).then(fn => {
 					if (fn && (typeof fn === 'function' || typeof fn === 'object')) {
 						return resolve(fn);
 					} else {
