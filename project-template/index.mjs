@@ -1,3 +1,3 @@
-import { start } from 'thor-web';
+import { App } from 'thor-web';
 
-start()
+App.start();

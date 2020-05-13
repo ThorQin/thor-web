@@ -61,47 +61,49 @@ class App {
 	stop() {
 		this.server && this.server.stop();
 	}
-}
 
-/**
- * Instead use App constructor to create a server instance,
- * this function create a simple server instance that add most commonly used middlewares to the instance.
- * @param {number} [port = 8080] Listen port default 8080
- * @param {string} serverKey Server key
- * @param {(param: {ctx:Context,username:string,passowrd:string,session,cookie,path: string,method: string,ip: string}) => boolean|'allow'|'deny'|'redirect:'|'auth:'} securityHandler Security handler function
- * @param {Object} env Any environment variables
- * @returns {App} App instance
- */
-function start(port = 8080, serverKey = null, securityHandler = null, env = {}) {
-	let app = new App();
-	let middlewares = [
-		session.create({serverKey: serverKey}),
-		staticServer.create(),
-		bodyParser.create(),
-		template.create(),
-		controller.create()
-	];
-	if (typeof securityHandler === 'function') {
-		middlewares.splice(1, 0, security.create(securityHandler));
-	}
-	app.use(
-		...middlewares
-	);
-	if (env) {
-		for (let k in env) {
-			if (!app[k]) {
-				app[k] = env[k];
+	/**
+	 * Instead use App constructor to create a server instance,
+	 * this function create a simple server instance that add most commonly used middlewares to the instance.
+	 * @param {number} [port = 8080] Listen port default 8080
+	 * @param {string} serverKey Server key
+	 * @param {(param: {ctx:Context,username:string,passowrd:string,session,cookie,path: string,method: string,ip: string}) => boolean|'allow'|'deny'|'redirect:'|'auth:'} securityHandler Security handler function
+	 * @param {Object} env Any environment variables
+	 * @returns {App} App instance
+	 */
+	static start(port = 8080, serverKey = null, securityHandler = null, env = {}) {
+		let app = new App();
+		let middlewares = [
+			session.create({serverKey: serverKey}),
+			staticServer.create(),
+			bodyParser.create(),
+			template.create(),
+			controller.create()
+		];
+		if (typeof securityHandler === 'function') {
+			middlewares.splice(1, 0, security.create(securityHandler));
+		}
+		app.use(
+			...middlewares
+		);
+		if (env) {
+			for (let k in env) {
+				if (!app[k]) {
+					app[k] = env[k];
+				}
 			}
 		}
+		app.start(port);
+		return app;
 	}
-	app.start(port);
-	return app;
 }
+
+
 
 import time from './utils/time.js';
 import enc from './utils/enc.js';
 
-export const middleware = {
+export const middlewares = {
 	session,
 	staticServer,
 	controller,
@@ -110,4 +112,4 @@ export const middleware = {
 	template
 }
 
-export { App, Context, start, time, enc }
+export { App, time, enc }

@@ -1,8 +1,5 @@
-import { Context } from 'thor-web';
-
 /**
- *
- * @param {Context} ctx
+ * @type import('thor-web').Controller
  */
 export async function get(ctx) {
 	let info = Object.entries(process.env)

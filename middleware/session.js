@@ -178,7 +178,7 @@ function generateKey() {
  * @property {string} domain
  * @property {boolean} httpOnly
  * @property {boolean} secure
- * @property {'Lax'|'None'|'Strict'} sameSite
+ * @property {'None'|'Lax'|'Strict'} sameSite
  */
 /**
  * Create session manager middleware

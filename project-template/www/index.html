@@ -10,7 +10,7 @@
 					let response = await fetch('echo');
 					if (response.status == 200) {
 						let serverInfo = await response.json();
-						info.textContent = `LoadAvg: ${serverInfo.loadavg[0]}, ${serverInfo.loadavg[1]}, ${serverInfo.loadavg[2]}\nTotal Memory: ${Math.round(serverInfo.totalmem / 1024 / 1024 / 1024 * 100) / 100}G\nFree Memory: ${Math.round(serverInfo.freemem / 1024 / 1024 / 1024 * 100) / 100}G`;
+						info.textContent = `Server Info: ${serverInfo.version}\nTotal Memory: ${Math.round(serverInfo.totalmem / 1024 / 1024 / 1024 * 100) / 100}G\nFree Memory: ${Math.round(serverInfo.freemem / 1024 / 1024 / 1024 * 100) / 100}G`;
 					} else {
 						info.textContent = response.status + ':' + response.statusText;
 					}
