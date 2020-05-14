@@ -7,7 +7,7 @@ import {
 	bodyParser,
 	security,
 	template
-} from './middleware/index.js'
+} from './middleware/index.js';
 
 async function processRequest(app, req, rsp, middlewares) {
 	async function* exec(ctx, req, rsp) {
@@ -98,9 +98,6 @@ class App {
 	}
 }
 
-
-
-import time from './utils/time.js';
 import enc from './utils/enc.js';
 
 export const middlewares = {
@@ -110,6 +107,7 @@ export const middlewares = {
 	bodyParser,
 	security,
 	template
-}
+};
 
-export { App, time, enc }
+export { enc };
+export default App;

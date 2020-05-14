@@ -1,5 +1,8 @@
+/**
+ * @typedef {import('../context').default} Context
+ */
 import uuidv1 from 'uuid/v1.js';
-import time from '../utils/time.js';
+import time from 'thor-time';
 import zlib from 'zlib';
 import crypto from 'crypto';
 
@@ -36,7 +39,7 @@ async function getSessionInfo(content, { serverKey, renew, validTime, interval }
 		let now = time.now();
 		if (!sessionInfo.validTime || now.getTime() < sessionInfo.validTime) {
 			if (interval) {
-				if (now < time.dateAdd(sessionInfo.accessTime, interval.value, interval.unit)) {
+				if (now < time.add(sessionInfo.accessTime, interval.value, interval.unit)) {
 					return sessionInfo;
 				} else {
 					return null;
@@ -47,7 +50,7 @@ async function getSessionInfo(content, { serverKey, renew, validTime, interval }
 		} else {
 			if (typeof renew === 'function') {
 				if (await renew(sessionInfo)) {
-					sessionInfo.validTime = validTime ? time.dateAdd(now, validTime.value, validTime.unit).getTime() : null;
+					sessionInfo.validTime = validTime ? time.add(now, validTime.value, validTime.unit).getTime() : null;
 					return sessionInfo;
 				} else {
 					return null;
@@ -61,6 +64,10 @@ async function getSessionInfo(content, { serverKey, renew, validTime, interval }
 	}
 }
 
+/**
+ *
+ * @param {Context} ctx
+ */
 function createSession(ctx, { serverKey, cookieName, maxAge = -1, validTime = null, path = '/', domain = null, httpOnly = true, info = null, sameSite = 'Lax', secure = false }) {
 	let data = info ? info.data : {};
 	if (!(data instanceof Object)) {
@@ -70,7 +77,7 @@ function createSession(ctx, { serverKey, cookieName, maxAge = -1, validTime = nu
 	let session = {
 		accessTime: new Date().getTime(),
 		createTime: createTime,
-		validTime: info ? info.validTime : (validTime ? time.dateAdd(createTime, validTime.value, validTime.unit).getTime() : null ),
+		validTime: info ? info.validTime : (validTime ? time.add(createTime, validTime.value, validTime.unit).getTime() : null ),
 		get: function(key) {
 			return data[key];
 		},
@@ -183,7 +190,7 @@ function generateKey() {
 /**
  * Create session manager middleware
  * @param {SessionOptions} options Options
- * @returns {(ctx, req, rsp) => boolean}
+ * @returns {(ctx: Context, req, rsp) => boolean}
  */
 function create({
 	serverKey = generateKey(),
@@ -211,7 +218,6 @@ function create({
 			interval: _interval
 		});
 
-		// eslint-disable-next-line require-atomic-updates
 		ctx.session = createSession(ctx, {
 			info: sessionInfo,
 			serverKey: key,
@@ -235,5 +241,5 @@ function create({
 export default {
 	create,
 	generateKey
-}
+};
 

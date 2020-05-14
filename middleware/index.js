@@ -7,4 +7,4 @@ import controller from './controller.js';
 
 export {
 	session, staticServer, security, bodyParser, template, controller
-}
+};

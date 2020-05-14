@@ -1,3 +1,7 @@
+/**
+ * @typedef {import('../context').default} Context
+ */
+
 import path from 'path';
 import tools from '../utils/tools.js';
 import url from 'url';
@@ -9,7 +13,7 @@ function loadScript(baseDir, api) {
 	if (p) {
 		return p;
 	}
-	p = new Promise((resolve, reject) => {
+	p = new Promise((resolve) => {
 		let file = baseDir + (api.endsWith('/') ? api + 'index' : api) + '.mjs';
 		tools.fileStat(file).then(stat => {
 			if (stat.isFile) {
@@ -107,4 +111,4 @@ function create({baseDir, rootPath = '/'} = {}) {
 
 export default {
 	create
-}
+};

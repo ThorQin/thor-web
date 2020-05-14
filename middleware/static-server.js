@@ -1,8 +1,10 @@
-import Context from '../context.js';
+/**
+ * @typedef {import('../context').default} Context
+ */
 import {promises as fs} from 'fs';
 import path from 'path';
 import tools from '../utils/tools.js';
-import time from '../utils/time.js';
+import time from 'thor-time';
 import mime from 'mime';
 import zlib from 'zlib';
 
@@ -98,6 +100,7 @@ function writeStream(stream, buffer) {
  * @property {number} enableGzipSize File can be gziped when size larger then this setting, default is 50K (50 * 1024)
  */
 /**
+ *
  * @param {StaticOptions} options
  * @returns {(ctx: Context, req, rsp) => boolean}
  */
@@ -182,9 +185,9 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 
 					let modifySince = ctx.getRequestHeader('if-modified-since');
 					if (modifySince) {
-						let lastTime = time.parseDate(modifySince);
+						let lastTime = time.parse(modifySince);
 						if (lastTime) {
-							if (time.parseDate(stat.mtime.toUTCString()).getTime() <= lastTime.getTime()) {
+							if (time.parse(stat.mtime.toUTCString()).getTime() <= lastTime.getTime()) {
 								await ctx.notModified();
 								return true;
 							}
@@ -226,7 +229,7 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 					try {
 						let canGzip = compressible(m[1]);
 						if (stat.size <= cachedFileSize && process.env.NODE_ENV !== 'development') {
-							let promise = loadCache(file, stat, canGzip)
+							let promise = loadCache(file, stat, canGzip);
 							cache.set(file, promise);
 							let cacheItem = await promise;
 							if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
@@ -287,4 +290,4 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 
 export default {
 	create, defaultSuffix
-}
+};

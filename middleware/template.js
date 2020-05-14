@@ -1,3 +1,6 @@
+/**
+ * @typedef {import('../context').default} Context
+ */
 import { promises as fs } from 'fs';
 import path from 'path';
 import tools from '../utils/tools.js';
@@ -11,7 +14,7 @@ import tpl from 'thor-tpl';
 /**
  * Create template render engin middleware.
  * @param {TemplateOptions} options
- * @returns {(ctx, req, rsp) => boolean}
+ * @returns {(ctx: Context, req, rsp) => boolean}
  */
 function create({baseDir = null, isDebug = false} = {}) {
 	const cache = {};
@@ -34,7 +37,7 @@ function create({baseDir = null, isDebug = false} = {}) {
 					return await renderFile(dir, file, data);
 				}
 			},
-			trace: (fn) => {
+			trace: (/*fn*/) => {
 				if (isDebug) {
 					console.log('compile template: ', jsFile);
 				}
@@ -68,7 +71,6 @@ function create({baseDir = null, isDebug = false} = {}) {
 	}
 
 	return async function (ctx) {
-		// eslint-disable-next-line require-atomic-updates
 		ctx.render = async function(file, data, returnText = false) {
 			if (!await tools.isFile(path.join(baseDir, file))) {
 				if (returnText) {
@@ -91,4 +93,4 @@ function create({baseDir = null, isDebug = false} = {}) {
 
 export default {
 	create
-}
+};

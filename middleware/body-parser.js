@@ -1,3 +1,6 @@
+/**
+ * @typedef {import('../context').default} Context
+ */
 import qs from 'querystring';
 import iconv from 'iconv-lite';
 import uuidv1 from 'uuid/v1.js';
@@ -292,6 +295,7 @@ function Parser({boundary, maxLength, storeDir, onPart, onError, onEnd, onEmpty}
 	async function parseBuffer() {
 		if (!parsing) {
 			parsing = true;
+			// eslint-disable-next-line no-unused-vars
 			for await (let _ of parseLoop());
 			parsing = false;
 			if (finished || noMoreData) {
@@ -466,7 +470,7 @@ function createParser(req) {
 
 /**
  * Create body-parser middleware.
- * @returns {(ctx, req, rsp) => boolean}
+ * @returns {(ctx: Context, req, rsp) => boolean}
  */
 function create() {
 	return async function (ctx, req) {
@@ -477,4 +481,4 @@ function create() {
 
 export default {
 	create
-}
+};

@@ -31,4 +31,4 @@ export default {
 	fileStat,
 	isFile,
 	getRootDir
-}
+};

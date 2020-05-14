@@ -1,4 +1,3 @@
-import http from 'http';
 import path from 'path';
 import mime from 'mime';
 import zlib from 'zlib';
@@ -34,8 +33,8 @@ function flushStream(stream) {
 export default class Context {
 	/**
 	 * Construct Context
-	 * @param {http.IncomingMessage} req
-	 * @param {http.ServerResponse} rsp
+	 * @param {import('http').IncomingMessage} req
+	 * @param {import('http').ServerResponse} rsp
 	 */
 	constructor(req, rsp) {
 		this.req = req;
@@ -73,7 +72,7 @@ export default class Context {
 	 * Write response status code and headers
 	 * @param {number} statusCode
 	 * @param {string} reasonPhrase
-	 * @param {http.OutgoingHttpHeaders} headers
+	 * @param {import('http').OutgoingHttpHeaders} headers
 	 */
 	writeHead(...args) {
 		this.rsp.writeHead(...args);

@@ -1,7 +1,5 @@
 module.exports = {
-	'sourceType': 'module',
 	'env': {
-		'commonjs': true,
 		'es6': true,
 		'node': true
 	},
@@ -11,7 +9,8 @@ module.exports = {
 		'SharedArrayBuffer': 'readonly'
 	},
 	'parserOptions': {
-		'ecmaVersion': 2018
+		'ecmaVersion': 11,
+		'sourceType': 'module'
 	},
 	'rules': {
 		'indent': [
@@ -29,15 +28,6 @@ module.exports = {
 		'semi': [
 			'error',
 			'always'
-		],
-		"no-unused-vars": [
-			"warn",
-			{
-				"vars": "all",
-				"args": "after-used",
-				"argsIgnorePattern": "^_$",
-				"varsIgnorePattern": "^_$"
-			}
 		]
 	}
 };

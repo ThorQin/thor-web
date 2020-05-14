@@ -17,7 +17,7 @@ function encrypt(key, value) {
 	let d2 = cipher.final();
 	let encData = Buffer.concat([d1, d2], d1.length + d2.length);
 	return encData.toString('base64');
-};
+}
 
 /**
  * Decrypt data
@@ -35,8 +35,8 @@ function decrypt(key, base64data) {
 	let zipData = Buffer.concat([d1, d2], d1.length + d2.length);
 	let rawData = zlib.gunzipSync(zipData).toString('utf8');
 	return JSON.parse(rawData);
-};
+}
 
 export default {
 	encrypt, decrypt
-}
+};

@@ -1,7 +1,10 @@
 /**
+ * @typedef {import('../context').default} Context
+ */
+/**
  * Create security handler middleware
  * @param {(param: {ctx:Context,username:string,passowrd:string,session,cookie,path: string,method: string,ip: string}) => boolean|'allow'|'deny'|'redirect:'|'auth:'} securityHandler
- * @returns {(ctx, req, rsp) => boolean}
+ * @returns {(ctx:Context, req, rsp) => boolean}
  */
 function create(securityHandler) {
 	return async function(ctx) {
@@ -67,4 +70,4 @@ function create(securityHandler) {
 
 export default {
 	create
-}
+};

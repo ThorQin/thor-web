@@ -170,54 +170,6 @@ interface ServerEnv {
 	[index: string]: any
 }
 
-export namespace time {
-	function now(): Date;
-	/**
-	 * Input seconds and get a time description
-	 */
-	function timespan(seconds: number): string;
-
-	/**
-	 * Get the distance of dt2 compare to dt1 (dt2 - dt1) return in specified unit (d: day, h: hours, m: minutes, s: seconds, ms: milliseconds)
-	 */
-	function dateDiff(dt1:string|number|Date, dt2:string|number|Date, unit?:'d'|'h'|'m'|'s'|'ms'): number;
-
-	/**
-	 * Get new date of dt add specified unit of values.
-	 */
-	function dateAdd(dt:string|number|Date, val: number, unit?:'d'|'h'|'m'|'s'|'ms'): Date;
-
-	/**
-	 * Get day in year
-	 */
-	function dayOfYear(dt: Date): number;
-
-	/**
-	 * Get total days of month
-	 */
-	function totalDaysOfMonth(dt: Date): number;
-
-
-	/**
-	 * Parse string get date instance (
-	 * try to parse format:
-	 *		'yyyy-MM-dd HH:mm:ss'，
-	 *		'yyyy-MM-dd',
-	 *		'dd MMM yyyy',
-	 *		'MMM dd, yyyy'
-	 *		and ISO8601 format, etc..)
-	 */
-	function parseDate(dtStr: string|number|Date, format?: string): Date;
-
-
-	/**
-	 * Convert date to string and output can be formated to ISO8601, RFC2822, RFC3339 or other customized format
-	 * @param dt Input date
-	 * @param dateFmt Format string, default is "yyyy-MM-ddTHH:mm:sszzz"
-	 */
-	function formatDate(dt:Date, dateFmt?: string): string;
-}
-
 export namespace enc {
 
 	/**
@@ -261,20 +213,32 @@ export namespace middlewares {
 		interface SessionOptions {
 			serverKey: string,
 			cookieName?: string,
-			maxAge: number = -1,
-			renew: (info: SessionInfo) => Promise<boolean> = null,
+			/**
+			 * Default: -1
+			 */
+			maxAge?: number,
+			renew?: (info: SessionInfo) => Promise<boolean>,
 			/**
 			 * timespan (e.g. 1d,2h,3m,100s, etc..)
 			 */
-			validTime: string = null,
+			validTime?: string,
 			/**
-			 * timespan (e.g. 1d,2h,3m,100s, etc..)
+			 * timespan (e.g. 1d,2h,3m,100s, etc..), default: '15d'
 			 */
-			interval: string = '15d',
-			domain: string = null,
-			httpOnly: boolean = true,
-			secure: boolean = false,
-			sameSite: string = 'None'|'Lax'|'Strict'
+			interval?: string,
+			domain?: string,
+			/**
+			 * Default true
+			 */
+			httpOnly?: boolean,
+			/**
+			 * Default false
+			 */
+			secure?: boolean,
+			/**
+			 * Default 'Lax'
+			 */
+			sameSite?: 'None' | 'Lax' | 'Strict'
 		}
 		/**
 		 * Create distributed session middleware instance
@@ -316,7 +280,7 @@ export namespace middlewares {
 	}
 	module controller {
 		interface ControllerOptions {
-			baseDir: string = null,
+			baseDir?: string,
 			/**
 			 * Default is '/'
 			 */
@@ -335,11 +299,11 @@ export namespace middlewares {
 	}
 	module template {
 		interface TemplateOptions {
-			baseDir: string = null,
+			baseDir?: string,
 			/**
-			 * Whether use debug mode
+			 * Whether use debug mode, default false
 			 */
-			isDebug: boolean = false
+			isDebug?: boolean
 		}
 		/**
 		 * Create template renderer middleware instance
