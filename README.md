@@ -36,6 +36,11 @@ or
 npm start
 ```
 
+## Use nodemon to debug project
+```
+npm run debug
+```
+
 # Middlewares
 
 * Session: Control user login status
