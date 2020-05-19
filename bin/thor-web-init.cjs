@@ -19,7 +19,7 @@ async function copy(...pathname) {
 	await fs.copyFile(path.resolve(basedir,...pathname), path.resolve(project, ...pathname));
 }
 
-const { exec } = require("child_process");
+const { exec } = require('child_process');
 
 function execCmd(cmdLine) {
 	return new Promise((resolve, reject) => {
@@ -39,7 +39,7 @@ function execCmd(cmdLine) {
 
 
 async function run() {
-	await mkdir(project)
+	await mkdir(project);
 	await mkdir(project, 'controllers');
 	await mkdir(project, 'templates');
 	await mkdir(project, 'www');
@@ -62,8 +62,8 @@ async function run() {
 
 	process.chdir(project);
 
-	await execCmd("npm install thor-web @types/node");
-	await execCmd("npm install --save-dev cross-env nodemon");
+	await execCmd('npm install thor-web thor-tpl @types/node');
+	await execCmd('npm install --save-dev cross-env nodemon');
 	console.log(`Project '${project}' created!!\n`);
 }
 

@@ -312,8 +312,8 @@ export default class Context {
 	 * Send 400 bad request
 	 * @param {string} message
 	 */
-	errorBadRequest() {
-		return this.error(400, 'Bad request!\n');
+	errorBadRequest(message = null) {
+		return this.error(400, `Bad request${message ? ': ' + message : '!'}\n`);
 	}
 
 	/**
@@ -359,8 +359,8 @@ export default class Context {
 	 * Send 500 unknown error
 	 * @param {string} message Error message
 	 */
-	errorUnknown(message) {
-		return this.error(500, `Unexpected server error: ${message}\n`);
+	errorUnknown(message = null) {
+		return this.error(500, `Unexpected server error${message ? ': ' + message : '!'}\n`);
 	}
 
 	/**

@@ -1,5 +1,6 @@
 import * as http from "http";
 import * as querystring from "querystring";
+import { Schema } from "thor-validation";
 
 interface RequestCookies {
 	readonly [name: string]: string
@@ -33,7 +34,12 @@ interface BodyParser {
 	getMultipartBoundary: () => string;
 	raw(): Promise<Buffer>;
 	text(): Promise<string>;
-	json(): Promise<any>;
+	/**
+	 * Get JSON data and do validation if given the schema parameter.
+	 * @param {Schema} schema
+	 * @throws {ValidationError}
+	 */
+	json(schema?: Schema): Promise<any>;
 	form(): Promise<querystring.ParsedUrlQuery>;
 	multipart(storeDir: string, maxLength?: number): Promise<BodyPart[]>;
 }
@@ -126,7 +132,7 @@ interface Context {
 	close(): void;
 }
 
-interface Controller {
+export interface Controller {
 	(ctx: Context, req: http.IncomingMessage , rsp: http.ServerResponse): Promise<any>;
 }
 
@@ -134,7 +140,7 @@ interface Middleware {
 	(ctx: Context, req: http.IncomingMessage , rsp: http.ServerResponse): Promise<boolean>;
 }
 
-export class App {
+class App {
 	use(...middleware: Middleware[]): App;
 	/**
 	 * Start web server
@@ -311,3 +317,5 @@ export namespace middlewares {
 		function create(options: TemplateOptions): Middleware;
 	}
 }
+
+export default App;

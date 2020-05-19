@@ -1,7 +1,7 @@
 {
 	"description": "Web site project powered by thor-web",
 	"version": "1.0.0",
-	"main": "index.mjs",
+	"main": "./index.mjs",
 	"type": "module",
 	"license": "MIT",
 	"repository": {

@@ -5,6 +5,7 @@ import qs from 'querystring';
 import iconv from 'iconv-lite';
 import uuidv1 from 'uuid/v1.js';
 import fs from 'fs';
+import { ValidationError } from 'thor-validation';
 
 const STATE_BEGIN = 0;
 const STATE_HEADER = 1;
@@ -378,14 +379,23 @@ function createParser(req) {
 				return buffer.toString(charset);
 			});
 		},
-		json: function() {
+		json: async function(schema = null) {
 			if (!this.isJSON()) {
-				return Promise.reject('Not a JSON data.');
+				throw new ValidationError('Not a valid JSON data.');
 			}
 			let charset = this.getCharset();
-			return this.raw().then(function(buffer) {
-				return JSON.parse(buffer.toString(charset));
-			});
+			let buffer = await this.raw();
+			let val;
+			try {
+				let jsonStr = buffer.toString(charset);
+				val = JSON.parse(jsonStr);
+			} catch (e) {
+				throw new ValidationError(`Not a valid JSON data: ${e.message}`);
+			}
+			if (schema instanceof Object && typeof schema.validate === 'function') {
+				schema.validate(val);
+			}
+			return val;
 		},
 		form: function() {
 			if (!this.isForm()) {

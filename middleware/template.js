@@ -4,8 +4,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import tools from '../utils/tools.js';
-import tpl from 'thor-tpl';
-
+import {renderAsync, compile} from 'thor-tpl';
 /**
  * @typedef TemplateOptions
  * @property {string} baseDir The root directory of the controllers.
@@ -45,14 +44,14 @@ function create({baseDir = null, isDebug = false} = {}) {
 		};
 		let fnPromise = cache[file];
 		if (fnPromise) {
-			return await tpl.renderAsync(await fnPromise, data, options);
+			return await renderAsync(await fnPromise, data, options);
 		} else {
 			if (process.env.NODE_ENV !== 'development') {
 				console.log('compile template: ', file);
 				fnPromise = new Promise((resolve, reject) => {
 					fs.readFile(file, 'utf8').then(content => {
 						try {
-							let fn = tpl.compile(content, options);
+							let fn = compile(content, options);
 							resolve(fn);
 						} catch (e) {
 							reject(e.message || e);
@@ -62,10 +61,10 @@ function create({baseDir = null, isDebug = false} = {}) {
 					});
 				});
 				cache[file] = fnPromise;
-				return await tpl.renderAsync(await fnPromise, data, options);
+				return await renderAsync(await fnPromise, data, options);
 			} else {
 				let content = await fs.readFile(file, 'utf8');
-				return await tpl.renderAsync(content, data, options);
+				return await renderAsync(content, data, options);
 			}
 		}
 	}

@@ -5,6 +5,7 @@
 import path from 'path';
 import tools from '../utils/tools.js';
 import url from 'url';
+import { ValidationError } from 'thor-validation';
 
 const API = {};
 
@@ -90,7 +91,9 @@ function create({baseDir, rootPath = '/'} = {}) {
 							if (e && e.message === 'ERR_HTTP_HEADERS_SENT') {
 								await ctx.end();
 							} else {
-								if (process.env.NODE_ENV == 'prodction') {
+								if (e && e.constructor && e.constructor.name === ValidationError.name) {
+									await ctx.errorBadRequest(e.message);
+								} else if (process.env.NODE_ENV == 'prodction') {
 									await ctx.error();
 								} else {
 									await ctx.errorUnknown(e);

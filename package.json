@@ -27,8 +27,9 @@
 		"@types/uuid": "^7.0.3",
 		"iconv-lite": "^0.5.1",
 		"mime": "^2.4.5",
-		"thor-time": "^1.0.1",
-		"thor-tpl": "^1.0.5",
+		"thor-time": "^1.0.2",
+		"thor-tpl": "^1.1.3",
+		"thor-validation": "^1.0.1",
 		"uuid": "^3.4.0"
 	},
 	"devDependencies": {
