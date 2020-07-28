@@ -159,13 +159,9 @@ class App {
 
 interface SecurityHandlerParam {
 	ctx:Context,
-	username:string,
-	passowrd:string,
-	session: Session,
-	cookie: RequestCookies,
-	path: string,
-	method: string,
-	ip: string
+	resource:string,
+	resourceId:string?,
+	action:string
 }
 
 interface SecurityHandler {
@@ -202,6 +198,7 @@ export namespace middlewares {
 		 * Create security middleware instance
 		 */
 		function create(securityHandler: SecurityHandler): Middleware;
+		async function shouldStopNext(ctx: Context, result: boolean|object|string): boolean;
 	}
 
 	module session {
