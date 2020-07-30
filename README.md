@@ -44,7 +44,7 @@ npm run debug
 # Middlewares
 
 * Session: Control user login status
-* Security: Control authorization access
+* Security: Control access authorization
 * Body Parser: Provide methods to access request contents
 * Controller: Route request to controller js file
 * Static: Provide static resources access
