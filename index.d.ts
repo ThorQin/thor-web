@@ -130,6 +130,11 @@ interface Context {
 	error(code: number, message: string): Promise<void>;
 	end(message?: Buffer|string): Promise<void>;
 	close(): void;
+
+	/**
+	 * @throws { SecurityError }
+	 */
+	checkPrivilege(action:string, resource:string, resourceId?:string, accent?:string): void;
 }
 
 export interface Controller {
@@ -164,8 +169,11 @@ interface SecurityHandlerParam {
 	action:string
 }
 
+/**
+ * return boolean value or string value, string can be 'allow', 'deny' or which starts with 'redirect:' or 'auth:'
+ */
 interface SecurityHandler {
-	(param: SecurityHandlerParam): boolean|string|'allow'|'deny'|'redirect:'|'auth:'
+	(param: SecurityHandlerParam): object|boolean|string|'allow'|'deny'
 }
 
 interface ServerEnv {
@@ -198,7 +206,6 @@ export namespace middlewares {
 		 * Create security middleware instance
 		 */
 		function create(securityHandler: SecurityHandler): Middleware;
-		async function shouldStopNext(ctx: Context, result: boolean|object|string): boolean;
 	}
 
 	module session {

@@ -1,5 +1,7 @@
 
 
+export class SecurityError extends Error {}
+
 /**
  * @typedef {import('../context').default} Context
  */
@@ -14,13 +16,29 @@
  */
 function create(securityHandler) {
 	return async function(ctx) {
-		let result = securityHandler({
-			ctx: ctx,
-			resource: 'url',
-			resourceId: ctx.path,
-			action: ctx.method
-		});
-		return await shouldStopNext(result);
+		if (typeof securityHandler === 'function') {
+			ctx.checkPrivilege = function(action, resource, resourceId, account) {
+				let result = securityHandler({
+					ctx: ctx,
+					resource: resource,
+					resourceId: resourceId,
+					action: action,
+					account: account
+				});
+				if (result !== true && result != 'allow') {
+					throw new SecurityError(`Access denied for ${action} ${resource}`);
+				}
+			};
+			let result = securityHandler({
+				ctx: ctx,
+				resource: 'access',
+				resourceId: ctx.path,
+				action: ctx.method
+			});
+			return await isCompleted(result);
+		} else {
+			return false;
+		}
 	};
 }
 
@@ -30,7 +48,7 @@ function create(securityHandler) {
  * @param {boolean|object|string} result
  * @returns {boolean}
  */
-async function shouldStopNext(ctx, result) {
+async function isCompleted(ctx, result) {
 	if (typeof result === 'object' && result) {
 		let headers = {};
 		Object.keys(result).filter(k => k != 'code' && k != 'body').forEach(k => {
@@ -77,5 +95,4 @@ async function shouldStopNext(ctx, result) {
 
 export default {
 	create,
-	shouldStopNext
 };

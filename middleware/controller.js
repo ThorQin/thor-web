@@ -6,7 +6,7 @@ import path from 'path';
 import tools from '../utils/tools.js';
 import url from 'url';
 import { ValidationError } from 'thor-validation';
-import security from './security.js';
+import { SecurityError } from './security.js';
 
 const API = {};
 
@@ -47,18 +47,13 @@ function loadScript(baseDir, api) {
  * @typedef ControllerOptions
  * @property {string} baseDir The root directory of the controllers.
  * @property {string} rootPath The root url path of the controllers.
- * @property {(param: {
- *  ctx:Context,
- * 	resource:string,
- *	resourceId:string?,
- *	action:string}) => boolean|object|string} securityHandler
  */
 /**
  * Create controller middleware.
  * @param {ControllerOptions} options
  * @returns {(ctx: Context, req, rsp) => boolean}
  */
-function create({baseDir, rootPath = '/', securityHandler = null} = {}) {
+function create({baseDir, rootPath = '/'} = {}) {
 	if (!rootPath) {
 		rootPath = '/';
 	}
@@ -83,19 +78,6 @@ function create({baseDir, rootPath = '/', securityHandler = null} = {}) {
 				fn = fn[req.method.toLowerCase()];
 			}
 			if (fn) {
-				if (typeof securityHandler === 'function' && fn.options && typeof fn.options === 'object') {
-					let result = securityHandler({
-						ctx: ctx,
-						resource: fn.options.resource,
-						resourceId: typeof fn.options.getResId === 'function' ? fn.options.getResId(ctx) : null,
-						action: fn.options.action
-					});
-					result = await security.shouldStopNext(ctx, result);
-					if (result) {
-						return true;
-					}
-				}
-				console.log(`Function options: ${fn.options}`);
 				try {
 					let result = await fn(ctx, req, rsp);
 					if (typeof result !== 'undefined') {
@@ -112,6 +94,8 @@ function create({baseDir, rootPath = '/', securityHandler = null} = {}) {
 							} else {
 								if (e && e.constructor && e.constructor.name === ValidationError.name) {
 									await ctx.errorBadRequest(e.message);
+								} else if (e && e.constructor && e.constructor.name === SecurityError.name) {
+									await ctx.errorForbidden(e.message);
 								} else if (process.env.NODE_ENV == 'prodction') {
 									await ctx.error();
 								} else {
