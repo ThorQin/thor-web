@@ -4,7 +4,7 @@
 		"web",
 		"framework"
 	],
-	"version": "1.2.0",
+	"version": "1.2.1",
 	"engines": {
 		"node": ">=14.0.0"
 	},
@@ -22,17 +22,17 @@
 	"license": "MIT",
 	"private": false,
 	"dependencies": {
-		"@types/mime": "^2.0.1",
-		"@types/node": "^13.13.5",
-		"@types/uuid": "^7.0.3",
-		"iconv-lite": "^0.5.1",
-		"mime": "^2.4.5",
+		"@types/mime": "^2.0.3",
+		"@types/node": "^13.13.30",
+		"@types/uuid": "^7.0.4",
+		"iconv-lite": "^0.5.2",
+		"mime": "^2.4.6",
 		"thor-time": "^1.0.3",
 		"thor-tpl": "^1.1.3",
 		"thor-validation": "^1.0.1",
 		"uuid": "^3.4.0"
 	},
 	"devDependencies": {
-		"eslint": "^7.0.0"
+		"eslint": "^7.12.1"
 	}
 }

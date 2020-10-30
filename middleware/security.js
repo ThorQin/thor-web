@@ -35,7 +35,7 @@ function create(securityHandler) {
 				resourceId: ctx.path,
 				action: ctx.method
 			});
-			return await isCompleted(result);
+			return await isCompleted(ctx, result);
 		} else {
 			return false;
 		}
@@ -63,7 +63,7 @@ async function isCompleted(ctx, result) {
 			body = JSON.stringify(result.body);
 			headers['content-type'] = 'application/json; charset=utf-8';
 		}
-		ctx.writeHead(code, result);
+		ctx.writeHead(code, headers);
 		await ctx.end(body);
 		return true;
 	} else if (typeof result === 'string') {

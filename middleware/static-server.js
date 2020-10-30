@@ -19,6 +19,7 @@ function defaultSuffix() {
 		'eot',
 		'otf',
 		'woff',
+		'woff2',
 		'ttf',
 		'bmp',
 		'gif',

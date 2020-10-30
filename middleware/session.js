@@ -103,21 +103,36 @@ function createSession(ctx, { serverKey, cookieName, maxAge = -1, validTime = nu
 			}
 			this.save();
 		},
-		save: function(mx) {
+		save: function(opt) {
+			if (typeof opt === 'number') {
+				opt = {
+					maxAge: opt
+				};
+			} else if (typeof opt !== 'object' || !opt) {
+				opt = {};
+			}
 			let token = this.toString();
 			let options = {};
-			options['Max-Age'] = typeof mx === 'number' ? mx : maxAge;
-			if (domain) {
-				options.Domain = domain;
+			options['Max-Age'] = typeof opt.maxAge === 'number' ? opt.maxAge : maxAge;
+			if (opt.domain || domain) {
+				options.Domain = opt.domain || domain;
 			}
-			options.Path = path;
-			if (httpOnly) {
+			options.Path = opt.path || path;
+			if (typeof opt.httpOnly === 'boolean') {
+				if (opt.httpOnly) {
+					options['HttpOnly'] = null;
+				}
+			} else if (httpOnly) {
 				options['HttpOnly'] = null;
 			}
-			if (secure) {
+			if (typeof opt.secure === 'boolean') {
+				if (opt.secure) {
+					options['Secure'] = null;
+				}
+			} else if (secure) {
 				options['Secure'] = null;
 			}
-			options.SameSite = sameSite;
+			options.SameSite = opt.sameSite || sameSite;
 			ctx.setResponseCookie(cookieName, token, options);
 		},
 		delete: function() {
@@ -178,7 +193,7 @@ function generateKey() {
  * @typedef SessionOptions
  * @property {string} serverKey Server key for AES128 encryption encoded by BASE64 (key = 16 bytes raw data -> base64)
  * @property {string} cookieName
- * @property {number} maxAge -1: not store, 0: delete cookie, >0: how long the cookie will be kept(in seconds)
+ * @property {number} maxAge  value <= 0: delete cookie, value > 0: how long the cookie will be kept(in seconds)
  * @property {(sessionInfo: any) => boolean} renew
  * @property {string} validTime 3d, 1m, etc..
  * @property {string} interval
@@ -195,7 +210,7 @@ function generateKey() {
 function create({
 	serverKey = generateKey(),
 	cookieName = 'ez_app',
-	maxAge = -1,
+	maxAge = 1800,
 	validTime = null,
 	renew = null,
 	interval = '15d',
