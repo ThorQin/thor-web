@@ -1,12 +1,13 @@
 /**
  * @typedef {import('../context').default} Context
  */
-import {promises as fs} from 'fs';
+import { promises as fs } from 'fs';
 import path from 'path';
 import tools from '../utils/tools.js';
 import time from 'thor-time';
 import mime from 'mime';
 import zlib from 'zlib';
+import { Middleware } from '../defs.js';
 
 function defaultSuffix() {
 	let suffix = [
@@ -34,7 +35,9 @@ function defaultSuffix() {
 		'wav',
 		'zip',
 		'rar',
-		'7z'
+		'7z',
+		'tar',
+		'gz',
 	];
 	if (process.env.NODE_ENV === 'development') {
 		suffix.push('map');
@@ -52,7 +55,7 @@ function compressible(suffix) {
 
 function gzip(buffer) {
 	return new Promise(function (resolve, reject) {
-		zlib.gzip(buffer, function(err, result) {
+		zlib.gzip(buffer, function (err, result) {
 			if (err) {
 				reject(err);
 				return;
@@ -61,7 +64,6 @@ function gzip(buffer) {
 		});
 	});
 }
-
 
 async function* readFile(fd, buffer) {
 	let rd = await fd.read(buffer, 0, buffer.length);
@@ -83,29 +85,47 @@ function writeStream(stream, buffer) {
 	if (buffer.length <= 0) {
 		return Promise.resolve();
 	}
-	return new Promise( (resolve) => {
+	return new Promise((resolve) => {
 		stream.write(buffer, () => {
 			resolve();
 		});
 	});
 }
 
-
+type StaticOptions = {
+	/**
+	 * Root directory of static resources.
+	 */
+	baseDir?: string;
+	/**
+	 * Root url path of static resource.
+	 */
+	rootPath?: string;
+	/**
+	 * Which suffix(extra) can be visit as static resource.
+	 */
+	suffix?: string[];
+	/**
+	 * File will be cached when size less this setting, default is 1MB (1024 * 1024).
+	 */
+	cachedFileSize?: number;
+	/**
+	 * File will be gziped when size larger then this setting, default is 50K (50 * 1024)
+	 */
+	enableGzipSize?: number;
+};
 
 /**
- * @typedef StaticOptions
- * @property {string} baseDir Root directory of static resources.
- * @property {string} rootPath Root url path of static resource.
- * @property {string[]} suffix Which suffix can be visit as static resource.
- * @property {number} cachedFileSize File can be cached when size less this setting, default is 1MB (1024 * 1024).
- * @property {number} enableGzipSize File can be gziped when size larger then this setting, default is 50K (50 * 1024)
+ * Create static resource middleware
+ * @param param0 Options for create static server.
  */
-/**
- *
- * @param {StaticOptions} options
- * @returns {(ctx: Context, req, rsp) => boolean}
- */
-function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize = 1024 * 1024, enableGzipSize = 50 * 1024} = {}) {
+function create({
+	baseDir,
+	rootPath = '/',
+	suffix,
+	cachedFileSize = 1024 * 1024,
+	enableGzipSize = 50 * 1024,
+}: StaticOptions = {}): Middleware {
 	if (!rootPath) {
 		rootPath = '/';
 	}
@@ -137,7 +157,7 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 		let fd = await fs.open(file);
 		try {
 			let data = await fd.readFile();
-			let cacheItem = {mtime: stat.mtime, data: data, gzipData: null};
+			let cacheItem = { mtime: stat.mtime, data: data, gzipData: null };
 			if (stat.size >= enableGzipSize && canGzip) {
 				let gziped = await gzip(data);
 				cacheItem.gzipData = gziped;
@@ -172,8 +192,8 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 						ctx.writeHead(200, {
 							'Content-Type': contentType,
 							'Content-Length': stat.size,
-							'Cache-Control':'no-cache',
-							'Last-Modified': stat.mtime.toUTCString()
+							'Cache-Control': 'no-cache',
+							'Last-Modified': stat.mtime.toUTCString(),
 						});
 						await ctx.end();
 						return true;
@@ -195,7 +215,6 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 						}
 					}
 
-
 					if (cache.has(file)) {
 						let cachedFile;
 						try {
@@ -208,16 +227,20 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 							let canGzip = compressible(m[1]);
 							if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
 								ctx.writeHead(200, {
-									'Cache-Control':'no-cache',
+									'Cache-Control': 'no-cache',
 									'Content-Type': contentType,
 									'Last-Modified': stat.mtime.toUTCString(),
 									'Content-Encoding': 'gzip',
-									'Transfer-Encoding': 'chunked'
+									'Transfer-Encoding': 'chunked',
 								});
 								// Send Gzip Data
 								await ctx.end(cachedFile.gzipData);
 							} else {
-								ctx.writeHead(200, {'Cache-Control':'no-cache', 'Content-Type': contentType, 'Last-Modified': stat.mtime.toUTCString()});
+								ctx.writeHead(200, {
+									'Cache-Control': 'no-cache',
+									'Content-Type': contentType,
+									'Last-Modified': stat.mtime.toUTCString(),
+								});
 								await ctx.end(cachedFile.data);
 							}
 							return true;
@@ -235,16 +258,20 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 							let cacheItem = await promise;
 							if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
 								ctx.writeHead(200, {
-									'Cache-Control':'no-cache',
+									'Cache-Control': 'no-cache',
 									'Content-Type': contentType,
 									'Last-Modified': stat.mtime.toUTCString(),
 									'Content-Encoding': 'gzip',
-									'Transfer-Encoding': 'chunked'
+									'Transfer-Encoding': 'chunked',
 								});
 								// Send Gzip Data
 								await ctx.end(cacheItem.gzipData);
 							} else {
-								ctx.writeHead(200, {'Cache-Control':'no-cache', 'Content-Type': contentType, 'Last-Modified': stat.mtime.toUTCString()});
+								ctx.writeHead(200, {
+									'Cache-Control': 'no-cache',
+									'Content-Type': contentType,
+									'Last-Modified': stat.mtime.toUTCString(),
+								});
 								await ctx.end(cacheItem.data);
 							}
 							return true;
@@ -255,11 +282,11 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 								let zstream = zlib.createGzip();
 								zstream.pipe(ctx.rsp);
 								ctx.writeHead(200, {
-									'Cache-Control':'no-cache',
+									'Cache-Control': 'no-cache',
 									'Content-Type': contentType,
 									'Last-Modified': stat.mtime.toUTCString(),
 									'Content-Encoding': 'gzip',
-									'Transfer-Encoding': 'chunked'
+									'Transfer-Encoding': 'chunked',
 								});
 
 								for await (let rd of readFile(fd, buffer)) {
@@ -267,7 +294,11 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 								}
 								await flushStream(zstream);
 							} else {
-								ctx.writeHead(200, {'Cache-Control':'no-cache', 'Content-Type': contentType, 'Last-Modified': stat.mtime.toUTCString()});
+								ctx.writeHead(200, {
+									'Cache-Control': 'no-cache',
+									'Content-Type': contentType,
+									'Last-Modified': stat.mtime.toUTCString(),
+								});
 								for await (let rd of readFile(fd, buffer)) {
 									await ctx.write(rd.buffer.slice(0, rd.bytesRead));
 								}
@@ -290,5 +321,6 @@ function create({baseDir = null, rootPath = '/', suffix = null, cachedFileSize =
 }
 
 export default {
-	create, defaultSuffix
+	create,
+	defaultSuffix,
 };

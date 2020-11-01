@@ -1,0 +1,14 @@
+{
+	"description": "Web site project powered by thor-web",
+	"version": "1.0.0",
+	"main": "./index.mjs",
+	"type": "module",
+	"license": "MIT",
+	"repository": {
+	},
+	"private": true,
+	"scripts": {
+		"start": "cross-env NODE_ENV=production node .",
+		"debug": "cross-env NODE_ENV=development nodemon -e js,mjs,sql --inspect ."
+	}
+}

@@ -1,4 +1,4 @@
-
+import { Middleware } from '../defs';
 
 export class SecurityError extends Error {}
 
@@ -14,16 +14,16 @@ export class SecurityError extends Error {}
  *	action:string}) => boolean|object|string} securityHandler
  * @returns {(ctx:Context, req, rsp) => boolean}
  */
-function create(securityHandler) {
-	return async function(ctx) {
+function create(securityHandler): Middleware {
+	return async function (ctx) {
 		if (typeof securityHandler === 'function') {
-			ctx.checkPrivilege = function(action, resource, resourceId, account) {
+			ctx.checkPrivilege = function (action, resource, resourceId, account) {
 				let result = securityHandler({
 					ctx: ctx,
 					resource: resource,
 					resourceId: resourceId,
 					action: action,
-					account: account
+					account: account,
 				});
 				if (result !== true && result != 'allow') {
 					throw new SecurityError(`Access denied for ${action} ${resource}`);
@@ -33,7 +33,7 @@ function create(securityHandler) {
 				ctx: ctx,
 				resource: 'access',
 				resourceId: ctx.path,
-				action: ctx.method
+				action: ctx.method,
 			});
 			return await isCompleted(ctx, result);
 		} else {
@@ -51,9 +51,11 @@ function create(securityHandler) {
 async function isCompleted(ctx, result) {
 	if (typeof result === 'object' && result) {
 		let headers = {};
-		Object.keys(result).filter(k => k != 'code' && k != 'body').forEach(k => {
-			headers[k.toLowerCase()] = result[k];
-		});
+		Object.keys(result)
+			.filter((k) => k != 'code' && k != 'body')
+			.forEach((k) => {
+				headers[k.toLowerCase()] = result[k];
+			});
 		let code = 403;
 		if (typeof result.code === 'number') {
 			code = result.code;
