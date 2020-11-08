@@ -1,31 +1,49 @@
-import { Middleware } from '../defs';
-declare function generateKey(): string;
-declare type SessionOptions = {
-    /**
-     * Server key for AES128 encryption encoded by BASE64 (key = 16 bytes raw data -> base64)
-     */
-    serverKey?: string;
-    cookieName?: string;
-    /**
-     * value <= 0: delete cookie, value > 0: how long the cookie will be kept(in seconds)
-     */
-    maxAge?: number;
-    renew?: (sessionInfo: any) => boolean;
-    validTime?: string;
-    interval?: string;
-    domain?: string;
-    httpOnly?: boolean;
-    secure?: boolean;
-    sameSite?: 'None' | 'Lax' | 'Strict';
+import { Middleware, MiddlewareFactory } from '../types';
+export declare type TimeCheck = {
+	value: number;
+	unit?: 'y' | 'M' | 'd' | 'h' | 'm' | 's' | 'ms';
+	action?: 'renew' | 'logout';
 };
-/**
- * Create session manager middleware
- * @param {SessionOptions} options Options
- * @returns {(ctx: Context, req, rsp) => boolean}
- */
-declare function create({ serverKey, cookieName, maxAge, validTime, renew, interval, domain, httpOnly, secure, sameSite, }?: SessionOptions): Middleware;
-declare const _default: {
-    create: typeof create;
-    generateKey: typeof generateKey;
+export declare type SessionInfo = {
+	createTime: number;
+	accessTime: number;
+	data: {
+		[key: string]: unknown;
+	};
 };
-export default _default;
+export declare type SessionOptions = {
+	/**
+	 * Server key for AES128 encryption encoded by BASE64 (key = 16 bytes raw data -> base64)
+	 */
+	serverKey?: string;
+	cookieName?: string;
+	path?: string;
+	/**
+	 * value <= 0: delete cookie, value > 0: how long the cookie will be kept(in seconds)
+	 */
+	maxAge?: number;
+	renew?: (sessionInfo: unknown) => Promise<boolean>;
+	expireCheck?: TimeCheck;
+	intervalCheck?: TimeCheck;
+	domain?: string;
+	httpOnly?: boolean;
+	secure?: boolean;
+	sameSite?: 'None' | 'Lax' | 'Strict';
+};
+declare class SessionFactory implements MiddlewareFactory {
+	create({
+		serverKey,
+		cookieName,
+		maxAge,
+		expireCheck,
+		renew,
+		intervalCheck,
+		domain,
+		httpOnly,
+		secure,
+		sameSite,
+	}?: SessionOptions): Middleware;
+	generateKey(): string;
+}
+declare const sessionFactory: SessionFactory;
+export default sessionFactory;

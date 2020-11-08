@@ -33,3 +33,9 @@ export function getRootDir(): string {
 		return js;
 	}
 }
+
+export default {
+	getRootDir: getRootDir,
+	fileStat: fileStat,
+	isFile: isFile,
+};

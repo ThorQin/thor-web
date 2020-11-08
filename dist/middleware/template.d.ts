@@ -1,18 +1,16 @@
-/**
- * @typedef TemplateOptions
- * @property {string} baseDir The root directory of the controllers.
- * @property {boolean} isDebug Use debug mode
- */
-/**
- * Create template render engin middleware.
- * @param {TemplateOptions} options
- * @returns {(ctx: Context, req, rsp) => boolean}
- */
-declare function create({ baseDir, isDebug }?: {
-    baseDir?: null | undefined;
-    isDebug?: boolean | undefined;
-}): (ctx: any) => Promise<boolean>;
-declare const _default: {
-    create: typeof create;
+import { Middleware, MiddlewareFactory } from '../types.js';
+export declare type TemplateOptions = {
+	/**
+	 * The root directory of the controllers.
+	 */
+	baseDir?: string;
+	/**
+	 * Use debug mode
+	 */
+	isDebug?: boolean;
 };
-export default _default;
+declare class TemplateFactory implements MiddlewareFactory {
+	create({ baseDir, isDebug }?: TemplateOptions): Middleware;
+}
+declare const templateFactory: TemplateFactory;
+export default templateFactory;

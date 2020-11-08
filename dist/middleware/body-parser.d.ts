@@ -1,9 +1,11 @@
+import { MiddlewareFactory } from '../types';
+import Context from '../context';
+import http from 'http';
 /**
  * Create body-parser middleware.
- * @returns {(ctx: Context, req, rsp) => boolean}
  */
-declare function create(): (ctx: any, req: any) => Promise<boolean>;
-declare const _default: {
-    create: typeof create;
-};
-export default _default;
+declare class BodyParserFactory implements MiddlewareFactory {
+	create(): (ctx: Context, req: http.IncomingMessage) => Promise<boolean>;
+}
+declare const bodyParser: BodyParserFactory;
+export default bodyParser;

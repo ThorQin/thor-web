@@ -4,7 +4,7 @@ import zlib from 'zlib';
 import stream from 'stream';
 import http from 'http';
 import { promises as fs } from 'fs';
-import { Application, BasicBodyParser } from './defs';
+import { Application, BasicBodyParser, Renderer, Session } from './types';
 
 async function* readFile(fd: fs.FileHandle, buffer: Buffer) {
 	let rd = await fd.read(buffer, 0, buffer.length);
@@ -42,6 +42,10 @@ type SendFileOption = {
 	gzip?: boolean;
 };
 
+interface PrivilegeHandler {
+	(action: string, resource: string, resourceId: string, account: string): void;
+}
+
 export default class Context {
 	req: http.IncomingMessage;
 	rsp: http.ServerResponse;
@@ -53,6 +57,9 @@ export default class Context {
 	params: URLSearchParams;
 	app?: Application;
 	body?: BasicBodyParser;
+	session?: Session;
+	checkPrivilege?: PrivilegeHandler;
+	render?: Renderer;
 
 	constructor(req: http.IncomingMessage, rsp: http.ServerResponse) {
 		this.req = req;
@@ -134,7 +141,7 @@ export default class Context {
 	 * @param value Cookie value
 	 * @param options Cookie options: HttpOnly, Exprie, Domain, Path
 	 */
-	setResponseCookie(name: string, value: string, options: { [key: string]: string }): this {
+	setResponseCookie(name: string, value: string, options: { [key: string]: string | number | null }): this {
 		this.removeResponseCookie(name);
 		const cookies = this.getResponseCookies();
 		let cookie = name + '=' + value;
@@ -383,7 +390,7 @@ export default class Context {
 	 * @param {number|string} code Default is 500
 	 * @param {string} message Default is 'Unexpected Server Error!'
 	 */
-	error(code = 500, message: string): Promise<void> {
+	error(code = 500, message?: string): Promise<void> {
 		if (typeof message === 'undefined' || message === null) {
 			if (typeof code === 'number') {
 				message = 'Unexpected server error!\n';

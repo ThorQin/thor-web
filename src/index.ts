@@ -1,6 +1,6 @@
 import http from 'http';
 import Context from './context';
-import { Middleware, Application, SecurityHandler, MiddlewareFactory } from './defs';
+import { Middleware, Application, SecurityHandler, MiddlewareFactory } from './types';
 import { session, staticServer, controller, bodyParser, security, template } from './middleware/index';
 
 async function processRequest(
@@ -86,65 +86,47 @@ class App implements Application {
 	/**
 	 * Instead use App constructor to create a server instance,
 	 * this function create a simple server instance that add most commonly used middlewares to the instance.
-	 * @typedef StartOptions
-	 * @prop {number} port
-	 * @prop {string} hostname
-	 * @prop {string} cookieName Session name
-	 * @prop {number} maxAge Session max age
-	 * @prop {string} domain Session cookie domain
-	 * @prop {string} serverKey
-	 * @prop {string[]} suffix Extra supported static file suffix
-	 * @prop {function} securityHandler Security handler function
-	 * @prop {object} env
-	 *
-	 * @param {StartOptions} options
-	 * @returns {App} App instance
+	 * @param options
+	 * @returns App instance
 	 */
-	static start(
-		options: StartOptions = {
-			port: 8080,
-			hostname: undefined,
-			cookieName: undefined,
-			serverKey: undefined,
-			maxAge: 1800,
-			domain: undefined,
-			suffix: undefined,
-			securityHandler: undefined,
-			env: {},
-		}
-	): App {
-		if (!options) {
-			options = {
-				port: 8080,
-			};
-		}
+	static start({
+		port = 8080,
+		hostname,
+		cookieName,
+		serverKey,
+		maxAge = 1800,
+		domain,
+		suffix,
+		securityHandler,
+		env = {},
+	}: StartOptions = {}): App {
 		const app = new App();
 		const middlewares = [
 			session.create({
-				serverKey: options.serverKey,
-				cookieName: options.cookieName,
-				maxAge: options.maxAge || 1800,
-				domain: options.domain,
+				serverKey: serverKey,
+				cookieName: cookieName,
+				maxAge: maxAge || 1800,
+				domain: domain,
 			}),
 			staticServer.create({
-				suffix: options.suffix,
+				suffix: suffix,
 			}),
 			bodyParser.create(),
 			template.create(),
 			controller.create(),
 		];
-		if (typeof options.securityHandler === 'function') {
-			middlewares.splice(1, 0, security.create(options.securityHandler));
+		if (typeof securityHandler === 'function') {
+			middlewares.splice(1, 0, security.create(securityHandler));
 		}
 		app.use(...middlewares);
-		if (options.env) {
-			for (const k in options.env) {
+		if (env) {
+			for (const k in env) {
 				if (!app[k]) {
-					app[k] = options.env[k];
+					app[k] = env[k];
 				}
 			}
 		}
-		app.start(options.port || 8080, options.hostname || undefined);
+		app.start(port || 8080, hostname || undefined);
 		return app;
 	}
 }

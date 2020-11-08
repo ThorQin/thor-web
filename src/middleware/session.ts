@@ -2,45 +2,32 @@ import uuidv1 from 'uuid/v1.js';
 import time from 'thor-time';
 import zlib from 'zlib';
 import crypto from 'crypto';
-import { Middleware, MiddlewareFactory, Session } from '../defs';
+import { Middleware, MiddlewareFactory, SaveOptions, Session } from '../types';
+import Context from '../context';
 
-function getTimeDef(str: string) {
-	let info;
-	const match = /^(\d+)([smhd])$/.exec(str);
-	if (match == null) {
-		info = {
-			value: 30,
-			unit: 'm',
-		};
-	} else {
-		info = {
-			value: parseInt(match[1]),
-			unit: match[2],
-		};
-	}
-	return info;
-}
-
-type Interval = {
+export type TimeCheck = {
 	value: number;
-	unit: string;
+	unit?: 'y' | 'M' | 'd' | 'h' | 'm' | 's' | 'ms';
+	action?: 'renew' | 'logout';
 };
 
-type SessionInfoOptions = {
-	serverKey: string;
-	renew: () => void;
-	validTime: number;
-	interval: Interval;
-};
-
-type SessionInfo = {
+export type SessionInfo = {
 	createTime: number;
-	validTime: number;
 	accessTime: number;
 	data: { [key: string]: unknown };
 };
 
-async function getSessionInfo(content: string, { serverKey, renew, validTime, interval }: SessionInfoOptions): Promise<SessionInfo | null> {
+type SessionInfoOptions = {
+	serverKey: Buffer;
+	renew?: (sessionInfo: SessionInfo) => Promise<boolean>;
+	expireCheck?: TimeCheck;
+	intervalCheck?: TimeCheck;
+};
+
+async function getSessionInfo(
+	content: string,
+	{ serverKey, renew, expireCheck, intervalCheck }: SessionInfoOptions
+): Promise<SessionInfo | null> {
 	try {
 		if (!content) {
 			return null;
@@ -57,21 +44,37 @@ async function getSessionInfo(content: string, { serverKey, renew, validTime, in
 			return null;
 		}
 		const now = time.now();
-		if (!sessionInfo.validTime || now.getTime() < sessionInfo.validTime) {
-			if (interval) {
-				if (now < time.add(sessionInfo.accessTime, interval.value, interval.unit)) {
-					return sessionInfo;
+		let needRenew = false;
+		if (expireCheck) {
+			const checkValidTime = (time.add(sessionInfo.createTime, expireCheck.value, expireCheck.unit) as Date).getTime();
+			if (now.getTime() >= checkValidTime) {
+				if (expireCheck.action === 'renew') {
+					needRenew = true;
 				} else {
 					return null;
 				}
-			} else {
-				return sessionInfo;
 			}
-		} else {
+		}
+
+		if (intervalCheck) {
+			const checkIntervalTime = (time.add(
+				sessionInfo.accessTime,
+				intervalCheck.value,
+				intervalCheck.unit
+			) as Date).getTime();
+			if (now.getTime() >= checkIntervalTime) {
+				if (intervalCheck.action === 'renew') {
+					needRenew = true;
+				} else {
+					return null;
+				}
+			}
+		}
+
+		if (needRenew) {
 			if (typeof renew === 'function') {
 				if (await renew(sessionInfo)) {
-					sessionInfo.validTime = validTime ? time.add(now, validTime.value, validTime.unit).getTime() : null;
-					return sessionInfo;
+					sessionInfo.createTime = now.getTime();
 				} else {
 					return null;
 				}
@@ -79,29 +82,59 @@ async function getSessionInfo(content: string, { serverKey, renew, validTime, in
 				return null;
 			}
 		}
+
+		sessionInfo.accessTime = now.getTime();
+		return sessionInfo;
 	} catch (e) {
 		return null;
 	}
 }
 
-/**
- *
- * @param {Context} ctx
- */
+export type SessionOptions = {
+	/**
+	 * Server key for AES128 encryption encoded by BASE64 (key = 16 bytes raw data -> base64)
+	 */
+	serverKey?: string;
+	cookieName?: string;
+	path?: string;
+	/**
+	 * value <= 0: delete cookie, value > 0: how long the cookie will be kept(in seconds)
+	 */
+	maxAge?: number;
+	renew?: (sessionInfo: unknown) => Promise<boolean>;
+	expireCheck?: TimeCheck;
+	intervalCheck?: TimeCheck;
+	domain?: string;
+	httpOnly?: boolean;
+	secure?: boolean;
+	sameSite?: 'None' | 'Lax' | 'Strict';
+};
+
+interface CreateSessionOptions {
+	serverKey: Buffer;
+	cookieName: string;
+	maxAge?: number;
+	domain?: string;
+	path?: string;
+	httpOnly?: boolean;
+	secure?: boolean;
+	sameSite?: 'None' | 'Lax' | 'Strict';
+	info?: SessionInfo | null;
+}
+
 function createSession(
-	ctx,
+	ctx: Context,
 	{
 		serverKey,
 		cookieName,
 		maxAge = -1,
-		validTime = null,
 		path = '/',
-		domain = null,
+		domain,
 		httpOnly = true,
 		info = null,
 		sameSite = 'Lax',
 		secure = false,
-	}
+	}: CreateSessionOptions
 ): Session {
 	let data = info ? info.data : {};
 	if (!(data instanceof Object)) {
@@ -111,27 +144,23 @@ function createSession(
 	const session = {
 		accessTime: new Date().getTime(),
 		createTime: createTime,
-		validTime: info
-			? info.validTime
-			: validTime
-				? time.add(createTime, validTime.value, validTime.unit).getTime()
-				: null,
-		get: function (key) {
+		get: function (key: string) {
 			return data[key];
 		},
-		set: function (key, value) {
-			if (key instanceof Object && typeof value === 'undefined') {
+		set: function (key: string | { [idx: string]: unknown }, value: unknown) {
+			if (key && key instanceof Object) {
 				for (const k in key) {
 					if (Object.prototype.hasOwnProperty.call(key, k)) {
 						data[k] = key[k];
 					}
 				}
-			} else {
+				this.save();
+			} else if (typeof key === 'string') {
 				data[key] = value;
+				this.save();
 			}
-			this.save();
 		},
-		remove: function (key) {
+		remove: function (key: string) {
 			delete data[key];
 			this.save();
 		},
@@ -141,19 +170,20 @@ function createSession(
 			}
 			this.save();
 		},
-		save: function (opt) {
+		save: function (opt?: SaveOptions | number) {
 			if (typeof opt === 'number') {
 				opt = {
 					maxAge: opt,
-				};
+				} as SaveOptions;
 			} else if (typeof opt !== 'object' || !opt) {
-				opt = {};
+				opt = {} as SaveOptions;
 			}
 			const token = this.toString();
-			const options = {};
+			const options: { [key: string]: string | number | null } = {};
 			options['Max-Age'] = typeof opt.maxAge === 'number' ? opt.maxAge : maxAge;
-			if (opt.domain || domain) {
-				options.Domain = opt.domain || domain;
+			const dm = opt.domain || domain;
+			if (dm) {
+				options.Domain = dm;
 			}
 			options.Path = opt.path || path;
 			if (typeof opt.httpOnly === 'boolean') {
@@ -174,7 +204,7 @@ function createSession(
 			ctx.setResponseCookie(cookieName, token, options);
 		},
 		delete: function () {
-			const options = {};
+			const options: { [key: string]: string | number | null } = {};
 			options['Max-Age'] = 0;
 			if (domain) {
 				options.Domain = domain;
@@ -189,22 +219,17 @@ function createSession(
 			options.SameSite = sameSite;
 			ctx.setResponseCookie(cookieName, '', options);
 		},
-		toString: function () {
-			try {
-				const d = JSON.parse(JSON.stringify(this));
-				d.data = data;
-				const s = JSON.stringify(d);
-				const zipData = zlib.gzipSync(Buffer.from(s, 'utf-8'));
-				const cipher = crypto.createCipheriv('aes-128-ecb', serverKey, '');
-				cipher.setAutoPadding(true);
-				const d1 = cipher.update(zipData);
-				const d2 = cipher.final();
-				const encData = Buffer.concat([d1, d2], d1.length + d2.length);
-				return encData.toString('base64');
-			} catch (e) {
-				console.log('Session toString() error: ', e.message || e + '', e.stack);
-				return null;
-			}
+		toString: function (): string {
+			const d = JSON.parse(JSON.stringify(this));
+			d.data = data;
+			const s = JSON.stringify(d);
+			const zipData = zlib.gzipSync(Buffer.from(s, 'utf-8'));
+			const cipher = crypto.createCipheriv('aes-128-ecb', serverKey, '');
+			cipher.setAutoPadding(true);
+			const d1 = cipher.update(zipData);
+			const d2 = cipher.final();
+			const encData = Buffer.concat([d1, d2], d1.length + d2.length);
+			return encData.toString('base64');
 		},
 	};
 
@@ -219,60 +244,43 @@ function createSession(
 	return session;
 }
 
-type SessionOptions = {
-	/**
-	 * Server key for AES128 encryption encoded by BASE64 (key = 16 bytes raw data -> base64)
-	 */
-	serverKey?: string;
-	cookieName?: string;
-	/**
-	 * value <= 0: delete cookie, value > 0: how long the cookie will be kept(in seconds)
-	 */
-	maxAge?: number;
-	renew?: (sessionInfo: any) => boolean;
-	validTime?: string;
-	interval?: string;
-	domain?: string;
-	httpOnly?: boolean;
-	secure?: boolean;
-	sameSite?: 'None' | 'Lax' | 'Strict';
-};
-
 class SessionFactory implements MiddlewareFactory {
 	create({
-		serverKey = generateKey(),
-		cookieName = 'ez_app',
+		serverKey = this.generateKey(),
+		cookieName = 'app_token',
 		maxAge = 1800,
-		validTime,
+		expireCheck,
 		renew,
-		interval = '15d',
+		intervalCheck = {
+			value: 30,
+			unit: 'm',
+			action: 'logout',
+		},
 		domain,
 		httpOnly = true,
 		secure = false,
 		sameSite = 'Lax',
 	}: SessionOptions = {}): Middleware {
-		const key = Buffer.from(serverKey || generateKey(), 'base64');
-		const _expire = validTime ? getTimeDef(validTime) : null;
-		const _interval = interval ? getTimeDef(interval) : null;
+		const key = Buffer.from(serverKey, 'base64');
 
-		return async function (ctx, req) {
-			req.cookies = ctx.getRequestCookies(req);
-			const content = req.cookies && req.cookies[cookieName];
-			const sessionInfo =
-				content &&
-				(await getSessionInfo(content, {
+		return async function (ctx) {
+			const cookies = ctx.getRequestCookies();
+			const content = cookies && cookies[cookieName];
+			let sessionInfo;
+			if (content) {
+				sessionInfo = await getSessionInfo(content, {
 					serverKey: key,
 					renew: renew,
-					validTime: _expire,
-					interval: _interval,
-				}));
+					expireCheck: expireCheck,
+					intervalCheck: intervalCheck,
+				});
+			}
 
 			ctx.session = createSession(ctx, {
 				info: sessionInfo,
 				serverKey: key,
 				cookieName: cookieName,
 				maxAge: maxAge,
-				validTime: _expire,
 				domain: domain,
 				httpOnly: httpOnly,
 				secure: secure,

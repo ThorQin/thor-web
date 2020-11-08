@@ -1,20 +1,7 @@
-import { Middleware } from '../defs';
-export declare class SecurityError extends Error {
+import { Middleware, MiddlewareFactory, SecurityHandler } from '../types';
+export declare class SecurityError extends Error {}
+declare class SecurityFactory implements MiddlewareFactory {
+	create(securityHandler: SecurityHandler): Middleware;
 }
-/**
- * @typedef {import('../context').default} Context
- */
-/**
- * Create security handler middleware
- * @param {(param: {
- *  ctx:Context,
- * 	resource:string,
- *	resourceId:string?,
- *	action:string}) => boolean|object|string} securityHandler
- * @returns {(ctx:Context, req, rsp) => boolean}
- */
-declare function create(securityHandler: any): Middleware;
-declare const _default: {
-    create: typeof create;
-};
-export default _default;
+declare const securityFactory: SecurityFactory;
+export default securityFactory;

@@ -3,7 +3,7 @@ import iconv from 'iconv-lite';
 import uuidv1 from 'uuid/v1.js';
 import fs from 'fs';
 import { Schema, ValidationError } from 'thor-validation';
-import { BasicBodyParser, MiddlewareFactory, PartInfo } from '../defs';
+import { BasicBodyParser, MiddlewareFactory, PartInfo } from '../types';
 import Context from '../context';
 import http from 'http';
 
@@ -575,9 +575,7 @@ function createParser(req: http.IncomingMessage): BodyParser {
 
 /**
  * Create body-parser middleware.
- * @returns {(ctx: Context, req, rsp) => boolean}
  */
-
 class BodyParserFactory implements MiddlewareFactory {
 	create() {
 		return async function (ctx: Context, req: http.IncomingMessage) {
@@ -588,5 +586,4 @@ class BodyParserFactory implements MiddlewareFactory {
 }
 
 const bodyParser = new BodyParserFactory();
-
 export default bodyParser;

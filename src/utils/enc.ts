@@ -7,7 +7,7 @@ import crypto from 'crypto';
  * @param value Any data will be enc
  * @returns Encrypted data encoding with base64.
  */
-function encrypt(key: string, value: any): string {
+function encrypt(key: string, value: unknown): string {
 	const serverKey = Buffer.from(key, 'base64');
 	const s = JSON.stringify(value);
 	const zipData = zlib.gzipSync(Buffer.from(s, 'utf-8'));
@@ -25,7 +25,7 @@ function encrypt(key: string, value: any): string {
  * @param base64data Encrypted base64 string
  * @returns Decrypted data
  */
-function decrypt(key: string, base64data: string): any {
+function decrypt(key: string, base64data: string): unknown {
 	const serverKey = Buffer.from(key, 'base64');
 	const encData = Buffer.from(base64data, 'base64');
 	const decipher = crypto.createDecipheriv('aes-128-ecb', serverKey, '');

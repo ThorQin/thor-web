@@ -1,59 +1,14 @@
-import { Middleware } from '../defs';
+import { Middleware, MiddlewareFactory, SecurityCheckResult, SecurityHandler } from '../types';
+import Context from '../context';
 
 export class SecurityError extends Error {}
 
-/**
- * @typedef {import('../context').default} Context
- */
-/**
- * Create security handler middleware
- * @param {(param: {
- *  ctx:Context,
- * 	resource:string,
- *	resourceId:string?,
- *	action:string}) => boolean|object|string} securityHandler
- * @returns {(ctx:Context, req, rsp) => boolean}
- */
-function create(securityHandler): Middleware {
-	return async function (ctx) {
-		if (typeof securityHandler === 'function') {
-			ctx.checkPrivilege = function (action, resource, resourceId, account) {
-				let result = securityHandler({
-					ctx: ctx,
-					resource: resource,
-					resourceId: resourceId,
-					action: action,
-					account: account,
-				});
-				if (result !== true && result != 'allow') {
-					throw new SecurityError(`Access denied for ${action} ${resource}`);
-				}
-			};
-			let result = securityHandler({
-				ctx: ctx,
-				resource: 'access',
-				resourceId: ctx.path,
-				action: ctx.method,
-			});
-			return await isCompleted(ctx, result);
-		} else {
-			return false;
-		}
-	};
-}
-
-/**
- *
- * @param {Context} ctx
- * @param {boolean|object|string} result
- * @returns {boolean}
- */
-async function isCompleted(ctx, result) {
+async function isCompleted(ctx: Context, result: SecurityCheckResult): Promise<boolean> {
 	if (typeof result === 'object' && result) {
-		let headers = {};
+		const headers: { [key: string]: string } = {};
 		Object.keys(result)
-			.filter((k) => k != 'code' && k != 'body')
-			.forEach((k) => {
+			.filter((k: string) => k != 'code' && k != 'body')
+			.forEach((k: string) => {
 				headers[k.toLowerCase()] = result[k];
 			});
 		let code = 403;
@@ -61,9 +16,15 @@ async function isCompleted(ctx, result) {
 			code = result.code;
 		}
 		let body = null;
-		if (typeof result.body === 'object') {
+		if (!result.contentType || result.contentType === 'json') {
 			body = JSON.stringify(result.body);
 			headers['content-type'] = 'application/json; charset=utf-8';
+		} else if (result.contentType === 'text') {
+			headers['content-type'] = 'text/plain; charset=utf-8';
+			body = result.body + '';
+		} else if (result.contentType === 'html') {
+			headers['content-type'] = 'text/html; charset=utf-8';
+			body = result.body + '';
 		}
 		ctx.writeHead(code, headers);
 		await ctx.end(body);
@@ -95,6 +56,35 @@ async function isCompleted(ctx, result) {
 	}
 }
 
-export default {
-	create,
-};
+class SecurityFactory implements MiddlewareFactory {
+	create(securityHandler: SecurityHandler): Middleware {
+		return async function (ctx) {
+			if (typeof securityHandler === 'function') {
+				ctx.checkPrivilege = async function (action, resource, resourceId, account) {
+					const result = await securityHandler({
+						ctx: ctx,
+						resource: resource,
+						resourceId: resourceId,
+						action: action,
+						account: account,
+					});
+					if (result !== true && result != 'allow') {
+						throw new SecurityError(`Permission denied: ${action} ${resource}(${resourceId}) by ${account}`);
+					}
+				};
+				const result = await securityHandler({
+					ctx: ctx,
+					resource: 'access',
+					resourceId: ctx.path,
+					action: ctx.method,
+				});
+				return await isCompleted(ctx, result);
+			} else {
+				return false;
+			}
+		};
+	}
+}
+
+const securityFactory = new SecurityFactory();
+export default securityFactory;
