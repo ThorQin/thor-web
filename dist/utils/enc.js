@@ -1,5 +1,12 @@
-import zlib from 'zlib';
-import crypto from 'crypto';
+'use strict';
+var __importDefault =
+	(this && this.__importDefault) ||
+	function (mod) {
+		return mod && mod.__esModule ? mod : { default: mod };
+	};
+Object.defineProperty(exports, '__esModule', { value: true });
+const zlib_1 = __importDefault(require('zlib'));
+const crypto_1 = __importDefault(require('crypto'));
 /**
  * Encrypt data
  * @param key Base64 format server key
@@ -9,8 +16,8 @@ import crypto from 'crypto';
 function encrypt(key, value) {
 	const serverKey = Buffer.from(key, 'base64');
 	const s = JSON.stringify(value);
-	const zipData = zlib.gzipSync(Buffer.from(s, 'utf-8'));
-	const cipher = crypto.createCipheriv('aes-128-ecb', serverKey, '');
+	const zipData = zlib_1.default.gzipSync(Buffer.from(s, 'utf-8'));
+	const cipher = crypto_1.default.createCipheriv('aes-128-ecb', serverKey, '');
 	cipher.setAutoPadding(true);
 	const d1 = cipher.update(zipData);
 	const d2 = cipher.final();
@@ -26,15 +33,16 @@ function encrypt(key, value) {
 function decrypt(key, base64data) {
 	const serverKey = Buffer.from(key, 'base64');
 	const encData = Buffer.from(base64data, 'base64');
-	const decipher = crypto.createDecipheriv('aes-128-ecb', serverKey, '');
+	const decipher = crypto_1.default.createDecipheriv('aes-128-ecb', serverKey, '');
 	decipher.setAutoPadding(true);
 	const d1 = decipher.update(encData);
 	const d2 = decipher.final();
 	const zipData = Buffer.concat([d1, d2], d1.length + d2.length);
-	const rawData = zlib.gunzipSync(zipData).toString('utf8');
+	const rawData = zlib_1.default.gunzipSync(zipData).toString('utf8');
 	return JSON.parse(rawData);
 }
-export default {
+exports.default = {
 	encrypt,
 	decrypt,
 };
+//# sourceMappingURL=enc.js.map

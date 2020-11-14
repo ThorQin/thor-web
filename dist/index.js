@@ -1,13 +1,21 @@
-import http from 'http';
-import Context from './context';
-import { session, staticServer, controller, bodyParser, security, template } from './middleware/index';
+'use strict';
+var __importDefault =
+	(this && this.__importDefault) ||
+	function (mod) {
+		return mod && mod.__esModule ? mod : { default: mod };
+	};
+Object.defineProperty(exports, '__esModule', { value: true });
+exports.enc = exports.middlewares = void 0;
+const http_1 = __importDefault(require('http'));
+const context_1 = __importDefault(require('./context'));
+const index_1 = require('./middleware/index');
 async function processRequest(app, req, rsp, middlewares) {
 	async function* exec(ctx, req, rsp) {
 		for (const m of middlewares) {
 			yield m(ctx, req, rsp);
 		}
 	}
-	const ctx = new Context(req, rsp);
+	const ctx = new context_1.default(req, rsp);
 	ctx.app = app;
 	try {
 		for await (const result of exec(ctx, req, rsp)) {
@@ -41,7 +49,7 @@ class App {
 		return this;
 	}
 	start(port = 8080, hostname) {
-		this.server = http
+		this.server = http_1.default
 			.createServer((req, rsp) => {
 				try {
 					processRequest(this, req, rsp, this.middlewares);
@@ -73,24 +81,36 @@ class App {
 		suffix,
 		securityHandler,
 		env = {},
+		staticDir,
+		staticPath,
+		templateDir,
+		controllerDir,
+		controllerPath,
 	} = {}) {
 		const app = new App();
 		const middlewares = [
-			session.create({
+			index_1.session.create({
 				serverKey: serverKey,
 				cookieName: cookieName,
 				maxAge: maxAge || 1800,
 				domain: domain,
 			}),
-			staticServer.create({
+			index_1.staticServer.create({
 				suffix: suffix,
+				baseDir: staticDir,
+				rootPath: staticPath,
 			}),
-			bodyParser.create(),
-			template.create(),
-			controller.create(),
+			index_1.bodyParser.create(),
+			index_1.template.create({
+				baseDir: templateDir,
+			}),
+			index_1.controller.create({
+				baseDir: controllerDir,
+				rootPath: controllerPath,
+			}),
 		];
 		if (typeof securityHandler === 'function') {
-			middlewares.splice(1, 0, security.create(securityHandler));
+			middlewares.splice(1, 0, index_1.security.create(securityHandler));
 		}
 		app.use(...middlewares);
 		if (env) {
@@ -104,14 +124,15 @@ class App {
 		return app;
 	}
 }
-import enc from './utils/enc.js';
-export const middlewares = {
-	session,
-	staticServer,
-	controller,
-	bodyParser,
-	security,
-	template,
+const enc_js_1 = __importDefault(require('./utils/enc.js'));
+exports.enc = enc_js_1.default;
+exports.middlewares = {
+	session: index_1.session,
+	staticServer: index_1.staticServer,
+	controller: index_1.controller,
+	bodyParser: index_1.bodyParser,
+	security: index_1.security,
+	template: index_1.template,
 };
-export { enc };
-export default App;
+exports.default = App;
+//# sourceMappingURL=index.js.map

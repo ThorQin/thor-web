@@ -1,4 +1,8 @@
-export class SecurityError extends Error {}
+'use strict';
+Object.defineProperty(exports, '__esModule', { value: true });
+exports.SecurityError = void 0;
+class SecurityError extends Error {}
+exports.SecurityError = SecurityError;
 async function isCompleted(ctx, result) {
 	if (typeof result === 'object' && result) {
 		const headers = {};
@@ -53,32 +57,32 @@ async function isCompleted(ctx, result) {
 }
 class SecurityFactory {
 	create(securityHandler) {
+		if (typeof securityHandler !== 'function') {
+			throw new Error('Error: SecurityFactory::create(): Must provide security handler function as parameter');
+		}
 		return async function (ctx) {
-			if (typeof securityHandler === 'function') {
-				ctx.checkPrivilege = async function (action, resource, resourceId, account) {
-					const result = await securityHandler({
-						ctx: ctx,
-						resource: resource,
-						resourceId: resourceId,
-						action: action,
-						account: account,
-					});
-					if (result !== true && result != 'allow') {
-						throw new SecurityError(`Permission denied: ${action} ${resource}(${resourceId}) by ${account}`);
-					}
-				};
+			ctx.checkPrivilege = async function (action, resource, resourceId, account) {
 				const result = await securityHandler({
 					ctx: ctx,
-					resource: 'access',
-					resourceId: ctx.path,
-					action: ctx.method,
+					resource: resource,
+					resourceId: resourceId,
+					action: action,
+					account: account,
 				});
-				return await isCompleted(ctx, result);
-			} else {
-				return false;
-			}
+				if (result !== true && result != 'allow') {
+					throw new SecurityError(`Permission denied: ${action} ${resource}(${resourceId}) by ${account}`);
+				}
+			};
+			const result = await securityHandler({
+				ctx: ctx,
+				resource: 'access',
+				resourceId: ctx.path,
+				action: ctx.method,
+			});
+			return await isCompleted(ctx, result);
 		};
 	}
 }
 const securityFactory = new SecurityFactory();
-export default securityFactory;
+exports.default = securityFactory;
+//# sourceMappingURL=security.js.map

@@ -1,7 +1,14 @@
-import path from 'path';
-import mime from 'mime';
-import zlib from 'zlib';
-import { promises as fs } from 'fs';
+'use strict';
+var __importDefault =
+	(this && this.__importDefault) ||
+	function (mod) {
+		return mod && mod.__esModule ? mod : { default: mod };
+	};
+Object.defineProperty(exports, '__esModule', { value: true });
+const path_1 = __importDefault(require('path'));
+const mime_1 = __importDefault(require('mime'));
+const zlib_1 = __importDefault(require('zlib'));
+const fs_1 = require('fs');
 async function* readFile(fd, buffer) {
 	let rd = await fd.read(buffer, 0, buffer.length);
 	while (rd.bytesRead > 0) {
@@ -26,7 +33,7 @@ function flushStream(stream) {
 		});
 	});
 }
-export default class Context {
+class Context {
 	constructor(req, rsp) {
 		this.req = req;
 		this.rsp = rsp;
@@ -178,10 +185,10 @@ export default class Context {
 			options.statusCode = 200;
 		}
 		if (!options.filename) {
-			options.filename = path.basename(file);
+			options.filename = path_1.default.basename(file);
 		}
 		if (!/^[^/]+\/[^/]+$/.test(options.contentType || '')) {
-			const ct = mime.getType(options.filename);
+			const ct = mime_1.default.getType(options.filename);
 			options.contentType = ct || 'application/octet-stream';
 		}
 		const headers = options.headers || {};
@@ -197,14 +204,14 @@ export default class Context {
 		} else {
 			hs['Content-Disposition'] = "attachment; filename*=utf-8''" + encodeURIComponent(options.filename);
 		}
-		const fd = await fs.open(file, 'r');
+		const fd = await fs_1.promises.open(file, 'r');
 		try {
 			const buffer = Buffer.alloc(4096);
 			if (options.gzip) {
 				hs['Content-Encoding'] = 'gzip';
 				hs['Transfer-Encoding'] = 'chunked';
 				this.rsp.writeHead(options.statusCode, hs);
-				const zstream = zlib.createGzip();
+				const zstream = zlib_1.default.createGzip();
 				zstream.pipe(this.rsp);
 				for await (const rd of readFile(fd, buffer)) {
 					// totalSize += rd.bytesRead;
@@ -366,3 +373,5 @@ export default class Context {
 		this.req.connection.destroy(error);
 	}
 }
+exports.default = Context;
+//# sourceMappingURL=context.js.map

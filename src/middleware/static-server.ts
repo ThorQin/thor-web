@@ -1,10 +1,10 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import tools, { FileStat } from '../utils/tools.js';
+import tools, { FileStat } from '../utils/tools';
 import time from 'thor-time';
 import mime from 'mime';
 import zlib from 'zlib';
-import { Middleware, MiddlewareFactory } from '../types.js';
+import { Middleware, MiddlewareFactory } from '../types';
 
 export function defaultSuffix(): string[] {
 	const suffix = [
@@ -129,8 +129,11 @@ class StaticFactory implements MiddlewareFactory {
 		if (!rootPath) {
 			rootPath = '/';
 		}
+		if (!rootPath.startsWith('/')) {
+			rootPath = `/${rootPath}`;
+		}
 		if (!rootPath.endsWith('/')) {
-			rootPath += '/';
+			rootPath = `${rootPath}/`;
 		}
 
 		if (!baseDir) {

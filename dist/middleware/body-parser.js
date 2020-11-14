@@ -1,8 +1,15 @@
-import qs from 'querystring';
-import iconv from 'iconv-lite';
-import uuidv1 from 'uuid/v1.js';
-import fs from 'fs';
-import { ValidationError } from 'thor-validation';
+'use strict';
+var __importDefault =
+	(this && this.__importDefault) ||
+	function (mod) {
+		return mod && mod.__esModule ? mod : { default: mod };
+	};
+Object.defineProperty(exports, '__esModule', { value: true });
+const querystring_1 = __importDefault(require('querystring'));
+const iconv_lite_1 = __importDefault(require('iconv-lite'));
+const v1_1 = __importDefault(require('uuid/v1'));
+const fs_1 = __importDefault(require('fs'));
+const thor_validation_1 = require('thor-validation');
 const STATE_BEGIN = 0;
 const STATE_HEADER = 1;
 const STATE_CONTENT = 2;
@@ -34,7 +41,7 @@ function decodeURIComponentGB(str) {
 		}
 	}
 	// return gb2utf8.convert(buffer.slice(0, len)).toString('utf-8');
-	return iconv.decode(buffer.slice(0, len), 'gb18030');
+	return iconv_lite_1.default.decode(buffer.slice(0, len), 'gb18030');
 }
 function parseHeaderLine(headers, line) {
 	const arr = /^([^:]+)\s*:\s*([^;]+)(?:;(.+))?$/.exec(line);
@@ -101,14 +108,14 @@ function paserHeaders(lines) {
 	return headers;
 }
 function generateFile(storeDir) {
-	const id = uuidv1().replace(/-/g, '');
+	const id = v1_1.default().replace(/-/g, '');
 	const path =
 		storeDir +
 		id.substring(0, 6).replace(/.{3}/g, function (v) {
 			return v + '/';
 		});
 	return new Promise((resolve, reject) => {
-		fs.mkdir(
+		fs_1.default.mkdir(
 			path,
 			{
 				recursive: true,
@@ -211,7 +218,7 @@ class Parser {
 							}
 							return new Promise(function (resolve, reject) {
 								if (partInfo && partInfo.file) {
-									fs.open(partInfo.file, 'a', function (err, fd) {
+									fs_1.default.open(partInfo.file, 'a', function (err, fd) {
 										if (err) {
 											reject(err);
 											return;
@@ -269,14 +276,14 @@ class Parser {
 						reject(invalidStateError());
 						return;
 					}
-					fs.write(partInfo.fd, writeBuffer, function (err) {
+					fs_1.default.write(partInfo.fd, writeBuffer, function (err) {
 						if (!partInfo || !partInfo.fd) {
 							reject(invalidStateError());
 							return;
 						}
 						if (err) {
 							if (partInfo && partInfo.fd) {
-								fs.close(partInfo.fd, () => {
+								fs_1.default.close(partInfo.fd, () => {
 									// do nothing
 								});
 							}
@@ -288,7 +295,7 @@ class Parser {
 							reject('Exceed content size limitation!');
 						} else if (partInfo.over) {
 							delete partInfo.over;
-							fs.close(partInfo.fd, function (err) {
+							fs_1.default.close(partInfo.fd, function (err) {
 								if (partInfo) {
 									delete partInfo.fd;
 								} else {
@@ -416,21 +423,27 @@ function createParser(req) {
 		text: function () {
 			const charset = this.getCharset();
 			return this.raw().then(function (buffer) {
-				return buffer.toString(charset);
+				return iconv_lite_1.default.decode(buffer, charset, {
+					stripBOM: true,
+					defaultEncoding: 'utf-8',
+				});
 			});
 		},
 		json: async function (schema) {
 			if (!this.isJSON()) {
-				throw new ValidationError('Not a valid JSON data.');
+				throw new thor_validation_1.ValidationError('Not a valid JSON data.');
 			}
 			const charset = this.getCharset();
 			const buffer = await this.raw();
 			let val;
 			try {
-				const jsonStr = buffer.toString(charset);
+				const jsonStr = iconv_lite_1.default.decode(buffer, charset, {
+					stripBOM: true,
+					defaultEncoding: 'utf-8',
+				});
 				val = JSON.parse(jsonStr);
 			} catch (e) {
-				throw new ValidationError(`Not a valid JSON data: ${e.message}`);
+				throw new thor_validation_1.ValidationError(`Not a valid JSON data: ${e.message}`);
 			}
 			if (schema instanceof Object && typeof schema.validate === 'function') {
 				schema.validate(val);
@@ -443,7 +456,12 @@ function createParser(req) {
 			}
 			const charset = this.getCharset();
 			return this.raw().then(function (buffer) {
-				return qs.parse(buffer.toString(charset));
+				return querystring_1.default.parse(
+					iconv_lite_1.default.decode(buffer, charset, {
+						stripBOM: true,
+						defaultEncoding: 'utf-8',
+					})
+				);
 			});
 		},
 		multipart: function (storeDir = null, maxLength = 1024 * 1024 * 10) {
@@ -526,4 +544,5 @@ class BodyParserFactory {
 	}
 }
 const bodyParser = new BodyParserFactory();
-export default bodyParser;
+exports.default = bodyParser;
+//# sourceMappingURL=body-parser.js.map

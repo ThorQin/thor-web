@@ -13,6 +13,11 @@ declare type StartOptions = {
 	env?: {
 		[key: string]: unknown;
 	};
+	staticDir?: string;
+	staticPath?: string;
+	templateDir?: string;
+	controllerDir?: string;
+	controllerPath?: string;
 };
 declare class App implements Application {
 	middlewares: Middleware[];
@@ -42,6 +47,11 @@ declare class App implements Application {
 		suffix,
 		securityHandler,
 		env,
+		staticDir,
+		staticPath,
+		templateDir,
+		controllerDir,
+		controllerPath,
 	}?: StartOptions): App;
 }
 import enc from './utils/enc.js';

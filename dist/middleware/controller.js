@@ -1,8 +1,51 @@
-import path from 'path';
-import tools from '../utils/tools.js';
-import url from 'url';
-import { ValidationError } from 'thor-validation';
-import { SecurityError } from './security.js';
+'use strict';
+var __createBinding =
+	(this && this.__createBinding) ||
+	(Object.create
+		? function (o, m, k, k2) {
+				if (k2 === undefined) k2 = k;
+				Object.defineProperty(o, k2, {
+					enumerable: true,
+					get: function () {
+						return m[k];
+					},
+				});
+		  }
+		: function (o, m, k, k2) {
+				if (k2 === undefined) k2 = k;
+				o[k2] = m[k];
+		  });
+var __setModuleDefault =
+	(this && this.__setModuleDefault) ||
+	(Object.create
+		? function (o, v) {
+				Object.defineProperty(o, 'default', { enumerable: true, value: v });
+		  }
+		: function (o, v) {
+				o['default'] = v;
+		  });
+var __importStar =
+	(this && this.__importStar) ||
+	function (mod) {
+		if (mod && mod.__esModule) return mod;
+		var result = {};
+		if (mod != null)
+			for (var k in mod)
+				if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+		__setModuleDefault(result, mod);
+		return result;
+	};
+var __importDefault =
+	(this && this.__importDefault) ||
+	function (mod) {
+		return mod && mod.__esModule ? mod : { default: mod };
+	};
+Object.defineProperty(exports, '__esModule', { value: true });
+const path_1 = __importDefault(require('path'));
+const tools_1 = __importDefault(require('../utils/tools'));
+// import url from 'url';
+const thor_validation_1 = require('thor-validation');
+const security_1 = require('./security');
 const API = {};
 function loadScript(baseDir, api) {
 	let p = API[api];
@@ -10,13 +53,18 @@ function loadScript(baseDir, api) {
 		return p;
 	}
 	p = new Promise((resolve) => {
-		const file = baseDir + (api.endsWith('/') ? api + 'index' : api) + '.mjs';
-		tools
-			.fileStat(file)
+		const modulePath = baseDir + (api.endsWith('/') ? api + 'index' : api);
+		const jsFile = modulePath + '.js';
+		// const mjsFile = modulePath + '.mjs';
+		tools_1.default
+			.fileStat(jsFile)
 			.then((stat) => {
 				if (stat.isFile) {
-					const fileUrl = url.pathToFileURL(file);
-					import(fileUrl.toString())
+					// const fileUrl = url.pathToFileURL(modulePath);
+					// console.log(fileUrl.toString());
+					// import(fileUrl.toString())
+					Promise.resolve()
+						.then(() => __importStar(require(modulePath)))
 						.then((fn) => {
 							if (fn && (typeof fn === 'function' || typeof fn === 'object')) {
 								return resolve(fn);
@@ -38,7 +86,9 @@ function loadScript(baseDir, api) {
 				resolve(null);
 			});
 	});
-	API[api] = p;
+	if (process.env.NODE_ENV !== 'development') {
+		API[api] = p;
+	}
 	return p;
 }
 class ControllerFactory {
@@ -46,11 +96,16 @@ class ControllerFactory {
 		if (!rootPath) {
 			rootPath = '/';
 		}
+		if (!rootPath.startsWith('/')) {
+			rootPath = `/${rootPath}`;
+		}
 		if (!rootPath.endsWith('/')) {
-			rootPath += '/';
+			rootPath = `${rootPath}/`;
 		}
 		if (!baseDir) {
-			baseDir = path.resolve(tools.getRootDir(), 'controllers');
+			baseDir = path_1.default.resolve(tools_1.default.getRootDir(), 'controllers');
+		} else {
+			baseDir = path_1.default.resolve(baseDir);
 		}
 		if (baseDir.endsWith('/')) {
 			baseDir = baseDir.substring(0, baseDir.length - 1);
@@ -81,9 +136,9 @@ class ControllerFactory {
 								if (e && e.message === 'ERR_HTTP_HEADERS_SENT') {
 									await ctx.end();
 								} else {
-									if (e && e.constructor && e.constructor.name === ValidationError.name) {
+									if (e && e.constructor && e.constructor.name === thor_validation_1.ValidationError.name) {
 										await ctx.errorBadRequest(e.message);
-									} else if (e && e.constructor && e.constructor.name === SecurityError.name) {
+									} else if (e && e.constructor && e.constructor.name === security_1.SecurityError.name) {
 										await ctx.error(403, e.message);
 									} else if (process.env.NODE_ENV == 'prodction') {
 										await ctx.error();
@@ -97,6 +152,7 @@ class ControllerFactory {
 				} else {
 					await ctx.errorBadMethod();
 				}
+				console.log(`> Execute handler: ${ctx.path} -> ${page}`);
 				return true;
 			} else {
 				return false;
@@ -105,4 +161,5 @@ class ControllerFactory {
 	}
 }
 const controllerFactory = new ControllerFactory();
-export default controllerFactory;
+exports.default = controllerFactory;
+//# sourceMappingURL=controller.js.map

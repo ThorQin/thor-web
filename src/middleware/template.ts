@@ -1,11 +1,8 @@
-/**
- * @typedef {import('../context').default} Context
- */
 import { promises as fs } from 'fs';
 import path from 'path';
-import tools from '../utils/tools.js';
+import tools from '../utils/tools';
 import { renderAsync, compile, CompiledFunction } from 'thor-tpl';
-import { Middleware, MiddlewareFactory } from '../types.js';
+import { Middleware, MiddlewareFactory } from '../types';
 
 export type TemplateOptions = {
 	/**

@@ -1,4 +1,5 @@
 import http from 'http';
+import { Schema } from 'thor-validation';
 import Context from './context';
 
 export type Middleware = {
@@ -37,6 +38,10 @@ export interface SecurityHandler {
 	(param: SecurityHandlerParam): Promise<SecurityCheckResult>;
 }
 
+export interface PrivilegeHandler {
+	(action: string, resource: string, resourceId: string, account: string): void;
+}
+
 export interface PartInfo {
 	length: number;
 	name: string | null;
@@ -57,7 +62,7 @@ export interface BasicBodyParser {
 	getMultipartBoundary: () => string | null;
 	raw: () => Promise<Buffer>;
 	text: () => Promise<string>;
-	json: () => Promise<unknown>;
+	json: (schema?: Schema) => Promise<unknown>;
 	form: () => Promise<NodeJS.Dict<string | string[]>>;
 	multipart: (storeDir?: string | null, maxLength?: number) => Promise<PartInfo[]>;
 }
@@ -88,5 +93,27 @@ export interface Controller {
 }
 
 export interface Renderer {
-	(file: string, data: unknown, returnText: boolean): Promise<string | void>;
+	(file: string, data: unknown, returnText?: boolean): Promise<string | void>;
 }
+
+export interface RenderContext extends Context {
+	render: Renderer;
+}
+
+export interface SessionContext extends Context {
+	session: Session;
+}
+
+export interface BodyContext extends Context {
+	body: BasicBodyParser;
+}
+
+export interface AppContext extends Context {
+	app: Application;
+}
+
+export interface PrivilegeContext extends Context {
+	checkPrivilege: PrivilegeHandler;
+}
+
+export type DefaultContext = RenderContext & SessionContext & BodyContext & AppContext & PrivilegeContext;

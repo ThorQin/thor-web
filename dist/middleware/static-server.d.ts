@@ -1,4 +1,4 @@
-import { Middleware, MiddlewareFactory } from '../types.js';
+import { Middleware, MiddlewareFactory } from '../types';
 export declare function defaultSuffix(): string[];
 export declare type StaticOptions = {
 	/**

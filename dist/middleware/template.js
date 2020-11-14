@@ -1,24 +1,28 @@
-/**
- * @typedef {import('../context').default} Context
- */
-import { promises as fs } from 'fs';
-import path from 'path';
-import tools from '../utils/tools.js';
-import { renderAsync, compile } from 'thor-tpl';
+'use strict';
+var __importDefault =
+	(this && this.__importDefault) ||
+	function (mod) {
+		return mod && mod.__esModule ? mod : { default: mod };
+	};
+Object.defineProperty(exports, '__esModule', { value: true });
+const fs_1 = require('fs');
+const path_1 = __importDefault(require('path'));
+const tools_1 = __importDefault(require('../utils/tools'));
+const thor_tpl_1 = require('thor-tpl');
 class TemplateFactory {
 	create({ baseDir, isDebug = false } = {}) {
 		const cache = {};
 		if (!baseDir) {
-			baseDir = path.resolve(tools.getRootDir(), 'templates');
+			baseDir = path_1.default.resolve(tools_1.default.getRootDir(), 'templates');
 		}
 		async function renderFile(file, data) {
 			if (typeof file !== 'string') {
 				throw new Error('Invalid parameter: need input file path!');
 			}
-			file = path.join(baseDir, file);
-			const dir = path.dirname(file);
-			const basename = path.basename(file);
-			const jsFile = path.join(dir, basename) + '.js';
+			file = path_1.default.join(baseDir, file);
+			const dir = path_1.default.dirname(file);
+			const basename = path_1.default.basename(file);
+			const jsFile = path_1.default.join(dir, basename) + '.js';
 			const options = {
 				fn: {
 					include: async (file, data) => {
@@ -26,7 +30,7 @@ class TemplateFactory {
 						if (file.startsWith('/')) {
 							return await renderFile(file, data);
 						} else {
-							file = path.join(dir, file);
+							file = path_1.default.join(dir, file);
 							return await renderFile(file, data);
 						}
 					},
@@ -39,15 +43,16 @@ class TemplateFactory {
 			};
 			let fnPromise = cache[file];
 			if (fnPromise) {
-				return await renderAsync(await fnPromise, data, options);
+				return await thor_tpl_1.renderAsync(await fnPromise, data, options);
 			} else {
 				if (process.env.NODE_ENV !== 'development') {
 					console.log('compile template: ', file);
 					fnPromise = new Promise((resolve, reject) => {
-						fs.readFile(file, 'utf8')
+						fs_1.promises
+							.readFile(file, 'utf8')
 							.then((content) => {
 								try {
-									const fn = compile(content, options);
+									const fn = thor_tpl_1.compile(content, options);
 									resolve(fn);
 								} catch (e) {
 									reject(e.message || e);
@@ -58,16 +63,16 @@ class TemplateFactory {
 							});
 					});
 					cache[file] = fnPromise;
-					return await renderAsync(await fnPromise, data, options);
+					return await thor_tpl_1.renderAsync(await fnPromise, data, options);
 				} else {
-					const content = await fs.readFile(file, 'utf8');
-					return await renderAsync(content, data, options);
+					const content = await fs_1.promises.readFile(file, 'utf8');
+					return await thor_tpl_1.renderAsync(content, data, options);
 				}
 			}
 		}
 		return async function (ctx) {
 			ctx.render = async function (file, data, returnText = false) {
-				if (!(await tools.isFile(path.join(baseDir, file)))) {
+				if (!(await tools_1.default.isFile(path_1.default.join(baseDir, file)))) {
 					if (returnText) {
 						throw new Error(`Template file not found! ${file}`);
 					} else {
@@ -87,4 +92,5 @@ class TemplateFactory {
 	}
 }
 const templateFactory = new TemplateFactory();
-export default templateFactory;
+exports.default = templateFactory;
+//# sourceMappingURL=template.js.map

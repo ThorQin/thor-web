@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import http from 'http';
-import { Application, BasicBodyParser, Renderer, Session } from './types';
+import { Application, BasicBodyParser, PrivilegeHandler, Renderer, Session } from './types';
 declare type SendFileOption = {
 	statusCode?: number;
 	contentType?: string;
@@ -11,9 +11,6 @@ declare type SendFileOption = {
 	inline?: boolean;
 	gzip?: boolean;
 };
-interface PrivilegeHandler {
-	(action: string, resource: string, resourceId: string, account: string): void;
-}
 export default class Context {
 	req: http.IncomingMessage;
 	rsp: http.ServerResponse;

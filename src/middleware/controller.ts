@@ -1,9 +1,9 @@
 import path from 'path';
-import tools from '../utils/tools.js';
-import url from 'url';
+import tools from '../utils/tools';
+// import url from 'url';
 import { ValidationError } from 'thor-validation';
-import { SecurityError } from './security.js';
-import { Controller, Middleware, MiddlewareFactory } from '../types.js';
+import { SecurityError } from './security';
+import { Controller, Middleware, MiddlewareFactory } from '../types';
 
 type ScriptDefinition = Controller | { [key: string]: Controller } | null;
 
@@ -15,13 +15,17 @@ function loadScript(baseDir: string, api: string): Promise<ScriptDefinition> {
 		return p;
 	}
 	p = new Promise((resolve) => {
-		const file = baseDir + (api.endsWith('/') ? api + 'index' : api) + '.mjs';
+		const modulePath = baseDir + (api.endsWith('/') ? api + 'index' : api);
+		const jsFile = modulePath + '.js';
+		// const mjsFile = modulePath + '.mjs';
 		tools
-			.fileStat(file)
+			.fileStat(jsFile)
 			.then((stat) => {
 				if (stat.isFile) {
-					const fileUrl = url.pathToFileURL(file);
-					import(fileUrl.toString())
+					// const fileUrl = url.pathToFileURL(modulePath);
+					// console.log(fileUrl.toString());
+					// import(fileUrl.toString())
+					import(modulePath)
 						.then((fn) => {
 							if (fn && (typeof fn === 'function' || typeof fn === 'object')) {
 								return resolve(fn);
@@ -43,7 +47,9 @@ function loadScript(baseDir: string, api: string): Promise<ScriptDefinition> {
 				resolve(null);
 			});
 	});
-	API[api] = p;
+	if (process.env.NODE_ENV !== 'development') {
+		API[api] = p;
+	}
 	return p;
 }
 
@@ -57,11 +63,16 @@ class ControllerFactory implements MiddlewareFactory {
 		if (!rootPath) {
 			rootPath = '/';
 		}
+		if (!rootPath.startsWith('/')) {
+			rootPath = `/${rootPath}`;
+		}
 		if (!rootPath.endsWith('/')) {
-			rootPath += '/';
+			rootPath = `${rootPath}/`;
 		}
 		if (!baseDir) {
 			baseDir = path.resolve(tools.getRootDir(), 'controllers');
+		} else {
+			baseDir = path.resolve(baseDir);
 		}
 		if (baseDir.endsWith('/')) {
 			baseDir = baseDir.substring(0, baseDir.length - 1);
@@ -108,6 +119,7 @@ class ControllerFactory implements MiddlewareFactory {
 				} else {
 					await ctx.errorBadMethod();
 				}
+				console.log(`> Execute handler: ${ctx.path} -> ${page}`);
 				return true;
 			} else {
 				return false;

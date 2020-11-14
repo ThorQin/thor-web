@@ -1,27 +1,36 @@
-import uuidv1 from 'uuid/v1.js';
-import time from 'thor-time';
-import zlib from 'zlib';
-import crypto from 'crypto';
+'use strict';
+var __importDefault =
+	(this && this.__importDefault) ||
+	function (mod) {
+		return mod && mod.__esModule ? mod : { default: mod };
+	};
+Object.defineProperty(exports, '__esModule', { value: true });
+const v1_1 = __importDefault(require('uuid/v1'));
+const thor_time_1 = __importDefault(require('thor-time'));
+const zlib_1 = __importDefault(require('zlib'));
+const crypto_1 = __importDefault(require('crypto'));
 async function getSessionInfo(content, { serverKey, renew, expireCheck, intervalCheck }) {
 	try {
 		if (!content) {
 			return null;
 		}
 		const encData = Buffer.from(content, 'base64');
-		const decipher = crypto.createDecipheriv('aes-128-ecb', serverKey, '');
+		const decipher = crypto_1.default.createDecipheriv('aes-128-ecb', serverKey, '');
 		decipher.setAutoPadding(true);
 		const d1 = decipher.update(encData);
 		const d2 = decipher.final();
 		const zipData = Buffer.concat([d1, d2], d1.length + d2.length);
-		const rawData = zlib.gunzipSync(zipData).toString('utf8');
+		const rawData = zlib_1.default.gunzipSync(zipData).toString('utf8');
 		const sessionInfo = JSON.parse(rawData);
 		if (!sessionInfo) {
 			return null;
 		}
-		const now = time.now();
+		const now = thor_time_1.default.now();
 		let needRenew = false;
 		if (expireCheck) {
-			const checkValidTime = time.add(sessionInfo.createTime, expireCheck.value, expireCheck.unit).getTime();
+			const checkValidTime = thor_time_1.default
+				.add(sessionInfo.createTime, expireCheck.value, expireCheck.unit)
+				.getTime();
 			if (now.getTime() >= checkValidTime) {
 				if (expireCheck.action === 'renew') {
 					needRenew = true;
@@ -31,7 +40,9 @@ async function getSessionInfo(content, { serverKey, renew, expireCheck, interval
 			}
 		}
 		if (intervalCheck) {
-			const checkIntervalTime = time.add(sessionInfo.accessTime, intervalCheck.value, intervalCheck.unit).getTime();
+			const checkIntervalTime = thor_time_1.default
+				.add(sessionInfo.accessTime, intervalCheck.value, intervalCheck.unit)
+				.getTime();
 			if (now.getTime() >= checkIntervalTime) {
 				if (intervalCheck.action === 'renew') {
 					needRenew = true;
@@ -158,8 +169,8 @@ function createSession(
 			const d = JSON.parse(JSON.stringify(this));
 			d.data = data;
 			const s = JSON.stringify(d);
-			const zipData = zlib.gzipSync(Buffer.from(s, 'utf-8'));
-			const cipher = crypto.createCipheriv('aes-128-ecb', serverKey, '');
+			const zipData = zlib_1.default.gzipSync(Buffer.from(s, 'utf-8'));
+			const cipher = crypto_1.default.createCipheriv('aes-128-ecb', serverKey, '');
 			cipher.setAutoPadding(true);
 			const d1 = cipher.update(zipData);
 			const d2 = cipher.final();
@@ -224,11 +235,12 @@ class SessionFactory {
 		};
 	}
 	generateKey() {
-		const id = uuidv1().replace(/-/g, '');
+		const id = v1_1.default().replace(/-/g, '');
 		const buffer = Buffer.from(id, 'hex');
 		const key = buffer.toString('base64');
 		return key;
 	}
 }
 const sessionFactory = new SessionFactory();
-export default sessionFactory;
+exports.default = sessionFactory;
+//# sourceMappingURL=session.js.map

@@ -1,4 +1,4 @@
-import uuidv1 from 'uuid/v1.js';
+import uuidv1 from 'uuid/v1';
 import time from 'thor-time';
 import zlib from 'zlib';
 import crypto from 'crypto';

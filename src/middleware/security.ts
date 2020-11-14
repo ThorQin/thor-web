@@ -58,30 +58,29 @@ async function isCompleted(ctx: Context, result: SecurityCheckResult): Promise<b
 
 class SecurityFactory implements MiddlewareFactory {
 	create(securityHandler: SecurityHandler): Middleware {
+		if (typeof securityHandler !== 'function') {
+			throw new Error('Error: SecurityFactory::create(): Must provide security handler function as parameter');
+		}
 		return async function (ctx) {
-			if (typeof securityHandler === 'function') {
-				ctx.checkPrivilege = async function (action, resource, resourceId, account) {
-					const result = await securityHandler({
-						ctx: ctx,
-						resource: resource,
-						resourceId: resourceId,
-						action: action,
-						account: account,
-					});
-					if (result !== true && result != 'allow') {
-						throw new SecurityError(`Permission denied: ${action} ${resource}(${resourceId}) by ${account}`);
-					}
-				};
+			ctx.checkPrivilege = async function (action, resource, resourceId, account) {
 				const result = await securityHandler({
 					ctx: ctx,
-					resource: 'access',
-					resourceId: ctx.path,
-					action: ctx.method,
+					resource: resource,
+					resourceId: resourceId,
+					action: action,
+					account: account,
 				});
-				return await isCompleted(ctx, result);
-			} else {
-				return false;
-			}
+				if (result !== true && result != 'allow') {
+					throw new SecurityError(`Permission denied: ${action} ${resource}(${resourceId}) by ${account}`);
+				}
+			};
+			const result = await securityHandler({
+				ctx: ctx,
+				resource: 'access',
+				resourceId: ctx.path,
+				action: ctx.method,
+			});
+			return await isCompleted(ctx, result);
 		};
 	}
 }

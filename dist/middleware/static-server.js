@@ -1,10 +1,18 @@
-import { promises as fs } from 'fs';
-import path from 'path';
-import tools from '../utils/tools.js';
-import time from 'thor-time';
-import mime from 'mime';
-import zlib from 'zlib';
-export function defaultSuffix() {
+'use strict';
+var __importDefault =
+	(this && this.__importDefault) ||
+	function (mod) {
+		return mod && mod.__esModule ? mod : { default: mod };
+	};
+Object.defineProperty(exports, '__esModule', { value: true });
+exports.defaultSuffix = void 0;
+const fs_1 = require('fs');
+const path_1 = __importDefault(require('path'));
+const tools_1 = __importDefault(require('../utils/tools'));
+const thor_time_1 = __importDefault(require('thor-time'));
+const mime_1 = __importDefault(require('mime'));
+const zlib_1 = __importDefault(require('zlib'));
+function defaultSuffix() {
 	const suffix = [
 		'txt',
 		'htm',
@@ -39,15 +47,16 @@ export function defaultSuffix() {
 	}
 	return suffix;
 }
+exports.defaultSuffix = defaultSuffix;
 function getMimeType(suffix) {
-	return mime.getType(suffix) || 'application/octet-stream';
+	return mime_1.default.getType(suffix) || 'application/octet-stream';
 }
 function compressible(suffix) {
 	return /^(txt|html?|css|js|json)$/.test(suffix);
 }
 function gzip(buffer) {
 	return new Promise(function (resolve, reject) {
-		zlib.gzip(buffer, function (err, result) {
+		zlib_1.default.gzip(buffer, function (err, result) {
 			if (err) {
 				reject(err);
 				return;
@@ -85,11 +94,14 @@ class StaticFactory {
 		if (!rootPath) {
 			rootPath = '/';
 		}
+		if (!rootPath.startsWith('/')) {
+			rootPath = `/${rootPath}`;
+		}
 		if (!rootPath.endsWith('/')) {
-			rootPath += '/';
+			rootPath = `${rootPath}/`;
 		}
 		if (!baseDir) {
-			baseDir = path.resolve(tools.getRootDir(), 'www');
+			baseDir = path_1.default.resolve(tools_1.default.getRootDir(), 'www');
 		} else if (baseDir.endsWith('/')) {
 			baseDir = baseDir.substring(0, baseDir.length - 1);
 		}
@@ -101,7 +113,7 @@ class StaticFactory {
 		}
 		const cache = new Map();
 		async function loadCache(file, stat, canGzip) {
-			const fd = await fs.open(file, 'r');
+			const fd = await fs_1.promises.open(file, 'r');
 			try {
 				const data = await fd.readFile();
 				const cacheItem = { mtime: stat.mtime, data: data, gzipData: null };
@@ -131,7 +143,7 @@ class StaticFactory {
 				if (suffixSet.has(m[1])) {
 					const contentType = getMimeType(m[1]);
 					const file = baseDir + page;
-					const stat = await tools.fileStat(file);
+					const stat = await tools_1.default.fileStat(file);
 					if (stat.isFile) {
 						const mtime = stat.mtime;
 						if (ctx.method === 'HEAD') {
@@ -150,9 +162,9 @@ class StaticFactory {
 						}
 						const modifySince = ctx.getRequestHeader('if-modified-since');
 						if (typeof modifySince === 'string') {
-							const lastTime = time.parse(modifySince);
+							const lastTime = thor_time_1.default.parse(modifySince);
 							if (lastTime) {
-								const v = time.parse(mtime.toUTCString());
+								const v = thor_time_1.default.parse(mtime.toUTCString());
 								if (v && v.getTime() <= lastTime.getTime()) {
 									await ctx.notModified();
 									return true;
@@ -219,10 +231,10 @@ class StaticFactory {
 								}
 								return true;
 							} else {
-								fd = await fs.open(file, 'r');
+								fd = await fs_1.promises.open(file, 'r');
 								const buffer = Buffer.alloc(4096);
 								if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
-									const zstream = zlib.createGzip();
+									const zstream = zlib_1.default.createGzip();
 									zstream.pipe(ctx.rsp);
 									ctx.writeHead(200, {
 										'Cache-Control': 'no-cache',
@@ -263,4 +275,5 @@ class StaticFactory {
 	}
 }
 const staticFactory = new StaticFactory();
-export default staticFactory;
+exports.default = staticFactory;
+//# sourceMappingURL=static-server.js.map

@@ -1,4 +1,4 @@
-import { Middleware, MiddlewareFactory } from '../types.js';
+import { Middleware, MiddlewareFactory } from '../types';
 export declare type ControllerCreateOptions = {
 	baseDir?: string;
 	rootPath?: string;

@@ -1,6 +1,6 @@
 import qs from 'querystring';
 import iconv from 'iconv-lite';
-import uuidv1 from 'uuid/v1.js';
+import uuidv1 from 'uuid/v1';
 import fs from 'fs';
 import { Schema, ValidationError } from 'thor-validation';
 import { BasicBodyParser, MiddlewareFactory, PartInfo } from '../types';
@@ -419,11 +419,7 @@ class Parser {
 	}
 }
 
-interface BodyParser extends BasicBodyParser {
-	json: (schema?: Schema) => Promise<unknown>;
-}
-
-function createParser(req: http.IncomingMessage): BodyParser {
+function createParser(req: http.IncomingMessage): BasicBodyParser {
 	let finished = false;
 	// let cl = req.headers['content-length'];
 	return {
@@ -471,7 +467,10 @@ function createParser(req: http.IncomingMessage): BodyParser {
 		text: function () {
 			const charset = this.getCharset();
 			return this.raw().then(function (buffer) {
-				return buffer.toString(charset);
+				return iconv.decode(buffer, charset, {
+					stripBOM: true,
+					defaultEncoding: 'utf-8',
+				});
 			});
 		},
 		json: async function (schema?: Schema) {
@@ -482,7 +481,10 @@ function createParser(req: http.IncomingMessage): BodyParser {
 			const buffer = await this.raw();
 			let val;
 			try {
-				const jsonStr = buffer.toString(charset);
+				const jsonStr = iconv.decode(buffer, charset, {
+					stripBOM: true,
+					defaultEncoding: 'utf-8',
+				});
 				val = JSON.parse(jsonStr);
 			} catch (e) {
 				throw new ValidationError(`Not a valid JSON data: ${e.message}`);
@@ -498,7 +500,12 @@ function createParser(req: http.IncomingMessage): BodyParser {
 			}
 			const charset = this.getCharset();
 			return this.raw().then(function (buffer) {
-				return qs.parse(buffer.toString(charset));
+				return qs.parse(
+					iconv.decode(buffer, charset, {
+						stripBOM: true,
+						defaultEncoding: 'utf-8',
+					})
+				);
 			});
 		},
 		multipart: function (storeDir: string | null = null, maxLength = 1024 * 1024 * 10): Promise<PartInfo[]> {

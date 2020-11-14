@@ -43,6 +43,11 @@ type StartOptions = {
 	suffix?: string[];
 	securityHandler?: SecurityHandler;
 	env?: { [key: string]: unknown };
+	staticDir?: string;
+	staticPath?: string;
+	templateDir?: string;
+	controllerDir?: string;
+	controllerPath?: string;
 };
 
 class App implements Application {
@@ -99,6 +104,11 @@ class App implements Application {
 		suffix,
 		securityHandler,
 		env = {},
+		staticDir,
+		staticPath,
+		templateDir,
+		controllerDir,
+		controllerPath,
 	}: StartOptions = {}): App {
 		const app = new App();
 		const middlewares = [
@@ -110,10 +120,17 @@ class App implements Application {
 			}),
 			staticServer.create({
 				suffix: suffix,
+				baseDir: staticDir,
+				rootPath: staticPath,
 			}),
 			bodyParser.create(),
-			template.create(),
-			controller.create(),
+			template.create({
+				baseDir: templateDir,
+			}),
+			controller.create({
+				baseDir: controllerDir,
+				rootPath: controllerPath,
+			}),
 		];
 		if (typeof securityHandler === 'function') {
 			middlewares.splice(1, 0, security.create(securityHandler));
