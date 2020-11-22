@@ -141,7 +141,7 @@ function createSession(
 		data = {};
 	}
 	const createTime = info ? info.createTime : new Date().getTime();
-	const session = {
+	const session: Session = {
 		accessTime: new Date().getTime(),
 		createTime: createTime,
 		get: function (key: string) {

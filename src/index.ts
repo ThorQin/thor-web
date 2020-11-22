@@ -1,6 +1,6 @@
 import http from 'http';
 import Context from './context';
-import { Middleware, Application, SecurityHandler, MiddlewareFactory } from './types';
+import { Middleware, Application, AccessHandler, MiddlewareFactory, PrivilegeHandler } from './types';
 import { session, staticServer, controller, bodyParser, security, template } from './middleware/index';
 
 async function processRequest(
@@ -41,7 +41,8 @@ type StartOptions = {
 	domain?: string;
 	serverKey?: string;
 	suffix?: string[];
-	securityHandler?: SecurityHandler;
+	accessHandler?: AccessHandler;
+	privilegeHandler?: PrivilegeHandler;
 	env?: { [key: string]: unknown };
 	staticDir?: string;
 	staticPath?: string;
@@ -102,7 +103,8 @@ class App implements Application {
 		maxAge = 1800,
 		domain,
 		suffix,
-		securityHandler,
+		accessHandler,
+		privilegeHandler,
 		env = {},
 		staticDir,
 		staticPath,
@@ -132,8 +134,15 @@ class App implements Application {
 				rootPath: controllerPath,
 			}),
 		];
-		if (typeof securityHandler === 'function') {
-			middlewares.splice(1, 0, security.create(securityHandler));
+		if (typeof accessHandler === 'function' || typeof privilegeHandler === 'function') {
+			middlewares.splice(
+				1,
+				0,
+				security.create({
+					accessHandler: accessHandler,
+					privilegeHandler: privilegeHandler,
+				})
+			);
 		}
 		app.use(...middlewares);
 		if (env) {

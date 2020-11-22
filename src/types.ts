@@ -17,29 +17,49 @@ export interface Application {
 	[key: string]: unknown;
 }
 
-export interface SecurityHandlerParam {
+export interface PrivilegeHandlerParam {
 	ctx: Context;
-	resource?: string;
+	account: string;
+	resource: string;
 	resourceId?: string;
 	action?: string;
-	account?: string;
 }
 
-export type SecurityCheckResult =
-	| ({
-			code?: number;
-			body?: unknown;
-			contentType?: 'text' | 'json' | 'html';
-	  } & { [key: string]: string })
-	| string
-	| boolean;
+export interface AccessHandlerParam {
+	ctx: Context;
+	path: string;
+	method: string;
+}
 
-export interface SecurityHandler {
-	(param: SecurityHandlerParam): Promise<SecurityCheckResult>;
+export type CustomResult = {
+	code?: number;
+	body?: unknown;
+	contentType?: 'text' | 'json' | 'html';
+	headers?: { [key: string]: number | string | string[] };
+};
+
+export type RedirectResult = {
+	action: 'redirect';
+	url: string;
+};
+
+export type BasicAuthResult = {
+	action: 'auth';
+	domain: string;
+};
+
+export type AccessCheckResult = CustomResult | RedirectResult | BasicAuthResult | boolean;
+
+export interface AccessHandler {
+	(param: AccessHandlerParam): Promise<AccessCheckResult>;
 }
 
 export interface PrivilegeHandler {
-	(action: string, resource: string, resourceId: string, account: string): void;
+	(param: PrivilegeHandlerParam): Promise<boolean>;
+}
+
+export interface PrivilegeCheck {
+	(account: string, resource: string, resourceId?: string, action?: string): void;
 }
 
 export interface PartInfo {
@@ -83,9 +103,9 @@ export interface Session {
 	set: (key: string, value: unknown) => void;
 	remove: (key: string) => void;
 	clear: () => void;
-	save: (opt?: SaveOptions) => void;
+	save: (opt?: SaveOptions | number) => void;
 	delete: () => void;
-	toString: () => string | null;
+	toString: () => string;
 }
 
 export interface Controller {
@@ -113,7 +133,7 @@ export interface AppContext extends Context {
 }
 
 export interface PrivilegeContext extends Context {
-	checkPrivilege: PrivilegeHandler;
+	checkPrivilege: PrivilegeCheck;
 }
 
 export type DefaultContext = RenderContext & SessionContext & BodyContext & AppContext & PrivilegeContext;

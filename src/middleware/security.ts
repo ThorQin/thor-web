@@ -1,86 +1,112 @@
-import { Middleware, MiddlewareFactory, SecurityCheckResult, SecurityHandler } from '../types';
+import {
+	Middleware,
+	MiddlewareFactory,
+	AccessCheckResult,
+	AccessHandler,
+	PrivilegeHandler,
+	RedirectResult,
+	BasicAuthResult,
+	CustomResult,
+} from '../types';
 import Context from '../context';
 
 export class SecurityError extends Error {}
 
-async function isCompleted(ctx: Context, result: SecurityCheckResult): Promise<boolean> {
+async function isCompleted(ctx: Context, result: AccessCheckResult): Promise<boolean> {
 	if (typeof result === 'object' && result) {
-		const headers: { [key: string]: string } = {};
-		Object.keys(result)
-			.filter((k: string) => k != 'code' && k != 'body')
-			.forEach((k: string) => {
-				headers[k.toLowerCase()] = result[k];
-			});
-		let code = 403;
-		if (typeof result.code === 'number') {
-			code = result.code;
-		}
-		let body = null;
-		if (!result.contentType || result.contentType === 'json') {
-			body = JSON.stringify(result.body);
-			headers['content-type'] = 'application/json; charset=utf-8';
-		} else if (result.contentType === 'text') {
-			headers['content-type'] = 'text/plain; charset=utf-8';
-			body = result.body + '';
-		} else if (result.contentType === 'html') {
-			headers['content-type'] = 'text/html; charset=utf-8';
-			body = result.body + '';
-		}
-		ctx.writeHead(code, headers);
-		await ctx.end(body);
-		return true;
-	} else if (typeof result === 'string') {
-		if (result === 'allow') {
-			return false;
-		} else {
-			let m = /^redirect:(.+)$/.exec(result);
-			if (m) {
-				await ctx.redirect(m[1]);
-				return true;
-			}
-			m = /^auth:(.+)$/.exec(result);
-			if (m) {
-				await ctx.needBasicAuth(m[1]);
+		if ((result as RedirectResult).action === 'redirect') {
+			if ((result as RedirectResult).url) {
+				await ctx.redirect((result as RedirectResult).url);
 				return true;
 			}
 			await ctx.errorForbidden();
 			return true;
 		}
-	} else {
+
+		if ((result as BasicAuthResult).action === 'auth') {
+			if ((result as BasicAuthResult).domain) {
+				await ctx.needBasicAuth((result as BasicAuthResult).domain);
+				return true;
+			}
+			await ctx.errorForbidden();
+			return true;
+		}
+
+		const r = result as CustomResult;
+
+		const headers: { [key: string]: number | string | string[] } = {};
+		if (r && typeof r.headers === 'object' && r.headers) {
+			Object.keys(r.headers).forEach((k: string) => {
+				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+				headers[k.toLowerCase()] = r.headers![k];
+			});
+		}
+
+		let code = 403;
+		if (typeof r.code === 'number') {
+			code = r.code;
+		}
+		let body = null;
+		if (!r.contentType || r.contentType === 'json') {
+			body = JSON.stringify(r.body);
+			headers['content-type'] = 'application/json; charset=utf-8';
+		} else if (r.contentType === 'text') {
+			headers['content-type'] = 'text/plain; charset=utf-8';
+			body = r.body + '';
+		} else if (r.contentType === 'html') {
+			headers['content-type'] = 'text/html; charset=utf-8';
+			body = r.body + '';
+		}
+		ctx.writeHead(code, headers);
+		await ctx.end(body);
+		return true;
+	} else if (typeof result === 'boolean') {
 		if (result) {
 			return false;
 		} else {
 			await ctx.errorForbidden();
 			return true;
 		}
+	} else {
+		await ctx.errorForbidden();
+		return true;
 	}
 }
 
+export interface SecurityOptions {
+	accessHandler?: AccessHandler;
+	privilegeHandler?: PrivilegeHandler;
+}
+
 class SecurityFactory implements MiddlewareFactory {
-	create(securityHandler: SecurityHandler): Middleware {
-		if (typeof securityHandler !== 'function') {
-			throw new Error('Error: SecurityFactory::create(): Must provide security handler function as parameter');
-		}
+	create(param: SecurityOptions = {}): Middleware {
 		return async function (ctx) {
-			ctx.checkPrivilege = async function (action, resource, resourceId, account) {
-				const result = await securityHandler({
-					ctx: ctx,
-					resource: resource,
-					resourceId: resourceId,
-					action: action,
-					account: account,
-				});
-				if (result !== true && result != 'allow') {
-					throw new SecurityError(`Permission denied: ${action} ${resource}(${resourceId}) by ${account}`);
+			ctx.checkPrivilege = async function (account, resource, resourceId, action) {
+				if (typeof param.privilegeHandler === 'function') {
+					const result = await param.privilegeHandler({
+						ctx: ctx,
+						account: account,
+						resource: resource,
+						resourceId: resourceId,
+						action: action,
+					});
+					if (!result) {
+						throw new SecurityError(`Permission denied: ${action} ${resource}(${resourceId}) by ${account}`);
+					}
+				} else {
+					throw new SecurityError(`Permission denied: ${account} ${resource}(${resourceId}) by ${account}`);
 				}
 			};
-			const result = await securityHandler({
-				ctx: ctx,
-				resource: 'access',
-				resourceId: ctx.path,
-				action: ctx.method,
-			});
-			return await isCompleted(ctx, result);
+			if (typeof param.accessHandler === 'function') {
+				const result = await param.accessHandler({
+					ctx: ctx,
+					path: ctx.path,
+					method: ctx.method,
+				});
+				return await isCompleted(ctx, result);
+			} else {
+				return true;
+			}
 		};
 	}
 }
