@@ -10,7 +10,7 @@ const path_1 = __importDefault(require('path'));
 const tools_1 = __importDefault(require('../utils/tools'));
 const thor_tpl_1 = require('thor-tpl');
 class TemplateFactory {
-	create({ baseDir, isDebug = false } = {}) {
+	create(app, { baseDir, isDebug = false } = {}) {
 		const cache = {};
 		if (!baseDir) {
 			baseDir = path_1.default.resolve(tools_1.default.getRootDir(), 'templates');
@@ -27,12 +27,7 @@ class TemplateFactory {
 				fn: {
 					include: async (file, data) => {
 						file = (file + '').trim().replace(/\\/g, '/');
-						if (file.startsWith('/')) {
-							return await renderFile(file, data);
-						} else {
-							file = path_1.default.join(dir, file);
-							return await renderFile(file, data);
-						}
+						return await renderFile(file, data);
 					},
 				},
 				trace: (/*fn*/) => {

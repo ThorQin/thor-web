@@ -90,7 +90,7 @@ function writeStream(stream, buffer) {
 	});
 }
 class StaticFactory {
-	create({ baseDir, rootPath = '/', suffix, cachedFileSize = 1024 * 1024, enableGzipSize = 50 * 1024 } = {}) {
+	create(app, { baseDir, rootPath = '/', suffix, cachedFileSize = 1024 * 1024, enableGzipSize = 50 * 1024 } = {}) {
 		if (!rootPath) {
 			rootPath = '/';
 		}

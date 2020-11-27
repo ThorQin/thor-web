@@ -3,7 +3,7 @@ import tools from '../utils/tools';
 // import url from 'url';
 import { ValidationError } from 'thor-validation';
 import { SecurityError } from './security';
-import { Controller, Middleware, MiddlewareFactory } from '../types';
+import { Application, Controller, Middleware, MiddlewareFactory } from '../types';
 
 type ScriptDefinition = Controller | { [key: string]: Controller } | null;
 
@@ -59,7 +59,7 @@ export type ControllerCreateOptions = {
 };
 
 class ControllerFactory implements MiddlewareFactory {
-	create({ baseDir, rootPath = '/' }: ControllerCreateOptions = {}): Middleware {
+	create(app: Application, { baseDir, rootPath = '/' }: ControllerCreateOptions = {}): Middleware {
 		if (!rootPath) {
 			rootPath = '/';
 		}
@@ -88,7 +88,10 @@ class ControllerFactory implements MiddlewareFactory {
 				if (typeof fn !== 'function') {
 					fn = fn[ctx.method.toLowerCase()];
 				}
-				if (fn) {
+				if (typeof fn !== 'function') {
+					fn = fn['default'];
+				}
+				if (typeof fn === 'function') {
 					try {
 						const result = await fn(ctx, req, rsp);
 						if (typeof result !== 'undefined') {
@@ -97,23 +100,27 @@ class ControllerFactory implements MiddlewareFactory {
 							await ctx.end();
 						}
 					} catch (e) {
-						if (!e || !e.handled) {
-							console.error(`[${req.method} : ${page}] `, e);
-							if (!rsp.writableEnded) {
-								if (e && e.message === 'ERR_HTTP_HEADERS_SENT') {
-									await ctx.end();
+						if (!rsp.writableEnded) {
+							if (e && e.message === 'ERR_HTTP_HEADERS_SENT') {
+								console.error(`[${req.method} : ${page}] `, e);
+								await ctx.end();
+							} else {
+								if (e && e.constructor && e.constructor.name === ValidationError.name) {
+									console.error(`[${req.method} : ${page}] `, e.message);
+									await ctx.errorBadRequest(e.message);
+								} else if (e && e.constructor && e.constructor.name === SecurityError.name) {
+									console.error(`[${req.method} : ${page}] `, e.message);
+									await ctx.error(403, e.message);
+								} else if (process.env.NODE_ENV == 'prodction') {
+									console.error(`[${req.method} : ${page}] `, e);
+									await ctx.error();
 								} else {
-									if (e && e.constructor && e.constructor.name === ValidationError.name) {
-										await ctx.errorBadRequest(e.message);
-									} else if (e && e.constructor && e.constructor.name === SecurityError.name) {
-										await ctx.error(403, e.message);
-									} else if (process.env.NODE_ENV == 'prodction') {
-										await ctx.error();
-									} else {
-										await ctx.errorUnknown(e);
-									}
+									console.error(`[${req.method} : ${page}] `, e);
+									await ctx.errorUnknown(e);
 								}
 							}
+						} else {
+							console.error(`[${req.method} : ${page}] `, e);
 						}
 					}
 				} else {

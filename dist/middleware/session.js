@@ -100,21 +100,21 @@ function createSession(
 						data[k] = key[k];
 					}
 				}
-				this.save();
+				!ctx.isWebSocket && this.save();
 			} else if (typeof key === 'string') {
 				data[key] = value;
-				this.save();
+				!ctx.isWebSocket && this.save();
 			}
 		},
 		remove: function (key) {
 			delete data[key];
-			this.save();
+			!ctx.isWebSocket && this.save();
 		},
 		clear: function () {
 			for (const k in data) {
 				delete data[k];
 			}
-			this.save();
+			!ctx.isWebSocket && this.save();
 		},
 		save: function (opt) {
 			if (typeof opt === 'number') {
@@ -147,7 +147,9 @@ function createSession(
 				options['Secure'] = null;
 			}
 			options.SameSite = opt.sameSite || sameSite;
-			ctx.setResponseCookie(cookieName, token, options);
+			if (!ctx.isWebSocket) {
+				ctx.setResponseCookie(cookieName, token, options);
+			}
 		},
 		delete: function () {
 			const options = {};
@@ -163,7 +165,9 @@ function createSession(
 				options['Secure'] = null;
 			}
 			options.SameSite = sameSite;
-			ctx.setResponseCookie(cookieName, '', options);
+			if (!ctx.isWebSocket) {
+				ctx.setResponseCookie(cookieName, '', options);
+			}
 		},
 		toString: function () {
 			const d = JSON.parse(JSON.stringify(this));
@@ -189,24 +193,27 @@ function createSession(
 	return session;
 }
 class SessionFactory {
-	create({
-		serverKey = this.generateKey(),
-		cookieName = 'app_token',
-		maxAge = 1800,
-		expireCheck,
-		renew,
-		intervalCheck = {
-			value: 30,
-			unit: 'm',
-			action: 'logout',
-		},
-		domain,
-		httpOnly = true,
-		secure = false,
-		sameSite = 'Lax',
-	} = {}) {
+	create(
+		app,
+		{
+			serverKey = this.generateKey(),
+			cookieName = 'app_token',
+			maxAge = 1800,
+			expireCheck,
+			renew,
+			intervalCheck = {
+				value: 30,
+				unit: 'm',
+				action: 'logout',
+			},
+			domain,
+			httpOnly = true,
+			secure = false,
+			sameSite = 'Lax',
+		} = {}
+	) {
 		const key = Buffer.from(serverKey, 'base64');
-		return async function (ctx) {
+		const fn = async function (ctx) {
 			const cookies = ctx.getRequestCookies();
 			const content = cookies && cookies[cookieName];
 			let sessionInfo;
@@ -229,10 +236,14 @@ class SessionFactory {
 				sameSite: sameSite,
 			});
 			if (ctx.session) {
-				ctx.session.save();
+				if (!ctx.isWebSocket) {
+					ctx.session.save();
+				}
 			}
 			return false;
 		};
+		fn.supportWebSocket = true;
+		return fn;
 	}
 	generateKey() {
 		const id = v1_1.default().replace(/-/g, '');

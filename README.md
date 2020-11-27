@@ -49,4 +49,5 @@ npm run debug
 * Controller: Route request to controller js file
 * Static: Provide static resources access
 * Template: Provide js template render method (Powered by thor-tpl)
+* WebSocket: Provide WebSocket communication
 

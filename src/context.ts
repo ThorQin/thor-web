@@ -56,6 +56,7 @@ export default class Context {
 	session?: Session;
 	checkPrivilege?: PrivilegeCheck;
 	render?: Renderer;
+	isWebSocket = false;
 
 	constructor(req: http.IncomingMessage, rsp: http.ServerResponse) {
 		this.req = req;

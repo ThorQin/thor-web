@@ -7,6 +7,7 @@ import {
 	RedirectResult,
 	BasicAuthResult,
 	CustomResult,
+	Application,
 } from '../types';
 import Context from '../context';
 
@@ -79,35 +80,43 @@ export interface SecurityOptions {
 }
 
 class SecurityFactory implements MiddlewareFactory {
-	create(param: SecurityOptions = {}): Middleware {
-		return async function (ctx) {
-			ctx.checkPrivilege = async function (account, resource, resourceId, action) {
-				if (typeof param.privilegeHandler === 'function') {
-					const result = await param.privilegeHandler({
-						ctx: ctx,
-						account: account,
-						resource: resource,
-						resourceId: resourceId,
-						action: action,
-					});
-					if (!result) {
-						throw new SecurityError(`Permission denied: ${action} ${resource}(${resourceId}) by ${account}`);
+	create(app: Application, param: SecurityOptions = {}): Middleware {
+		const fn = async function (ctx: Context) {
+			if (!ctx.isWebSocket) {
+				ctx.checkPrivilege = async function (account, resource, resourceId, action) {
+					if (typeof param.privilegeHandler === 'function') {
+						const result = await param.privilegeHandler({
+							ctx: ctx,
+							account: account,
+							resource: resource,
+							resourceId: resourceId,
+							action: action,
+						});
+						if (!result) {
+							throw new SecurityError(`Permission denied: ${action} ${resource}(${resourceId}) by ${account}`);
+						}
+					} else {
+						throw new SecurityError(`Permission denied: ${account} ${resource}(${resourceId}) by ${account}`);
 					}
-				} else {
-					throw new SecurityError(`Permission denied: ${account} ${resource}(${resourceId}) by ${account}`);
-				}
-			};
+				};
+			}
 			if (typeof param.accessHandler === 'function') {
 				const result = await param.accessHandler({
 					ctx: ctx,
 					path: ctx.path,
 					method: ctx.method,
 				});
-				return await isCompleted(ctx, result);
+				if (!ctx.isWebSocket) {
+					return await isCompleted(ctx, result);
+				} else {
+					return result !== true;
+				}
 			} else {
 				return true;
 			}
 		};
+		fn.supportWebSocket = true;
+		return fn;
 	}
 }
 

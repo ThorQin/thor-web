@@ -1,4 +1,4 @@
-import { Middleware, MiddlewareFactory } from '../types';
+import { Application, Middleware, MiddlewareFactory, MiddlewareOptions } from '../types';
 export declare type TimeCheck = {
 	value: number;
 	unit?: 'y' | 'M' | 'd' | 'h' | 'm' | 's' | 'ms';
@@ -11,7 +11,7 @@ export declare type SessionInfo = {
 		[key: string]: unknown;
 	};
 };
-export declare type SessionOptions = {
+export interface SessionOptions extends MiddlewareOptions {
 	/**
 	 * Server key for AES128 encryption encoded by BASE64 (key = 16 bytes raw data -> base64)
 	 */
@@ -29,20 +29,23 @@ export declare type SessionOptions = {
 	httpOnly?: boolean;
 	secure?: boolean;
 	sameSite?: 'None' | 'Lax' | 'Strict';
-};
+}
 declare class SessionFactory implements MiddlewareFactory {
-	create({
-		serverKey,
-		cookieName,
-		maxAge,
-		expireCheck,
-		renew,
-		intervalCheck,
-		domain,
-		httpOnly,
-		secure,
-		sameSite,
-	}?: SessionOptions): Middleware;
+	create(
+		app: Application,
+		{
+			serverKey,
+			cookieName,
+			maxAge,
+			expireCheck,
+			renew,
+			intervalCheck,
+			domain,
+			httpOnly,
+			secure,
+			sameSite,
+		}?: SessionOptions
+	): Middleware;
 	generateKey(): string;
 }
 declare const sessionFactory: SessionFactory;

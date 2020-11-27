@@ -2,7 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import tools from '../utils/tools';
 import { renderAsync, compile, CompiledFunction } from 'thor-tpl';
-import { Middleware, MiddlewareFactory } from '../types';
+import { Application, Middleware, MiddlewareFactory } from '../types';
 
 export type TemplateOptions = {
 	/**
@@ -16,7 +16,7 @@ export type TemplateOptions = {
 };
 
 class TemplateFactory implements MiddlewareFactory {
-	create({ baseDir, isDebug = false }: TemplateOptions = {}): Middleware {
+	create(app: Application, { baseDir, isDebug = false }: TemplateOptions = {}): Middleware {
 		const cache: { [key: string]: Promise<CompiledFunction> } = {};
 
 		if (!baseDir) {
@@ -35,12 +35,7 @@ class TemplateFactory implements MiddlewareFactory {
 				fn: {
 					include: async (file: string, data: unknown) => {
 						file = (file + '').trim().replace(/\\/g, '/');
-						if (file.startsWith('/')) {
-							return await renderFile(file, data);
-						} else {
-							file = path.join(dir, file);
-							return await renderFile(file, data);
-						}
+						return await renderFile(file, data);
 					},
 				},
 				trace: (/*fn*/) => {

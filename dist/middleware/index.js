@@ -5,7 +5,7 @@ var __importDefault =
 		return mod && mod.__esModule ? mod : { default: mod };
 	};
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.controller = exports.template = exports.bodyParser = exports.security = exports.staticServer = exports.session = void 0;
+exports.webSocket = exports.controller = exports.template = exports.bodyParser = exports.security = exports.staticServer = exports.session = void 0;
 const session_1 = __importDefault(require('./session'));
 exports.session = session_1.default;
 const static_server_1 = __importDefault(require('./static-server'));
@@ -18,4 +18,6 @@ const template_1 = __importDefault(require('./template'));
 exports.template = template_1.default;
 const controller_1 = __importDefault(require('./controller'));
 exports.controller = controller_1.default;
+const websocket_1 = __importDefault(require('./websocket'));
+exports.webSocket = websocket_1.default;
 //# sourceMappingURL=index.js.map

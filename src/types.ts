@@ -1,19 +1,38 @@
 import http from 'http';
 import { Schema } from 'thor-validation';
 import Context from './context';
+import { connection, server, IMessage, frame } from 'websocket';
+
+export type WebSocketConnection = connection;
+export type WebSocketServer = server;
+export type WebSocketMessage = IMessage;
+export type WebSocketFrame = frame;
 
 export type Middleware = {
 	(ctx: Context, req: http.IncomingMessage, rsp: http.ServerResponse): Promise<boolean>;
+	supportWebSocket?: boolean;
 };
 
 export interface MiddlewareFactory {
-	create: (arg: never) => Middleware;
+	create: (app: Application, arg?: MiddlewareOptions) => Middleware | null;
 }
 
+export interface StartOptions {
+	port: number;
+	hostname?: string;
+	useWebSocket: boolean;
+}
+
+export interface MiddlewareOptions {
+	[index: string]: unknown;
+}
 export interface Application {
-	start(port?: number, hostname?: string): this;
+	middlewares: Middleware[];
+	server: http.Server | null;
+	start(options?: StartOptions): this;
 	stop(): this;
-	use(...middleware: Middleware[]): this;
+	use<T extends MiddlewareFactory>(factory: T, options: MiddlewareOptions): this;
+	ws?: WebSocketServer;
 	[key: string]: unknown;
 }
 
@@ -110,6 +129,10 @@ export interface Session {
 
 export interface Controller {
 	(ctx: Context, req: http.IncomingMessage, rsp: http.ServerResponse): Promise<unknown>;
+}
+
+export interface SocketHandler {
+	(connection: WebSocketConnection, app: Application): void;
 }
 
 export interface Renderer {

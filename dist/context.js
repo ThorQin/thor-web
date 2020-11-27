@@ -35,6 +35,7 @@ function flushStream(stream) {
 }
 class Context {
 	constructor(req, rsp) {
+		this.isWebSocket = false;
 		this.req = req;
 		this.rsp = rsp;
 		const url = new URL(req.url || '', `http://${req.headers.host}/`);

@@ -2,7 +2,7 @@ import uuidv1 from 'uuid/v1';
 import time from 'thor-time';
 import zlib from 'zlib';
 import crypto from 'crypto';
-import { Middleware, MiddlewareFactory, SaveOptions, Session } from '../types';
+import { Application, Middleware, MiddlewareFactory, MiddlewareOptions, SaveOptions, Session } from '../types';
 import Context from '../context';
 
 export type TimeCheck = {
@@ -90,7 +90,7 @@ async function getSessionInfo(
 	}
 }
 
-export type SessionOptions = {
+export interface SessionOptions extends MiddlewareOptions {
 	/**
 	 * Server key for AES128 encryption encoded by BASE64 (key = 16 bytes raw data -> base64)
 	 */
@@ -108,7 +108,7 @@ export type SessionOptions = {
 	httpOnly?: boolean;
 	secure?: boolean;
 	sameSite?: 'None' | 'Lax' | 'Strict';
-};
+}
 
 interface CreateSessionOptions {
 	serverKey: Buffer;
@@ -154,21 +154,21 @@ function createSession(
 						data[k] = key[k];
 					}
 				}
-				this.save();
+				!ctx.isWebSocket && this.save();
 			} else if (typeof key === 'string') {
 				data[key] = value;
-				this.save();
+				!ctx.isWebSocket && this.save();
 			}
 		},
 		remove: function (key: string) {
 			delete data[key];
-			this.save();
+			!ctx.isWebSocket && this.save();
 		},
 		clear: function () {
 			for (const k in data) {
 				delete data[k];
 			}
-			this.save();
+			!ctx.isWebSocket && this.save();
 		},
 		save: function (opt?: SaveOptions | number) {
 			if (typeof opt === 'number') {
@@ -201,7 +201,9 @@ function createSession(
 				options['Secure'] = null;
 			}
 			options.SameSite = opt.sameSite || sameSite;
-			ctx.setResponseCookie(cookieName, token, options);
+			if (!ctx.isWebSocket) {
+				ctx.setResponseCookie(cookieName, token, options);
+			}
 		},
 		delete: function () {
 			const options: { [key: string]: string | number | null } = {};
@@ -217,7 +219,9 @@ function createSession(
 				options['Secure'] = null;
 			}
 			options.SameSite = sameSite;
-			ctx.setResponseCookie(cookieName, '', options);
+			if (!ctx.isWebSocket) {
+				ctx.setResponseCookie(cookieName, '', options);
+			}
 		},
 		toString: function (): string {
 			const d = JSON.parse(JSON.stringify(this));
@@ -245,25 +249,28 @@ function createSession(
 }
 
 class SessionFactory implements MiddlewareFactory {
-	create({
-		serverKey = this.generateKey(),
-		cookieName = 'app_token',
-		maxAge = 1800,
-		expireCheck,
-		renew,
-		intervalCheck = {
-			value: 30,
-			unit: 'm',
-			action: 'logout',
-		},
-		domain,
-		httpOnly = true,
-		secure = false,
-		sameSite = 'Lax',
-	}: SessionOptions = {}): Middleware {
+	create(
+		app: Application,
+		{
+			serverKey = this.generateKey(),
+			cookieName = 'app_token',
+			maxAge = 1800,
+			expireCheck,
+			renew,
+			intervalCheck = {
+				value: 30,
+				unit: 'm',
+				action: 'logout',
+			},
+			domain,
+			httpOnly = true,
+			secure = false,
+			sameSite = 'Lax',
+		}: SessionOptions = {}
+	): Middleware {
 		const key = Buffer.from(serverKey, 'base64');
 
-		return async function (ctx) {
+		const fn = async function (ctx: Context) {
 			const cookies = ctx.getRequestCookies();
 			const content = cookies && cookies[cookieName];
 			let sessionInfo;
@@ -288,11 +295,15 @@ class SessionFactory implements MiddlewareFactory {
 			});
 
 			if (ctx.session) {
-				ctx.session.save();
+				if (!ctx.isWebSocket) {
+					ctx.session.save();
+				}
 			}
 
 			return false;
 		};
+		fn.supportWebSocket = true;
+		return fn;
 	}
 
 	generateKey() {

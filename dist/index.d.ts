@@ -1,6 +1,13 @@
 /// <reference types="node" />
 import http from 'http';
-import { Middleware, Application, SecurityHandler, MiddlewareFactory } from './types';
+import {
+	Middleware,
+	Application,
+	AccessHandler,
+	MiddlewareFactory,
+	PrivilegeHandler,
+	MiddlewareOptions,
+} from './types';
 declare type StartOptions = {
 	port?: number;
 	hostname?: string;
@@ -9,7 +16,8 @@ declare type StartOptions = {
 	domain?: string;
 	serverKey?: string;
 	suffix?: string[];
-	securityHandler?: SecurityHandler;
+	accessHandler?: AccessHandler;
+	privilegeHandler?: PrivilegeHandler;
 	env?: {
 		[key: string]: unknown;
 	};
@@ -18,18 +26,17 @@ declare type StartOptions = {
 	templateDir?: string;
 	controllerDir?: string;
 	controllerPath?: string;
+	wsDir?: string;
+	wsPath?: string;
+	wsMaxMessageSize?: number;
 };
 declare class App implements Application {
 	middlewares: Middleware[];
 	server: http.Server | null;
 	[key: string]: unknown;
 	constructor();
-	/**
-	 * Add some middlewares.
-	 * @param middleware Middleware or array of middlewares.
-	 */
-	use(...middleware: Middleware[]): this;
-	start(port?: number, hostname?: string): this;
+	use<T extends MiddlewareFactory>(factory: T, options?: MiddlewareOptions): this;
+	start({ port, hostname }?: StartOptions): this;
 	stop(): this;
 	/**
 	 * Instead use App constructor to create a server instance,
@@ -45,13 +52,17 @@ declare class App implements Application {
 		maxAge,
 		domain,
 		suffix,
-		securityHandler,
+		accessHandler,
+		privilegeHandler,
 		env,
 		staticDir,
 		staticPath,
 		templateDir,
 		controllerDir,
 		controllerPath,
+		wsDir,
+		wsPath,
+		wsMaxMessageSize,
 	}?: StartOptions): App;
 }
 import enc from './utils/enc.js';

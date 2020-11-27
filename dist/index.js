@@ -38,17 +38,17 @@ class App {
 		this.server = null;
 		this.middlewares = [];
 	}
-	/**
-	 * Add some middlewares.
-	 * @param middleware Middleware or array of middlewares.
-	 */
-	use(...middleware) {
-		if (middleware instanceof Array) {
-			this.middlewares = this.middlewares.concat(...middleware);
+	use(factory, options) {
+		if (!this.server) {
+			throw new Error('Error: server not started!');
+		}
+		const middleware = factory.create(this, options);
+		if (middleware) {
+			this.middlewares.push(middleware);
 		}
 		return this;
 	}
-	start(port = 8080, hostname) {
+	start({ port = 8080, hostname } = {}) {
 		this.server = http_1.default
 			.createServer((req, rsp) => {
 				try {
@@ -58,7 +58,11 @@ class App {
 				}
 			})
 			.listen(port, hostname);
-		console.log(`Server listening at: ${port}`);
+		if (hostname) {
+			console.log(`Server listening on: ${hostname}:${port}`);
+		} else {
+			console.log(`Server listening on: ${port}`);
+		}
 		return this;
 	}
 	stop() {
@@ -79,40 +83,19 @@ class App {
 		maxAge = 1800,
 		domain,
 		suffix,
-		securityHandler,
+		accessHandler,
+		privilegeHandler,
 		env = {},
 		staticDir,
 		staticPath,
 		templateDir,
 		controllerDir,
 		controllerPath,
+		wsDir,
+		wsPath,
+		wsMaxMessageSize,
 	} = {}) {
 		const app = new App();
-		const middlewares = [
-			index_1.session.create({
-				serverKey: serverKey,
-				cookieName: cookieName,
-				maxAge: maxAge || 1800,
-				domain: domain,
-			}),
-			index_1.staticServer.create({
-				suffix: suffix,
-				baseDir: staticDir,
-				rootPath: staticPath,
-			}),
-			index_1.bodyParser.create(),
-			index_1.template.create({
-				baseDir: templateDir,
-			}),
-			index_1.controller.create({
-				baseDir: controllerDir,
-				rootPath: controllerPath,
-			}),
-		];
-		if (typeof securityHandler === 'function') {
-			middlewares.splice(1, 0, index_1.security.create(securityHandler));
-		}
-		app.use(...middlewares);
 		if (env) {
 			for (const k in env) {
 				if (!app[k]) {
@@ -120,7 +103,40 @@ class App {
 				}
 			}
 		}
-		app.start(port || 8080, hostname || undefined);
+		app.start({
+			port: port || 8080,
+			hostname: hostname || undefined,
+		});
+		app.use(index_1.session, {
+			serverKey: serverKey,
+			cookieName: cookieName,
+			maxAge: maxAge || 1800,
+			domain: domain,
+		});
+		if (typeof accessHandler === 'function' || typeof privilegeHandler === 'function') {
+			app.use(index_1.security, {
+				accessHandler: accessHandler,
+				privilegeHandler: privilegeHandler,
+			});
+		}
+		app.use(index_1.staticServer, {
+			suffix: suffix,
+			baseDir: staticDir,
+			rootPath: staticPath,
+		});
+		app.use(index_1.bodyParser);
+		app.use(index_1.template, {
+			baseDir: templateDir,
+		});
+		app.use(index_1.controller, {
+			baseDir: controllerDir,
+			rootPath: controllerPath,
+		});
+		app.use(index_1.webSocket, {
+			baseDir: wsDir,
+			rootPath: wsPath,
+			maxReceivedMessageSize: wsMaxMessageSize,
+		});
 		return app;
 	}
 }
@@ -133,6 +149,7 @@ exports.middlewares = {
 	bodyParser: index_1.bodyParser,
 	security: index_1.security,
 	template: index_1.template,
+	webSocket: index_1.webSocket,
 };
 exports.default = App;
 //# sourceMappingURL=index.js.map

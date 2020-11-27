@@ -4,7 +4,7 @@ import tools, { FileStat } from '../utils/tools';
 import time from 'thor-time';
 import mime from 'mime';
 import zlib from 'zlib';
-import { Middleware, MiddlewareFactory } from '../types';
+import { Application, Middleware, MiddlewareFactory } from '../types';
 
 export function defaultSuffix(): string[] {
 	const suffix = [
@@ -119,13 +119,10 @@ type CacheData = {
 };
 
 class StaticFactory implements MiddlewareFactory {
-	create({
-		baseDir,
-		rootPath = '/',
-		suffix,
-		cachedFileSize = 1024 * 1024,
-		enableGzipSize = 50 * 1024,
-	}: StaticOptions = {}): Middleware {
+	create(
+		app: Application,
+		{ baseDir, rootPath = '/', suffix, cachedFileSize = 1024 * 1024, enableGzipSize = 50 * 1024 }: StaticOptions = {}
+	): Middleware {
 		if (!rootPath) {
 			rootPath = '/';
 		}

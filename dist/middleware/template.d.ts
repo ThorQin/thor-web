@@ -1,4 +1,4 @@
-import { Middleware, MiddlewareFactory } from '../types';
+import { Application, Middleware, MiddlewareFactory } from '../types';
 export declare type TemplateOptions = {
 	/**
 	 * The root directory of the controllers.
@@ -10,7 +10,7 @@ export declare type TemplateOptions = {
 	isDebug?: boolean;
 };
 declare class TemplateFactory implements MiddlewareFactory {
-	create({ baseDir, isDebug }?: TemplateOptions): Middleware;
+	create(app: Application, { baseDir, isDebug }?: TemplateOptions): Middleware;
 }
 declare const templateFactory: TemplateFactory;
 export default templateFactory;

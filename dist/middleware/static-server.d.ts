@@ -1,4 +1,4 @@
-import { Middleware, MiddlewareFactory } from '../types';
+import { Application, Middleware, MiddlewareFactory } from '../types';
 export declare function defaultSuffix(): string[];
 export declare type StaticOptions = {
 	/**
@@ -23,7 +23,7 @@ export declare type StaticOptions = {
 	enableGzipSize?: number;
 };
 declare class StaticFactory implements MiddlewareFactory {
-	create({ baseDir, rootPath, suffix, cachedFileSize, enableGzipSize }?: StaticOptions): Middleware;
+	create(app: Application, { baseDir, rootPath, suffix, cachedFileSize, enableGzipSize }?: StaticOptions): Middleware;
 }
 declare const staticFactory: StaticFactory;
 export default staticFactory;

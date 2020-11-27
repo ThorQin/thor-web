@@ -4,5 +4,6 @@ import security from './security';
 import bodyParser from './body-parser';
 import template from './template';
 import controller from './controller';
+import webSocket from './websocket';
 
-export { session, staticServer, security, bodyParser, template, controller };
+export { session, staticServer, security, bodyParser, template, controller, webSocket };

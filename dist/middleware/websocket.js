@@ -43,9 +43,9 @@ var __importDefault =
 Object.defineProperty(exports, '__esModule', { value: true });
 const path_1 = __importDefault(require('path'));
 const tools_1 = __importDefault(require('../utils/tools'));
-// import url from 'url';
-const thor_validation_1 = require('thor-validation');
-const security_1 = require('./security');
+const websocket_1 = require('websocket');
+const http_1 = __importDefault(require('http'));
+const context_1 = __importDefault(require('../context'));
 const API = {};
 function loadScript(baseDir, api) {
 	let p = API[api];
@@ -55,21 +55,21 @@ function loadScript(baseDir, api) {
 	p = new Promise((resolve) => {
 		const modulePath = baseDir + (api.endsWith('/') ? api + 'index' : api);
 		const jsFile = modulePath + '.js';
+		// console.log(`jsFile: ${jsFile}`);
 		// const mjsFile = modulePath + '.mjs';
 		tools_1.default
 			.fileStat(jsFile)
 			.then((stat) => {
 				if (stat.isFile) {
-					// const fileUrl = url.pathToFileURL(modulePath);
-					// console.log(fileUrl.toString());
-					// import(fileUrl.toString())
 					Promise.resolve()
 						.then(() => __importStar(require(modulePath)))
 						.then((fn) => {
-							if (fn && (typeof fn === 'function' || typeof fn === 'object')) {
+							if (fn && typeof fn === 'function') {
 								return resolve(fn);
+							} else if (fn && typeof fn === 'object' && typeof fn.default === 'function') {
+								return resolve(fn.default);
 							} else {
-								console.error('Invalid API handler: must export a function or an object');
+								console.error('Invalid WebSocket handler: must export a function');
 								resolve(null);
 							}
 						})
@@ -91,8 +91,36 @@ function loadScript(baseDir, api) {
 	}
 	return p;
 }
-class ControllerFactory {
-	create(app, { baseDir, rootPath = '/' } = {}) {
+async function processRequest(app, req, rsp, middlewares) {
+	async function* exec(ctx, req, rsp) {
+		for (const m of middlewares) {
+			if (m.supportWebSocket) {
+				yield m(ctx, req, rsp);
+			}
+		}
+	}
+	const ctx = new context_1.default(req, rsp);
+	ctx.isWebSocket = true;
+	ctx.app = app;
+	try {
+		for await (const result of exec(ctx, req, rsp)) {
+			if (result) {
+				return false;
+			}
+		}
+		return true;
+	} catch (e) {
+		console.error(e);
+		if (process.env.NODE_ENV == 'prodction') {
+			ctx.errorUnknown();
+		} else {
+			ctx.errorUnknown(e);
+		}
+		return false;
+	}
+}
+class WebSocketFactory {
+	create(app, { baseDir, rootPath = '/', maxReceivedMessageSize } = {}) {
 		if (!rootPath) {
 			rootPath = '/';
 		}
@@ -103,70 +131,48 @@ class ControllerFactory {
 			rootPath = `${rootPath}/`;
 		}
 		if (!baseDir) {
-			baseDir = path_1.default.resolve(tools_1.default.getRootDir(), 'controllers');
+			baseDir = path_1.default.resolve(tools_1.default.getRootDir(), 'socket');
 		} else {
 			baseDir = path_1.default.resolve(baseDir);
 		}
 		if (baseDir.endsWith('/')) {
 			baseDir = baseDir.substring(0, baseDir.length - 1);
 		}
-		return async function (ctx, req, rsp) {
-			let page = ctx.path;
+		if (!app.server) {
+			return null;
+		}
+		const ws = new websocket_1.server({
+			httpServer: app.server,
+			maxReceivedMessageSize: maxReceivedMessageSize,
+		});
+		app.ws = ws;
+		ws.on('request', async function (request) {
+			const rsp = new http_1.default.ServerResponse(request.httpRequest);
+			const result = await processRequest(app, request.httpRequest, rsp, app.middlewares);
+			if (!result) {
+				console.warn('WebSocket connection to ' + request.resource + ' was rejected!');
+				request.reject();
+				return;
+			}
+			let page = request.resource;
 			if (!page.startsWith(rootPath)) {
-				return false;
+				console.log(`invalid path: ${page}, should be starts with: ${rootPath}`);
+				request.reject(404, 'Not Found');
+				return;
 			}
 			page = page.substring(rootPath.length - 1);
-			let fn = await loadScript(baseDir, page);
-			if (fn) {
-				if (typeof fn !== 'function') {
-					fn = fn[ctx.method.toLowerCase()];
-				}
-				if (typeof fn !== 'function') {
-					fn = fn['default'];
-				}
-				if (typeof fn === 'function') {
-					try {
-						const result = await fn(ctx, req, rsp);
-						if (typeof result !== 'undefined') {
-							await ctx.sendJson(result);
-						} else if (!rsp.writableEnded) {
-							await ctx.end();
-						}
-					} catch (e) {
-						if (!rsp.writableEnded) {
-							if (e && e.message === 'ERR_HTTP_HEADERS_SENT') {
-								console.error(`[${req.method} : ${page}] `, e);
-								await ctx.end();
-							} else {
-								if (e && e.constructor && e.constructor.name === thor_validation_1.ValidationError.name) {
-									console.error(`[${req.method} : ${page}] `, e.message);
-									await ctx.errorBadRequest(e.message);
-								} else if (e && e.constructor && e.constructor.name === security_1.SecurityError.name) {
-									console.error(`[${req.method} : ${page}] `, e.message);
-									await ctx.error(403, e.message);
-								} else if (process.env.NODE_ENV == 'prodction') {
-									console.error(`[${req.method} : ${page}] `, e);
-									await ctx.error();
-								} else {
-									console.error(`[${req.method} : ${page}] `, e);
-									await ctx.errorUnknown(e);
-								}
-							}
-						} else {
-							console.error(`[${req.method} : ${page}] `, e);
-						}
-					}
-				} else {
-					await ctx.errorBadMethod();
-				}
-				console.log(`> Execute handler: ${ctx.path} -> ${page}`);
-				return true;
+			const fn = await loadScript(baseDir, page);
+			if (typeof fn === 'function') {
+				const connection = request.accept();
+				fn(connection, app);
 			} else {
-				return false;
+				console.warn('WebSocket connection to ' + request.resource + ' was rejected: WS handler not found!');
+				request.reject(404, 'Not Found');
 			}
-		};
+		});
+		return null;
 	}
 }
-const controllerFactory = new ControllerFactory();
-exports.default = controllerFactory;
-//# sourceMappingURL=controller.js.map
+const webSocketFactory = new WebSocketFactory();
+exports.default = webSocketFactory;
+//# sourceMappingURL=websocket.js.map
