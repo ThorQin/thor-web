@@ -5,7 +5,7 @@ var __importDefault =
 		return mod && mod.__esModule ? mod : { default: mod };
 	};
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.enc = exports.middlewares = void 0;
+exports.HttpError = exports.enc = exports.middlewares = void 0;
 const http_1 = __importDefault(require('http'));
 const context_1 = __importDefault(require('./context'));
 const index_1 = require('./middleware/index');
@@ -142,6 +142,13 @@ class App {
 }
 const enc_js_1 = __importDefault(require('./utils/enc.js'));
 exports.enc = enc_js_1.default;
+const controller_1 = require('./middleware/controller');
+Object.defineProperty(exports, 'HttpError', {
+	enumerable: true,
+	get: function () {
+		return controller_1.HttpError;
+	},
+});
 exports.middlewares = {
 	session: index_1.session,
 	staticServer: index_1.staticServer,

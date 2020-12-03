@@ -1,4 +1,8 @@
 import { Application, Middleware, MiddlewareFactory } from '../types';
+export declare class HttpError extends Error {
+	code: number;
+	constructor(code: number, msg: string);
+}
 export declare type ControllerCreateOptions = {
 	baseDir?: string;
 	rootPath?: string;

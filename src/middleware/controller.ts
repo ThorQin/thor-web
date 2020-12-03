@@ -53,6 +53,14 @@ function loadScript(baseDir: string, api: string): Promise<ScriptDefinition> {
 	return p;
 }
 
+export class HttpError extends Error {
+	code: number;
+	constructor(code: number, msg: string) {
+		super(msg);
+		this.code = code;
+	}
+}
+
 export type ControllerCreateOptions = {
 	baseDir?: string;
 	rootPath?: string;
@@ -111,6 +119,9 @@ class ControllerFactory implements MiddlewareFactory {
 								} else if (e && e.constructor && e.constructor.name === SecurityError.name) {
 									console.error(`[${req.method} : ${page}] `, e.message);
 									await ctx.error(403, e.message);
+								} else if (e && e.constructor && e.constructor.name === HttpError.name) {
+									console.error(`[${req.method} : ${page}] `, e.message);
+									await ctx.error(e.code, e.message);
 								} else if (process.env.NODE_ENV == 'prodction') {
 									console.error(`[${req.method} : ${page}] `, e);
 									await ctx.error();

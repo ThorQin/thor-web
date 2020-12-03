@@ -41,6 +41,7 @@ var __importDefault =
 		return mod && mod.__esModule ? mod : { default: mod };
 	};
 Object.defineProperty(exports, '__esModule', { value: true });
+exports.HttpError = void 0;
 const path_1 = __importDefault(require('path'));
 const tools_1 = __importDefault(require('../utils/tools'));
 // import url from 'url';
@@ -91,6 +92,13 @@ function loadScript(baseDir, api) {
 	}
 	return p;
 }
+class HttpError extends Error {
+	constructor(code, msg) {
+		super(msg);
+		this.code = code;
+	}
+}
+exports.HttpError = HttpError;
 class ControllerFactory {
 	create(app, { baseDir, rootPath = '/' } = {}) {
 		if (!rootPath) {
@@ -144,6 +152,9 @@ class ControllerFactory {
 								} else if (e && e.constructor && e.constructor.name === security_1.SecurityError.name) {
 									console.error(`[${req.method} : ${page}] `, e.message);
 									await ctx.error(403, e.message);
+								} else if (e && e.constructor && e.constructor.name === HttpError.name) {
+									console.error(`[${req.method} : ${page}] `, e.message);
+									await ctx.error(e.code, e.message);
 								} else if (process.env.NODE_ENV == 'prodction') {
 									console.error(`[${req.method} : ${page}] `, e);
 									await ctx.error();

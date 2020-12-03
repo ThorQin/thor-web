@@ -179,6 +179,7 @@ class App implements Application {
 
 import enc from './utils/enc.js';
 import { WebSocketCreateOptions } from './middleware/websocket';
+import { HttpError } from './middleware/controller';
 
 export const middlewares: {
 	[key: string]: MiddlewareFactory;
@@ -192,5 +193,5 @@ export const middlewares: {
 	webSocket,
 };
 
-export { enc };
+export { enc, HttpError };
 export default App;

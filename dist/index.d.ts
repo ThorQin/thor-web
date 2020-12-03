@@ -66,8 +66,9 @@ declare class App implements Application {
 	}?: StartOptions): App;
 }
 import enc from './utils/enc.js';
+import { HttpError } from './middleware/controller';
 export declare const middlewares: {
 	[key: string]: MiddlewareFactory;
 };
-export { enc };
+export { enc, HttpError };
 export default App;
