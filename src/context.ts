@@ -47,6 +47,9 @@ export default class Context {
 	rsp: http.ServerResponse;
 	url: string;
 	ip?: string;
+	/**
+	 * In upper case
+	 */
 	method: string;
 	path: string;
 	query: string;
@@ -64,7 +67,7 @@ export default class Context {
 		const url = new URL(req.url || '', `http://${req.headers.host}/`);
 		this.url = url.href;
 		this.ip = req.connection.remoteAddress;
-		this.method = req.method || 'GET';
+		this.method = (req.method || 'GET').toUpperCase();
 		this.path = url.pathname;
 		this.query = url.search;
 		this.params = url.searchParams;

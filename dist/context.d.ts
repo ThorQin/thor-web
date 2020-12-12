@@ -16,6 +16,9 @@ export default class Context {
 	rsp: http.ServerResponse;
 	url: string;
 	ip?: string;
+	/**
+	 * In upper case
+	 */
 	method: string;
 	path: string;
 	query: string;

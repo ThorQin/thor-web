@@ -124,13 +124,16 @@ class ControllerFactory {
 				return false;
 			}
 			page = page.substring(rootPath.length - 1);
-			let fn = await loadScript(baseDir, page);
-			if (fn) {
-				if (typeof fn !== 'function') {
-					fn = fn[ctx.method.toLowerCase()];
-				}
-				if (typeof fn !== 'function') {
-					fn = fn['default'];
+			const obj = await loadScript(baseDir, page);
+			let fn = null;
+			if (obj) {
+				if (typeof obj !== 'function') {
+					fn = obj[ctx.method.toLowerCase()];
+					if (typeof fn !== 'function') {
+						fn = obj['default'];
+					}
+				} else {
+					fn = obj;
 				}
 				if (typeof fn === 'function') {
 					try {

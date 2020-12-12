@@ -91,13 +91,16 @@ class ControllerFactory implements MiddlewareFactory {
 				return false;
 			}
 			page = page.substring(rootPath.length - 1);
-			let fn = await loadScript(baseDir as string, page);
-			if (fn) {
-				if (typeof fn !== 'function') {
-					fn = fn[ctx.method.toLowerCase()];
-				}
-				if (typeof fn !== 'function') {
-					fn = fn['default'];
+			const obj = await loadScript(baseDir as string, page);
+			let fn: Controller | null = null;
+			if (obj) {
+				if (typeof obj !== 'function') {
+					fn = obj[ctx.method.toLowerCase()];
+					if (typeof fn !== 'function') {
+						fn = obj['default'];
+					}
+				} else {
+					fn = obj;
 				}
 				if (typeof fn === 'function') {
 					try {
