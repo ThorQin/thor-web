@@ -118,7 +118,7 @@ type CacheData = {
 	gzipData: Buffer | null;
 };
 
-class StaticFactory implements MiddlewareFactory {
+class StaticFactory implements MiddlewareFactory<StaticOptions> {
 	create(
 		app: Application,
 		{ baseDir, rootPath = '/', suffix, cachedFileSize = 1024 * 1024, enableGzipSize = 50 * 1024 }: StaticOptions = {}

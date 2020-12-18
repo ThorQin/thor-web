@@ -44,7 +44,18 @@ type StartOptions = {
 	port?: number;
 	hostname?: string;
 	cookieName?: string;
+	/**
+	 * 保存 Session 的 Cookie 的有效期，默认 1800 秒，设置为 -1 为永久保存
+	 */
 	maxAge?: number;
+	/**
+	 * 过期检查选项，判断 Session 首次建立时间是否超过规定值，以及超过后的要执行的动作
+	 */
+	expireCheck?: TimeCheck;
+	/**
+	 * 访问间隔检查选项，判断 Session 最后请求时间是否超过规定值，以及超过后的要执行的动作
+	 */
+	intervalCheck?: TimeCheck;
 	domain?: string;
 	serverKey?: string;
 	suffix?: string[];
@@ -70,7 +81,7 @@ class App implements Application {
 		this.middlewares = [];
 	}
 
-	use<T extends MiddlewareFactory>(factory: T, options?: MiddlewareOptions): this {
+	use<T extends MiddlewareFactory<O>, O extends MiddlewareOptions>(factory: T, options?: O): this {
 		if (!this.server) {
 			throw new Error('Error: server not started!');
 		}
@@ -117,6 +128,8 @@ class App implements Application {
 		cookieName,
 		serverKey,
 		maxAge = 1800,
+		expireCheck,
+		intervalCheck,
 		domain,
 		suffix,
 		accessHandler,
@@ -147,6 +160,8 @@ class App implements Application {
 			serverKey: serverKey,
 			cookieName: cookieName,
 			maxAge: maxAge || 1800,
+			expireCheck: expireCheck,
+			intervalCheck: intervalCheck,
 			domain: domain,
 		});
 		if (typeof accessHandler === 'function' || typeof privilegeHandler === 'function') {
@@ -180,9 +195,10 @@ class App implements Application {
 import enc from './utils/enc.js';
 import { WebSocketCreateOptions } from './middleware/websocket';
 import { HttpError } from './middleware/controller';
+import { TimeCheck } from './middleware/session';
 
 export const middlewares: {
-	[key: string]: MiddlewareFactory;
+	[key: string]: MiddlewareFactory<MiddlewareOptions>;
 } = {
 	session,
 	staticServer,

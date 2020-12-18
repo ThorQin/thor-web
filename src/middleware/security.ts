@@ -8,6 +8,7 @@ import {
 	BasicAuthResult,
 	CustomResult,
 	Application,
+	MiddlewareOptions,
 } from '../types';
 import Context from '../context';
 
@@ -74,12 +75,12 @@ async function isCompleted(ctx: Context, result: AccessCheckResult): Promise<boo
 	}
 }
 
-export interface SecurityOptions {
+export interface SecurityOptions extends MiddlewareOptions {
 	accessHandler?: AccessHandler;
 	privilegeHandler?: PrivilegeHandler;
 }
 
-class SecurityFactory implements MiddlewareFactory {
+class SecurityFactory implements MiddlewareFactory<SecurityOptions> {
 	create(app: Application, param: SecurityOptions = {}): Middleware {
 		const fn = async function (ctx: Context) {
 			if (!ctx.isWebSocket) {

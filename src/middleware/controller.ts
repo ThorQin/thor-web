@@ -66,7 +66,7 @@ export type ControllerCreateOptions = {
 	rootPath?: string;
 };
 
-class ControllerFactory implements MiddlewareFactory {
+class ControllerFactory implements MiddlewareFactory<ControllerCreateOptions> {
 	create(app: Application, { baseDir, rootPath = '/' }: ControllerCreateOptions = {}): Middleware {
 		if (!rootPath) {
 			rootPath = '/';
@@ -117,13 +117,13 @@ class ControllerFactory implements MiddlewareFactory {
 								await ctx.end();
 							} else {
 								if (e && e.constructor && e.constructor.name === ValidationError.name) {
-									console.error(`[${req.method} : ${page}] `, e.message);
+									console.error(`[${req.method} : ${page}] `, e);
 									await ctx.errorBadRequest(e.message);
 								} else if (e && e.constructor && e.constructor.name === SecurityError.name) {
-									console.error(`[${req.method} : ${page}] `, e.message);
+									console.error(`[${req.method} : ${page}] `, e);
 									await ctx.error(403, e.message);
 								} else if (e && e.constructor && e.constructor.name === HttpError.name) {
-									console.error(`[${req.method} : ${page}] `, e.message);
+									console.error(`[${req.method} : ${page}] `, e);
 									await ctx.error(e.code, e.message);
 								} else if (process.env.NODE_ENV == 'prodction') {
 									console.error(`[${req.method} : ${page}] `, e);

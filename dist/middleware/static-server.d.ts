@@ -22,7 +22,7 @@ export declare type StaticOptions = {
 	 */
 	enableGzipSize?: number;
 };
-declare class StaticFactory implements MiddlewareFactory {
+declare class StaticFactory implements MiddlewareFactory<StaticOptions> {
 	create(app: Application, { baseDir, rootPath, suffix, cachedFileSize, enableGzipSize }?: StaticOptions): Middleware;
 }
 declare const staticFactory: StaticFactory;

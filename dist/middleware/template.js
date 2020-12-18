@@ -24,6 +24,7 @@ class TemplateFactory {
 			const basename = path_1.default.basename(file);
 			const jsFile = path_1.default.join(dir, basename) + '.js';
 			const options = {
+				useAsync: true,
 				fn: {
 					include: async (file, data) => {
 						file = (file + '').trim().replace(/\\/g, '/');
@@ -50,7 +51,7 @@ class TemplateFactory {
 									const fn = thor_tpl_1.compile(content, options);
 									resolve(fn);
 								} catch (e) {
-									reject(e.message || e);
+									reject(e);
 								}
 							})
 							.catch((cause) => {

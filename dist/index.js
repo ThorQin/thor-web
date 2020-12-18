@@ -81,6 +81,8 @@ class App {
 		cookieName,
 		serverKey,
 		maxAge = 1800,
+		expireCheck,
+		intervalCheck,
 		domain,
 		suffix,
 		accessHandler,
@@ -111,6 +113,8 @@ class App {
 			serverKey: serverKey,
 			cookieName: cookieName,
 			maxAge: maxAge || 1800,
+			expireCheck: expireCheck,
+			intervalCheck: intervalCheck,
 			domain: domain,
 		});
 		if (typeof accessHandler === 'function' || typeof privilegeHandler === 'function') {

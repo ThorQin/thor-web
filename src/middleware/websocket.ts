@@ -93,7 +93,7 @@ export type WebSocketCreateOptions = {
 	maxReceivedMessageSize?: number;
 };
 
-class WebSocketFactory implements MiddlewareFactory {
+class WebSocketFactory implements MiddlewareFactory<WebSocketCreateOptions> {
 	create(
 		app: Application,
 		{ baseDir, rootPath = '/', maxReceivedMessageSize }: WebSocketCreateOptions = {}

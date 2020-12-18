@@ -248,7 +248,7 @@ function createSession(
 	return session;
 }
 
-class SessionFactory implements MiddlewareFactory {
+class SessionFactory implements MiddlewareFactory<SessionOptions> {
 	create(
 		app: Application,
 		{

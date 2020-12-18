@@ -4,7 +4,7 @@ export declare type WebSocketCreateOptions = {
 	rootPath?: string;
 	maxReceivedMessageSize?: number;
 };
-declare class WebSocketFactory implements MiddlewareFactory {
+declare class WebSocketFactory implements MiddlewareFactory<WebSocketCreateOptions> {
 	create(app: Application, { baseDir, rootPath, maxReceivedMessageSize }?: WebSocketCreateOptions): Middleware | null;
 }
 declare const webSocketFactory: WebSocketFactory;

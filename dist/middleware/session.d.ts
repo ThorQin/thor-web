@@ -30,7 +30,7 @@ export interface SessionOptions extends MiddlewareOptions {
 	secure?: boolean;
 	sameSite?: 'None' | 'Lax' | 'Strict';
 }
-declare class SessionFactory implements MiddlewareFactory {
+declare class SessionFactory implements MiddlewareFactory<SessionOptions> {
 	create(
 		app: Application,
 		{

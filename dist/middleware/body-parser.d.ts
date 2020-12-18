@@ -4,7 +4,7 @@ import http from 'http';
 /**
  * Create body-parser middleware.
  */
-declare class BodyParserFactory implements MiddlewareFactory {
+declare class BodyParserFactory implements MiddlewareFactory<undefined> {
 	create(): (ctx: Context, req: http.IncomingMessage) => Promise<boolean>;
 }
 declare const bodyParser: BodyParserFactory;

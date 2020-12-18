@@ -13,8 +13,8 @@ export type Middleware = {
 	supportWebSocket?: boolean;
 };
 
-export interface MiddlewareFactory {
-	create: (app: Application, arg?: MiddlewareOptions) => Middleware | null;
+export interface MiddlewareFactory<T extends MiddlewareOptions | undefined> {
+	create: (app: Application, arg?: T) => Middleware | null;
 }
 
 export interface StartOptions {
@@ -31,7 +31,7 @@ export interface Application {
 	server: http.Server | null;
 	start(options?: StartOptions): this;
 	stop(): this;
-	use<T extends MiddlewareFactory>(factory: T, options: MiddlewareOptions): this;
+	use<T extends MiddlewareFactory<MiddlewareOptions>>(factory: T, options: MiddlewareOptions): this;
 	ws?: WebSocketServer;
 	[key: string]: unknown;
 }

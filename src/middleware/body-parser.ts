@@ -583,7 +583,7 @@ function createParser(req: http.IncomingMessage): BasicBodyParser {
 /**
  * Create body-parser middleware.
  */
-class BodyParserFactory implements MiddlewareFactory {
+class BodyParserFactory implements MiddlewareFactory<undefined> {
 	create() {
 		return async function (ctx: Context, req: http.IncomingMessage) {
 			ctx.body = createParser(req);

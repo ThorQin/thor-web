@@ -9,7 +9,7 @@ export declare type TemplateOptions = {
 	 */
 	isDebug?: boolean;
 };
-declare class TemplateFactory implements MiddlewareFactory {
+declare class TemplateFactory implements MiddlewareFactory<TemplateOptions> {
 	create(app: Application, { baseDir, isDebug }?: TemplateOptions): Middleware;
 }
 declare const templateFactory: TemplateFactory;

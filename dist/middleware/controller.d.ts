@@ -7,7 +7,7 @@ export declare type ControllerCreateOptions = {
 	baseDir?: string;
 	rootPath?: string;
 };
-declare class ControllerFactory implements MiddlewareFactory {
+declare class ControllerFactory implements MiddlewareFactory<ControllerCreateOptions> {
 	create(app: Application, { baseDir, rootPath }?: ControllerCreateOptions): Middleware;
 }
 declare const controllerFactory: ControllerFactory;

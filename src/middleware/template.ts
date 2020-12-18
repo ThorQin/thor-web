@@ -15,7 +15,7 @@ export type TemplateOptions = {
 	isDebug?: boolean;
 };
 
-class TemplateFactory implements MiddlewareFactory {
+class TemplateFactory implements MiddlewareFactory<TemplateOptions> {
 	create(app: Application, { baseDir, isDebug = false }: TemplateOptions = {}): Middleware {
 		const cache: { [key: string]: Promise<CompiledFunction> } = {};
 
@@ -32,6 +32,7 @@ class TemplateFactory implements MiddlewareFactory {
 			const basename = path.basename(file);
 			const jsFile = path.join(dir, basename) + '.js';
 			const options = {
+				useAsync: true,
 				fn: {
 					include: async (file: string, data: unknown) => {
 						file = (file + '').trim().replace(/\\/g, '/');
@@ -57,7 +58,7 @@ class TemplateFactory implements MiddlewareFactory {
 									const fn = compile(content, options);
 									resolve(fn);
 								} catch (e) {
-									reject(e.message || e);
+									reject(e);
 								}
 							})
 							.catch((cause) => {
