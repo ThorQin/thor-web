@@ -71,7 +71,7 @@ async function* readFile(fd: fs.FileHandle, buffer: Buffer) {
 }
 
 function flushStream(stream: zlib.Gzip) {
-	return new Promise((resolve) => {
+	return new Promise<void>((resolve) => {
 		stream.flush(() => {
 			resolve();
 		});
@@ -82,7 +82,7 @@ function writeStream(stream: zlib.Gzip, buffer: Buffer) {
 	if (buffer.length <= 0) {
 		return Promise.resolve();
 	}
-	return new Promise((resolve) => {
+	return new Promise<void>((resolve) => {
 		stream.write(buffer, () => {
 			resolve();
 		});

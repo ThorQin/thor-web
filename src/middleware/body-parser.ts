@@ -307,7 +307,7 @@ class Parser {
 				lastPos = 1 + lfPos.lead;
 			}
 			if (partInfo.fd) {
-				return new Promise(function (resolve, reject) {
+				return new Promise<void>(function (resolve, reject) {
 					if (!partInfo || !partInfo.fd) {
 						reject(invalidStateError());
 						return;

@@ -26,7 +26,7 @@ function writeStream(stream: stream.Writable, buffer: Buffer | string): Promise<
 }
 
 function flushStream(stream: zlib.Gzip) {
-	return new Promise((resolve) => {
+	return new Promise<void>((resolve) => {
 		stream.flush(() => {
 			resolve();
 		});
