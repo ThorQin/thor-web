@@ -283,7 +283,7 @@ class Parser {
 			}
 		}
 
-		function onBody(lfPos: Pos) {
+		function onBody(lfPos: Pos): Promise<void> {
 			if (!partInfo) {
 				return Promise.reject(new Error(''));
 			}

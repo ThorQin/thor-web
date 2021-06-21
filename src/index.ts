@@ -29,6 +29,7 @@ async function processRequest(
 				return;
 			}
 		}
+		console.log(`not found: ${ctx.url}`);
 		ctx.errorNotFound();
 	} catch (e) {
 		console.error(e);
@@ -108,6 +109,7 @@ class App implements Application {
 		} else {
 			console.log(`Server listening on: ${port}`);
 		}
+		console.log(`Current work dir: ${getRootDir()}`);
 		return this;
 	}
 
@@ -196,6 +198,7 @@ import enc from './utils/enc.js';
 import { WebSocketCreateOptions } from './middleware/websocket';
 import { HttpError } from './middleware/controller';
 import { TimeCheck } from './middleware/session';
+import { getRootDir } from './utils/tools';
 
 export const middlewares: {
 	[key: string]: MiddlewareFactory<MiddlewareOptions>;

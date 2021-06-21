@@ -23,6 +23,7 @@ async function processRequest(app, req, rsp, middlewares) {
 				return;
 			}
 		}
+		console.log(`not found: ${ctx.url}`);
 		ctx.errorNotFound();
 	} catch (e) {
 		console.error(e);
@@ -63,6 +64,7 @@ class App {
 		} else {
 			console.log(`Server listening on: ${port}`);
 		}
+		console.log(`Current work dir: ${tools_1.getRootDir()}`);
 		return this;
 	}
 	stop() {
@@ -153,6 +155,7 @@ Object.defineProperty(exports, 'HttpError', {
 		return controller_1.HttpError;
 	},
 });
+const tools_1 = require('./utils/tools');
 exports.middlewares = {
 	session: index_1.session,
 	staticServer: index_1.staticServer,
