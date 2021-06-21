@@ -82,7 +82,7 @@ function writeStream(stream: zlib.Gzip, buffer: Buffer): Promise<void> {
 	if (buffer.length <= 0) {
 		return Promise.resolve();
 	}
-	return new Promise((resolve) => {
+	return new Promise<void>((resolve) => {
 		stream.write(buffer, () => {
 			resolve();
 		});
