@@ -9,6 +9,7 @@ import {
 	CustomResult,
 	Application,
 	MiddlewareOptions,
+	PermissionHandler,
 } from '../types';
 import Context from '../context';
 
@@ -78,6 +79,7 @@ async function isCompleted(ctx: Context, result: AccessCheckResult): Promise<boo
 export interface SecurityOptions extends MiddlewareOptions {
 	accessHandler?: AccessHandler;
 	privilegeHandler?: PrivilegeHandler;
+	permissionHandler?: PermissionHandler;
 }
 
 class SecurityFactory implements MiddlewareFactory<SecurityOptions> {
@@ -98,6 +100,20 @@ class SecurityFactory implements MiddlewareFactory<SecurityOptions> {
 						}
 					} else {
 						throw new SecurityError(`Permission denied: ${account} ${resource}(${resourceId}) by ${account}`);
+					}
+				};
+				ctx.checkPermission = async function (account, permission) {
+					if (typeof param.permissionHandler === 'function') {
+						const result = await param.permissionHandler({
+							ctx: ctx,
+							account: account,
+							permission: permission,
+						});
+						if (!result) {
+							throw new SecurityError(`Permission denied: ${permission} by ${account}`);
+						}
+					} else {
+						throw new SecurityError(`Permission denied: ${permission} by ${account}`);
 					}
 				};
 			}

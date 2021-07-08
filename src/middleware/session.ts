@@ -1,20 +1,22 @@
-import uuidv1 from 'uuid/v1';
+import { v1 as uuidv1 } from 'uuid';
 import time from 'thor-time';
 import zlib from 'zlib';
 import crypto from 'crypto';
-import { Application, Middleware, MiddlewareFactory, MiddlewareOptions, SaveOptions, Session } from '../types';
+import {
+	Application,
+	Middleware,
+	MiddlewareFactory,
+	MiddlewareOptions,
+	SaveOptions,
+	Session,
+	SessionInfo,
+} from '../types';
 import Context from '../context';
 
 export type TimeCheck = {
 	value: number;
 	unit?: 'y' | 'M' | 'd' | 'h' | 'm' | 's' | 'ms';
 	action?: 'renew' | 'logout';
-};
-
-export type SessionInfo = {
-	createTime: number;
-	accessTime: number;
-	data: { [key: string]: unknown };
 };
 
 type SessionInfoOptions = {
@@ -101,7 +103,7 @@ export interface SessionOptions extends MiddlewareOptions {
 	 * value <= 0: delete cookie, value > 0: how long the cookie will be kept(in seconds)
 	 */
 	maxAge?: number;
-	renew?: (sessionInfo: unknown) => Promise<boolean>;
+	renew?: (sessionInfo: SessionInfo) => Promise<boolean>;
 	expireCheck?: TimeCheck;
 	intervalCheck?: TimeCheck;
 	domain?: string;

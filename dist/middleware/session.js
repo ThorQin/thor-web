@@ -5,7 +5,7 @@ var __importDefault =
 		return mod && mod.__esModule ? mod : { default: mod };
 	};
 Object.defineProperty(exports, '__esModule', { value: true });
-const v1_1 = __importDefault(require('uuid/v1'));
+const uuid_1 = require('uuid');
 const thor_time_1 = __importDefault(require('thor-time'));
 const zlib_1 = __importDefault(require('zlib'));
 const crypto_1 = __importDefault(require('crypto'));
@@ -246,7 +246,7 @@ class SessionFactory {
 		return fn;
 	}
 	generateKey() {
-		const id = v1_1.default().replace(/-/g, '');
+		const id = uuid_1.v1().replace(/-/g, '');
 		const buffer = Buffer.from(id, 'hex');
 		const key = buffer.toString('base64');
 		return key;

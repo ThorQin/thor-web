@@ -7,7 +7,7 @@ var __importDefault =
 Object.defineProperty(exports, '__esModule', { value: true });
 const querystring_1 = __importDefault(require('querystring'));
 const iconv_lite_1 = __importDefault(require('iconv-lite'));
-const v1_1 = __importDefault(require('uuid/v1'));
+const uuid_1 = require('uuid');
 const fs_1 = __importDefault(require('fs'));
 const thor_validation_1 = require('thor-validation');
 const STATE_BEGIN = 0;
@@ -108,7 +108,7 @@ function paserHeaders(lines) {
 	return headers;
 }
 function generateFile(storeDir) {
-	const id = v1_1.default().replace(/-/g, '');
+	const id = uuid_1.v1().replace(/-/g, '');
 	const path =
 		storeDir +
 		id.substring(0, 6).replace(/.{3}/g, function (v) {

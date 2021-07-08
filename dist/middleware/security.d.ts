@@ -5,11 +5,13 @@ import {
 	PrivilegeHandler,
 	Application,
 	MiddlewareOptions,
+	PermissionHandler,
 } from '../types';
 export declare class SecurityError extends Error {}
 export interface SecurityOptions extends MiddlewareOptions {
 	accessHandler?: AccessHandler;
 	privilegeHandler?: PrivilegeHandler;
+	permissionHandler?: PermissionHandler;
 }
 declare class SecurityFactory implements MiddlewareFactory<SecurityOptions> {
 	create(app: Application, param?: SecurityOptions): Middleware;

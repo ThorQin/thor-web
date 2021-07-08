@@ -85,10 +85,12 @@ class App {
 		maxAge = 1800,
 		expireCheck,
 		intervalCheck,
+		renew,
 		domain,
 		suffix,
 		accessHandler,
 		privilegeHandler,
+		permissionHandler,
 		env = {},
 		staticDir,
 		staticPath,
@@ -117,12 +119,18 @@ class App {
 			maxAge: maxAge || 1800,
 			expireCheck: expireCheck,
 			intervalCheck: intervalCheck,
+			renew: renew,
 			domain: domain,
 		});
-		if (typeof accessHandler === 'function' || typeof privilegeHandler === 'function') {
+		if (
+			typeof accessHandler === 'function' ||
+			typeof privilegeHandler === 'function' ||
+			typeof permissionHandler === 'function'
+		) {
 			app.use(index_1.security, {
 				accessHandler: accessHandler,
 				privilegeHandler: privilegeHandler,
+				permissionHandler: permissionHandler,
 			});
 		}
 		app.use(index_1.staticServer, {

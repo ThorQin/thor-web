@@ -1,6 +1,6 @@
 import qs from 'querystring';
 import iconv from 'iconv-lite';
-import uuidv1 from 'uuid/v1';
+import { v1 as uuidv1 } from 'uuid';
 import fs from 'fs';
 import { Schema, ValidationError } from 'thor-validation';
 import { BasicBodyParser, MiddlewareFactory, PartInfo } from '../types';

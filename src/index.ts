@@ -7,6 +7,8 @@ import {
 	MiddlewareFactory,
 	PrivilegeHandler,
 	MiddlewareOptions,
+	PermissionHandler,
+	SessionInfo,
 } from './types';
 import { session, staticServer, controller, bodyParser, security, template, webSocket } from './middleware/index';
 
@@ -57,19 +59,52 @@ type StartOptions = {
 	 * 访问间隔检查选项，判断 Session 最后请求时间是否超过规定值，以及超过后的要执行的动作
 	 */
 	intervalCheck?: TimeCheck;
+	renew?: (sessionInfo: SessionInfo) => Promise<boolean>;
+	/**
+	 * 限定 session 的访问域名
+	 */
 	domain?: string;
 	serverKey?: string;
+	/**
+	 * 额外允许访问的静态资源文件后缀
+	 */
 	suffix?: string[];
 	accessHandler?: AccessHandler;
 	privilegeHandler?: PrivilegeHandler;
+	permissionHandler?: PermissionHandler;
 	env?: { [key: string]: unknown };
+	/**
+	 * 静态资源物理存放位置
+	 */
 	staticDir?: string;
+	/**
+	 * 静态资源web访问路径
+	 */
 	staticPath?: string;
+	/**
+	 * 模板物理存放位置
+	 */
 	templateDir?: string;
+	/**
+	 * 接口物理存放位置
+	 */
 	controllerDir?: string;
+	/**
+	 * 接口web访问路径
+	 */
 	controllerPath?: string;
+	/**
+	 * WebSocket handler 物理位置
+	 */
 	wsDir?: string;
+	/**
+	 * WebSocket 访问路径
+	 */
 	wsPath?: string;
+	/**
+	 * The maximum allowed aggregate message size (for fragmented messages) in bytes.
+	 * @default 1MiB
+	 */
 	wsMaxMessageSize?: number;
 };
 
@@ -132,10 +167,12 @@ class App implements Application {
 		maxAge = 1800,
 		expireCheck,
 		intervalCheck,
+		renew,
 		domain,
 		suffix,
 		accessHandler,
 		privilegeHandler,
+		permissionHandler,
 		env = {},
 		staticDir,
 		staticPath,
@@ -164,12 +201,18 @@ class App implements Application {
 			maxAge: maxAge || 1800,
 			expireCheck: expireCheck,
 			intervalCheck: intervalCheck,
+			renew: renew,
 			domain: domain,
 		});
-		if (typeof accessHandler === 'function' || typeof privilegeHandler === 'function') {
+		if (
+			typeof accessHandler === 'function' ||
+			typeof privilegeHandler === 'function' ||
+			typeof permissionHandler === 'function'
+		) {
 			app.use(security, {
 				accessHandler: accessHandler,
 				privilegeHandler: privilegeHandler,
+				permissionHandler: permissionHandler,
 			});
 		}
 		app.use(staticServer, {

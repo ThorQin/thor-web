@@ -4,7 +4,7 @@ import zlib from 'zlib';
 import stream from 'stream';
 import http from 'http';
 import { promises as fs } from 'fs';
-import { Application, BasicBodyParser, PrivilegeCheck, Renderer, Session } from './types';
+import { Application, BasicBodyParser, PermissionCheck, PrivilegeCheck, Renderer, Session } from './types';
 
 async function* readFile(fd: fs.FileHandle, buffer: Buffer) {
 	let rd = await fd.read(buffer, 0, buffer.length);
@@ -58,6 +58,7 @@ export default class Context {
 	body?: BasicBodyParser;
 	session?: Session;
 	checkPrivilege?: PrivilegeCheck;
+	checkPermission?: PermissionCheck;
 	render?: Renderer;
 	isWebSocket = false;
 

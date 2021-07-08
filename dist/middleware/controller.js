@@ -158,7 +158,7 @@ class ControllerFactory {
 								} else if (e && e.constructor && e.constructor.name === HttpError.name) {
 									console.error(`[${req.method} : ${page}] `, e);
 									await ctx.error(e.code, e.message);
-								} else if (process.env.NODE_ENV == 'prodction') {
+								} else if (process.env.NODE_ENV !== 'development') {
 									console.error(`[${req.method} : ${page}] `, e);
 									await ctx.error();
 								} else {

@@ -79,6 +79,20 @@ class SecurityFactory {
 						throw new SecurityError(`Permission denied: ${account} ${resource}(${resourceId}) by ${account}`);
 					}
 				};
+				ctx.checkPermission = async function (account, permission) {
+					if (typeof param.permissionHandler === 'function') {
+						const result = await param.permissionHandler({
+							ctx: ctx,
+							account: account,
+							permission: permission,
+						});
+						if (!result) {
+							throw new SecurityError(`Permission denied: ${permission} by ${account}`);
+						}
+					} else {
+						throw new SecurityError(`Permission denied: ${permission} by ${account}`);
+					}
+				};
 			}
 			if (typeof param.accessHandler === 'function') {
 				const result = await param.accessHandler({

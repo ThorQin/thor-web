@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import http from 'http';
-import { Application, BasicBodyParser, PrivilegeCheck, Renderer, Session } from './types';
+import { Application, BasicBodyParser, PermissionCheck, PrivilegeCheck, Renderer, Session } from './types';
 declare type SendFileOption = {
 	statusCode?: number;
 	contentType?: string;
@@ -27,6 +27,7 @@ export default class Context {
 	body?: BasicBodyParser;
 	session?: Session;
 	checkPrivilege?: PrivilegeCheck;
+	checkPermission?: PermissionCheck;
 	render?: Renderer;
 	isWebSocket: boolean;
 	constructor(req: http.IncomingMessage, rsp: http.ServerResponse);

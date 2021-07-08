@@ -1,15 +1,8 @@
-import { Application, Middleware, MiddlewareFactory, MiddlewareOptions } from '../types';
+import { Application, Middleware, MiddlewareFactory, MiddlewareOptions, SessionInfo } from '../types';
 export declare type TimeCheck = {
 	value: number;
 	unit?: 'y' | 'M' | 'd' | 'h' | 'm' | 's' | 'ms';
 	action?: 'renew' | 'logout';
-};
-export declare type SessionInfo = {
-	createTime: number;
-	accessTime: number;
-	data: {
-		[key: string]: unknown;
-	};
 };
 export interface SessionOptions extends MiddlewareOptions {
 	/**
@@ -22,7 +15,7 @@ export interface SessionOptions extends MiddlewareOptions {
 	 * value <= 0: delete cookie, value > 0: how long the cookie will be kept(in seconds)
 	 */
 	maxAge?: number;
-	renew?: (sessionInfo: unknown) => Promise<boolean>;
+	renew?: (sessionInfo: SessionInfo) => Promise<boolean>;
 	expireCheck?: TimeCheck;
 	intervalCheck?: TimeCheck;
 	domain?: string;

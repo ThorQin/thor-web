@@ -38,6 +38,11 @@ export interface PrivilegeHandlerParam {
 	resourceId?: string;
 	action?: string;
 }
+export interface PermissionHandlerParam {
+	ctx: Context;
+	account: string;
+	permission: string;
+}
 export interface AccessHandlerParam {
 	ctx: Context;
 	path: string;
@@ -66,8 +71,14 @@ export interface AccessHandler {
 export interface PrivilegeHandler {
 	(param: PrivilegeHandlerParam): Promise<boolean>;
 }
+export interface PermissionHandler {
+	(param: PermissionHandlerParam): Promise<boolean>;
+}
 export interface PrivilegeCheck {
 	(account: string, resource: string, resourceId?: string, action?: string): void;
+}
+export interface PermissionCheck {
+	(account: string, permission: string): void;
 }
 export interface PartInfo {
 	length: number;
@@ -100,6 +111,13 @@ export interface SaveOptions {
 	secure?: boolean;
 	sameSite?: 'None' | 'Lax' | 'Strict';
 }
+export declare type SessionInfo = {
+	createTime: number;
+	accessTime: number;
+	data: {
+		[key: string]: unknown;
+	};
+};
 export interface Session {
 	accessTime: number;
 	createTime: number;
