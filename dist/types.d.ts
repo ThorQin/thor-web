@@ -128,6 +128,13 @@ export interface Session {
 	save: (opt?: SaveOptions | number) => void;
 	delete: () => void;
 	toString: () => string;
+	createToken: (info: {
+		accessTime: number;
+		createTime: number;
+		data: {
+			[key: string]: unknown;
+		};
+	}) => string;
 }
 export interface Controller {
 	(ctx: Context, req: http.IncomingMessage, rsp: http.ServerResponse): Promise<unknown>;

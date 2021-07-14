@@ -237,6 +237,16 @@ function createSession(
 			const encData = Buffer.concat([d1, d2], d1.length + d2.length);
 			return encData.toString('base64');
 		},
+		createToken: function (info: { accessTime: number; createTime: number; data: { [key: string]: unknown } }): string {
+			const s = JSON.stringify(info);
+			const zipData = zlib.gzipSync(Buffer.from(s, 'utf-8'));
+			const cipher = crypto.createCipheriv('aes-128-ecb', serverKey, '');
+			cipher.setAutoPadding(true);
+			const d1 = cipher.update(zipData);
+			const d2 = cipher.final();
+			const encData = Buffer.concat([d1, d2], d1.length + d2.length);
+			return encData.toString('base64');
+		},
 	};
 
 	Object.defineProperty(session, 'createTime', {
