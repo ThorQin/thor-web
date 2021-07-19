@@ -16,8 +16,8 @@ export interface SessionOptions extends MiddlewareOptions {
 	 */
 	maxAge?: number;
 	renew?: (sessionInfo: SessionInfo) => Promise<boolean>;
-	expireCheck?: TimeCheck;
-	intervalCheck?: TimeCheck;
+	expireCheck?: TimeCheck | null;
+	intervalCheck?: TimeCheck | null;
 	domain?: string;
 	httpOnly?: boolean;
 	secure?: boolean;

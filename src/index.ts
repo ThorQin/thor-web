@@ -52,13 +52,13 @@ type StartOptions = {
 	 */
 	maxAge?: number;
 	/**
-	 * 过期检查选项，判断 Session 首次建立时间是否超过规定值，以及超过后的要执行的动作
+	 * 过期检查选项，判断 Session 首次建立时间是否超过规定值，以及超过后的要执行的动作，默认不做任何检查
 	 */
-	expireCheck?: TimeCheck;
+	expireCheck?: TimeCheck | null;
 	/**
-	 * 访问间隔检查选项，判断 Session 最后请求时间是否超过规定值，以及超过后的要执行的动作
+	 * 访问间隔检查选项，判断 Session 最后请求时间是否超过规定值，以及超过后的要执行的动作，默认超过30分钟空闲会注销登录，要禁用检查传入 null
 	 */
-	intervalCheck?: TimeCheck;
+	intervalCheck?: TimeCheck | null;
 	renew?: (sessionInfo: SessionInfo) => Promise<boolean>;
 	/**
 	 * 限定 session 的访问域名
