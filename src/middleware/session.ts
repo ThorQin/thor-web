@@ -48,17 +48,20 @@ async function getSessionInfo(
 		const now = time.now();
 		let needRenew = false;
 		if (expireCheck) {
+			console.log('perform expire check ...');
 			const checkValidTime = (time.add(sessionInfo.createTime, expireCheck.value, expireCheck.unit) as Date).getTime();
 			if (now.getTime() >= checkValidTime) {
 				if (expireCheck.action === 'renew') {
 					needRenew = true;
 				} else {
+					console.warn('expire time has been reached!');
 					return null;
 				}
 			}
 		}
 
 		if (intervalCheck) {
+			console.log('perform interval check ...');
 			const checkIntervalTime = (time.add(
 				sessionInfo.accessTime,
 				intervalCheck.value,
@@ -68,6 +71,7 @@ async function getSessionInfo(
 				if (intervalCheck.action === 'renew') {
 					needRenew = true;
 				} else {
+					console.warn('interval time has been exceeded!');
 					return null;
 				}
 			}

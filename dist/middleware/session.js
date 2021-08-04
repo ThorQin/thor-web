@@ -28,6 +28,7 @@ async function getSessionInfo(content, { serverKey, renew, expireCheck, interval
 		const now = thor_time_1.default.now();
 		let needRenew = false;
 		if (expireCheck) {
+			console.log('perform expire check ...');
 			const checkValidTime = thor_time_1.default
 				.add(sessionInfo.createTime, expireCheck.value, expireCheck.unit)
 				.getTime();
@@ -35,11 +36,13 @@ async function getSessionInfo(content, { serverKey, renew, expireCheck, interval
 				if (expireCheck.action === 'renew') {
 					needRenew = true;
 				} else {
+					console.warn('expire time has been reached!');
 					return null;
 				}
 			}
 		}
 		if (intervalCheck) {
+			console.log('perform interval check ...');
 			const checkIntervalTime = thor_time_1.default
 				.add(sessionInfo.accessTime, intervalCheck.value, intervalCheck.unit)
 				.getTime();
@@ -47,6 +50,7 @@ async function getSessionInfo(content, { serverKey, renew, expireCheck, interval
 				if (intervalCheck.action === 'renew') {
 					needRenew = true;
 				} else {
+					console.warn('interval time has been exceeded!');
 					return null;
 				}
 			}
