@@ -42,7 +42,6 @@ async function getSessionInfo(content, { serverKey, renew, expireCheck, interval
 			}
 		}
 		if (intervalCheck) {
-			console.log('perform interval check ...');
 			const checkIntervalTime = thor_time_1.default
 				.add(sessionInfo.accessTime, intervalCheck.value, intervalCheck.unit)
 				.getTime();

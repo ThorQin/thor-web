@@ -1,11 +1,11 @@
 import http from 'http';
 import { Schema } from 'thor-validation';
 import Context from './context';
-import { connection, server, IMessage, frame } from 'websocket';
+import { connection, server, Message, frame } from 'websocket';
 
 export type WebSocketConnection = connection;
 export type WebSocketServer = server;
-export type WebSocketMessage = IMessage;
+export type WebSocketMessage = Message;
 export type WebSocketFrame = frame;
 
 export type Middleware = {

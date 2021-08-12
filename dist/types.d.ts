@@ -2,10 +2,10 @@
 import http from 'http';
 import { Schema } from 'thor-validation';
 import Context from './context';
-import { connection, server, IMessage, frame } from 'websocket';
+import { connection, server, Message, frame } from 'websocket';
 export declare type WebSocketConnection = connection;
 export declare type WebSocketServer = server;
-export declare type WebSocketMessage = IMessage;
+export declare type WebSocketMessage = Message;
 export declare type WebSocketFrame = frame;
 export declare type Middleware = {
 	(ctx: Context, req: http.IncomingMessage, rsp: http.ServerResponse): Promise<boolean>;

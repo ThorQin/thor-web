@@ -61,7 +61,6 @@ async function getSessionInfo(
 		}
 
 		if (intervalCheck) {
-			console.log('perform interval check ...');
 			const checkIntervalTime = (time.add(
 				sessionInfo.accessTime,
 				intervalCheck.value,
