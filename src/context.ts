@@ -196,9 +196,10 @@ export default class Context {
 	/**
 	 * Send content to client
 	 */
-	send(data: string | Buffer, contentType = 'text/plain; charset=utf-8'): Promise<void> {
+	send(data: string | Buffer, contentType?: string): Promise<void> {
 		this.rsp.writeHead(200, {
-			'Content-Type': contentType,
+			// eslint-disable-next-line prettier/prettier
+			'Content-Type': contentType ? contentType : typeof data === 'string' ? 'text/plain; charset=utf-8': 'application/octet-stream',
 		});
 		return this.end(data);
 	}
