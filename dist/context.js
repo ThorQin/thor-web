@@ -156,9 +156,14 @@ class Context {
 	/**
 	 * Send content to client
 	 */
-	send(data, contentType = 'text/plain; charset=utf-8') {
+	send(data, contentType) {
 		this.rsp.writeHead(200, {
-			'Content-Type': contentType,
+			// eslint-disable-next-line prettier/prettier
+			'Content-Type': contentType
+				? contentType
+				: typeof data === 'string'
+				? 'text/plain; charset=utf-8'
+				: 'application/octet-stream',
 		});
 		return this.end(data);
 	}
