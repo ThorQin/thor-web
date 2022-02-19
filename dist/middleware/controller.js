@@ -42,6 +42,7 @@ var __importDefault =
 	};
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.HttpError = void 0;
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const path_1 = __importDefault(require('path'));
 const tools_1 = __importDefault(require('../utils/tools'));
 // import url from 'url';

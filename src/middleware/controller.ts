@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import path from 'path';
 import tools from '../utils/tools';
 // import url from 'url';
@@ -147,7 +148,7 @@ class ControllerFactory implements MiddlewareFactory<ControllerCreateOptions> {
 				} else if (!rsp.writableEnded) {
 					await ctx.end();
 				}
-			} catch (e) {
+			} catch (e: any) {
 				if (!rsp.writableEnded) {
 					if (e && e.message === 'ERR_HTTP_HEADERS_SENT') {
 						console.error(`[${method} : ${page}] `, e);

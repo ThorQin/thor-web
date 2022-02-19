@@ -41,6 +41,7 @@ var __importDefault =
 		return mod && mod.__esModule ? mod : { default: mod };
 	};
 Object.defineProperty(exports, '__esModule', { value: true });
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const path_1 = __importDefault(require('path'));
 const tools_1 = __importDefault(require('../utils/tools'));
 const websocket_1 = require('websocket');

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import qs from 'querystring';
 import iconv from 'iconv-lite';
 import { v1 as uuidv1 } from 'uuid';
@@ -486,7 +487,7 @@ function createParser(req: http.IncomingMessage): BasicBodyParser {
 					defaultEncoding: 'utf-8',
 				});
 				val = JSON.parse(jsonStr);
-			} catch (e) {
+			} catch (e: any) {
 				throw new ValidationError(`Not a valid JSON data: ${e.message}`);
 			}
 			if (schema instanceof Object && typeof schema.validate === 'function') {

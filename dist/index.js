@@ -6,6 +6,7 @@ var __importDefault =
 	};
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.HttpError = exports.enc = exports.middlewares = void 0;
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const http_1 = __importDefault(require('http'));
 const context_1 = __importDefault(require('./context'));
 const index_1 = require('./middleware/index');
@@ -64,7 +65,7 @@ class App {
 		} else {
 			console.log(`Server listening on: ${port}`);
 		}
-		console.log(`Current work dir: ${tools_1.getRootDir()}`);
+		console.log(`Current work dir: ${(0, tools_1.getRootDir)()}`);
 		return this;
 	}
 	stop() {

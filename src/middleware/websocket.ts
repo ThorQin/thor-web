@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import path from 'path';
 import tools from '../utils/tools';
 import { Application, SocketHandler, Middleware, MiddlewareFactory } from '../types';
@@ -76,7 +77,7 @@ async function processRequest(
 			}
 		}
 		return true;
-	} catch (e) {
+	} catch (e: any) {
 		console.error(e);
 		if (process.env.NODE_ENV == 'prodction') {
 			ctx.errorUnknown();

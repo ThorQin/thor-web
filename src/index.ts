@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import http from 'http';
 import Context from './context';
 import {
@@ -33,7 +34,7 @@ async function processRequest(
 		}
 		console.log(`not found: ${ctx.url}`);
 		ctx.errorNotFound();
-	} catch (e) {
+	} catch (e: any) {
 		console.error(e);
 		if (process.env.NODE_ENV == 'prodction') {
 			ctx.errorUnknown();

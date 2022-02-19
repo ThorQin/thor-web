@@ -5,6 +5,7 @@ var __importDefault =
 		return mod && mod.__esModule ? mod : { default: mod };
 	};
 Object.defineProperty(exports, '__esModule', { value: true });
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const querystring_1 = __importDefault(require('querystring'));
 const iconv_lite_1 = __importDefault(require('iconv-lite'));
 const uuid_1 = require('uuid');
@@ -108,7 +109,7 @@ function paserHeaders(lines) {
 	return headers;
 }
 function generateFile(storeDir) {
-	const id = uuid_1.v1().replace(/-/g, '');
+	const id = (0, uuid_1.v1)().replace(/-/g, '');
 	const path =
 		storeDir +
 		id.substring(0, 6).replace(/.{3}/g, function (v) {

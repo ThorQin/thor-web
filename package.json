@@ -4,7 +4,7 @@
 		"web",
 		"framework"
 	],
-	"version": "1.4.13",
+	"version": "1.4.14",
 	"engines": {
 		"node": ">=14.0.0"
 	},
@@ -19,25 +19,25 @@
 	"private": false,
 	"dependencies": {
 		"iconv-lite": "^0.6.3",
-		"mime": "^2.5.2",
+		"mime": "^3.0.0",
 		"thor-time": "^1.1.1",
 		"thor-tpl": "^1.1.8",
-		"thor-validation": "^1.1.5",
+		"thor-validation": "^1.1.6",
 		"uuid": "^8.3.2",
 		"websocket": "^1.0.34"
 	},
 	"devDependencies": {
 		"@types/mime": "^2.0.3",
-		"@types/node": "^14.14.7",
-		"@types/uuid": "^8.3.0",
-		"@types/websocket": "^1.0.4",
-		"@typescript-eslint/eslint-plugin": "^4.6.0",
-		"@typescript-eslint/parser": "^4.6.0",
-		"eslint": "^7.12.1",
-		"eslint-config-prettier": "^6.11.0",
-		"eslint-plugin-prettier": "^3.1.3",
-		"prettier": "^2.0.5",
-		"typescript": "^4.0.5"
+		"@types/node": "^17.0.18",
+		"@types/uuid": "^8.3.4",
+		"@types/websocket": "^1.0.5",
+		"@typescript-eslint/eslint-plugin": "^5.12.0",
+		"@typescript-eslint/parser": "^5.12.0",
+		"eslint": "^8.9.0",
+		"eslint-config-prettier": "^8.3.0",
+		"eslint-plugin-prettier": "^4.0.0",
+		"prettier": "^2.5.1",
+		"typescript": "^4.5.5"
 	},
 	"scripts": {
 		"build-cjs": "tsc -P tsconfig.json",
