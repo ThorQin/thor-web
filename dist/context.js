@@ -103,12 +103,12 @@ class Context {
 				this.setResponseHeader('Access-Control-Max-Age', allowMaxAge);
 			}
 			if (allowOrigin === OriginType.ANY) {
-				this.setResponseHeader('Acess-Control-Allow-Origin', reqOrigin);
+				this.setResponseHeader('Access-Control-Allow-Origin', reqOrigin);
 				this.setResponseHeader('Vary', 'Origin');
 			} else if (allowOrigin === OriginType.PUBLIC) {
-				this.setResponseHeader('Acess-Control-Allow-Origin', '*');
+				this.setResponseHeader('Access-Control-Allow-Origin', '*');
 			} else if (typeof allowOrigin === 'string') {
-				this.setResponseHeader('Acess-Control-Allow-Origin', allowOrigin);
+				this.setResponseHeader('Access-Control-Allow-Origin', allowOrigin);
 				this.setResponseHeader('Vary', 'Origin');
 			}
 		}
