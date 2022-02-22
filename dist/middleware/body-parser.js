@@ -109,7 +109,7 @@ function paserHeaders(lines) {
 	return headers;
 }
 function generateFile(storeDir) {
-	const id = (0, uuid_1.v1)().replace(/-/g, '');
+	const id = uuid_1.v1().replace(/-/g, '');
 	const path =
 		storeDir +
 		id.substring(0, 6).replace(/.{3}/g, function (v) {

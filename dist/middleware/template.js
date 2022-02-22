@@ -39,7 +39,7 @@ class TemplateFactory {
 			};
 			let fnPromise = cache[file];
 			if (fnPromise) {
-				return await (0, thor_tpl_1.renderAsync)(await fnPromise, data, options);
+				return await thor_tpl_1.renderAsync(await fnPromise, data, options);
 			} else {
 				if (process.env.NODE_ENV !== 'development') {
 					console.log('compile template: ', file);
@@ -48,7 +48,7 @@ class TemplateFactory {
 							.readFile(file, 'utf8')
 							.then((content) => {
 								try {
-									const fn = (0, thor_tpl_1.compile)(content, options);
+									const fn = thor_tpl_1.compile(content, options);
 									resolve(fn);
 								} catch (e) {
 									reject(e);
@@ -59,10 +59,10 @@ class TemplateFactory {
 							});
 					});
 					cache[file] = fnPromise;
-					return await (0, thor_tpl_1.renderAsync)(await fnPromise, data, options);
+					return await thor_tpl_1.renderAsync(await fnPromise, data, options);
 				} else {
 					const content = await fs_1.promises.readFile(file, 'utf8');
-					return await (0, thor_tpl_1.renderAsync)(content, data, options);
+					return await thor_tpl_1.renderAsync(content, data, options);
 				}
 			}
 		}

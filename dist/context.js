@@ -5,6 +5,7 @@ var __importDefault =
 		return mod && mod.__esModule ? mod : { default: mod };
 	};
 Object.defineProperty(exports, '__esModule', { value: true });
+exports.OriginType = void 0;
 const path_1 = __importDefault(require('path'));
 const mime_1 = __importDefault(require('mime'));
 const zlib_1 = __importDefault(require('zlib'));
@@ -33,6 +34,11 @@ function flushStream(stream) {
 		});
 	});
 }
+var OriginType;
+(function (OriginType) {
+	OriginType[(OriginType['PUBLIC'] = 0)] = 'PUBLIC';
+	OriginType[(OriginType['ANY'] = 1)] = 'ANY';
+})((OriginType = exports.OriginType || (exports.OriginType = {})));
 class Context {
 	constructor(req, rsp) {
 		this.isWebSocket = false;
@@ -48,20 +54,64 @@ class Context {
 	}
 	getRequestHeader(key = null) {
 		if (key) {
-			return this.req.headers[key];
+			return this.req.headers[key.toLowerCase()];
 		} else {
 			return this.req.headers;
 		}
 	}
 	getResponseHeader(key = null) {
 		if (key) {
-			return this.rsp.getHeader(key);
+			return this.rsp.getHeader(key.toLowerCase());
 		} else {
 			return this.rsp.getHeaders();
 		}
 	}
 	setResponseHeader(key, value) {
 		this.rsp.setHeader(key, value);
+		return this;
+	}
+	enableCORS({
+		allowMethods = 'HEAD,GET,POST,PUT,DELETE,OPTIONS',
+		allowAnyMethods = true,
+		allowHeaders = 'Content-Type,Keep-Alive,User-Agent',
+		allowAnyHeaders = true,
+		allowMaxAge = 600,
+		allowOrigin = OriginType.ANY,
+		allowCredential = true,
+	} = {}) {
+		let reqOrigin = this.getRequestHeader('origin');
+		if (reqOrigin) {
+			reqOrigin += '';
+			const reqMethods = this.getRequestHeader('access-control-request-method');
+			if (allowAnyMethods && reqMethods) {
+				allowMethods += ',' + reqMethods;
+			}
+			if (allowMethods) {
+				this.setResponseHeader('Access-Control-Allow-Methods', allowMethods);
+			}
+			const reqHeaders = this.getRequestHeader('access-control-request-headers');
+			if (allowAnyHeaders && reqHeaders) {
+				allowHeaders += ',' + reqHeaders;
+			}
+			if (allowHeaders) {
+				this.setResponseHeader('Access-Control-Allow-Headers', allowHeaders);
+			}
+			if (allowCredential) {
+				this.setResponseHeader('Access-Control-Allow-Credentials', 'true');
+			}
+			if (typeof allowMaxAge === 'number' && allowMaxAge > 0) {
+				this.setResponseHeader('Access-Control-Max-Age', allowMaxAge);
+			}
+			if (allowOrigin === OriginType.ANY) {
+				this.setResponseHeader('Acess-Control-Allow-Origin', reqOrigin);
+				this.setResponseHeader('Vary', 'Origin');
+			} else if (allowOrigin === OriginType.PUBLIC) {
+				this.setResponseHeader('Acess-Control-Allow-Origin', '*');
+			} else if (typeof allowOrigin === 'string') {
+				this.setResponseHeader('Acess-Control-Allow-Origin', allowOrigin);
+				this.setResponseHeader('Vary', 'Origin');
+			}
+		}
 		return this;
 	}
 	writeHead(statusCode, ...args) {

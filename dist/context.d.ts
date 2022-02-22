@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import http from 'http';
 import { Application, BasicBodyParser, PermissionCheck, PrivilegeCheck, Renderer, Session } from './types';
-declare type SendFileOption = {
+export declare type SendFileOption = {
 	statusCode?: number;
 	contentType?: string;
 	headers?: {
@@ -10,6 +10,40 @@ declare type SendFileOption = {
 	filename?: string;
 	inline?: boolean;
 	gzip?: boolean;
+};
+export declare enum OriginType {
+	PUBLIC = 0,
+	ANY = 1,
+}
+export declare type CORSOptions = {
+	/**
+	 * 允许的跨站 http headers, 多个用逗号隔开
+	 */
+	allowHeaders?: string;
+	/**
+	 * 允许前端请求的任何 headers
+	 */
+	allowAnyHeaders?: boolean;
+	/**
+	 * 允许的跨站 http 方法, 多个用逗号隔开
+	 */
+	allowMethods?: string;
+	/**
+	 * 允许前端请求的任何 http 方法
+	 */
+	allowAnyMethods?: boolean;
+	/**
+	 * 本次跨站请求策略持续时间，默认：600 秒
+	 */
+	allowMaxAge?: number;
+	/**
+	 * 允许的发起源
+	 */
+	allowOrigin?: OriginType | string;
+	/**
+	 * 是否允许携带认证信息
+	 */
+	allowCredential?: boolean;
 };
 export default class Context {
 	req: http.IncomingMessage;
@@ -34,6 +68,15 @@ export default class Context {
 	getRequestHeader(key?: string | null): string | http.IncomingHttpHeaders | string[] | undefined;
 	getResponseHeader(key?: string | null): string | number | string[] | http.OutgoingHttpHeaders | undefined;
 	setResponseHeader(key: string, value: string | number | readonly string[]): this;
+	enableCORS({
+		allowMethods,
+		allowAnyMethods,
+		allowHeaders,
+		allowAnyHeaders,
+		allowMaxAge,
+		allowOrigin,
+		allowCredential,
+	}?: CORSOptions): this;
 	writeHead(statusCode: number, reasonPhrase?: string, headers?: http.OutgoingHttpHeaders): this;
 	writeHead(statusCode: number, headers?: http.OutgoingHttpHeaders): this;
 	getRequestCookies(): {
@@ -139,4 +182,3 @@ export default class Context {
 	 */
 	close(error?: Error): void;
 }
-export {};

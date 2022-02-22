@@ -259,7 +259,7 @@ class SessionFactory {
 		return fn;
 	}
 	generateKey() {
-		const id = (0, uuid_1.v1)().replace(/-/g, '');
+		const id = uuid_1.v1().replace(/-/g, '');
 		const buffer = Buffer.from(id, 'hex');
 		const key = buffer.toString('base64');
 		return key;
