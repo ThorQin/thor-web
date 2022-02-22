@@ -33,13 +33,49 @@ function flushStream(stream: zlib.Gzip): Promise<void> {
 	});
 }
 
-type SendFileOption = {
+export type SendFileOption = {
 	statusCode?: number;
 	contentType?: string;
 	headers?: { [key: string]: string };
 	filename?: string;
 	inline?: boolean;
 	gzip?: boolean;
+};
+
+export enum OriginType {
+	PUBLIC,
+	ANY,
+}
+
+export type CORSOptions = {
+	/**
+	 * 允许的跨站 http headers, 多个用逗号隔开
+	 */
+	allowHeaders?: string;
+	/**
+	 * 允许前端请求的任何 headers
+	 */
+	allowAnyHeaders?: boolean;
+	/**
+	 * 允许的跨站 http 方法, 多个用逗号隔开
+	 */
+	allowMethods?: string;
+	/**
+	 * 允许前端请求的任何 http 方法
+	 */
+	allowAnyMethods?: boolean;
+	/**
+	 * 本次跨站请求策略持续时间，默认：600 秒
+	 */
+	allowMaxAge?: number;
+	/**
+	 * 允许的发起源
+	 */
+	allowOrigin?: OriginType | string;
+	/**
+	 * 是否允许携带认证信息
+	 */
+	allowCredential?: boolean;
 };
 
 export default class Context {
@@ -76,7 +112,7 @@ export default class Context {
 
 	getRequestHeader(key: string | null = null): string | http.IncomingHttpHeaders | string[] | undefined {
 		if (key) {
-			return this.req.headers[key];
+			return this.req.headers[key.toLowerCase()];
 		} else {
 			return this.req.headers;
 		}
@@ -84,7 +120,7 @@ export default class Context {
 
 	getResponseHeader(key: string | null = null): string | number | string[] | http.OutgoingHttpHeaders | undefined {
 		if (key) {
-			return this.rsp.getHeader(key);
+			return this.rsp.getHeader(key.toLowerCase());
 		} else {
 			return this.rsp.getHeaders();
 		}
@@ -92,6 +128,51 @@ export default class Context {
 
 	setResponseHeader(key: string, value: string | number | readonly string[]): this {
 		this.rsp.setHeader(key, value);
+		return this;
+	}
+
+	enableCORS({
+		allowMethods = 'HEAD,GET,POST,PUT,DELETE,OPTIONS',
+		allowAnyMethods = true,
+		allowHeaders = 'Content-Type,Keep-Alive,User-Agent',
+		allowAnyHeaders = true,
+		allowMaxAge = 600,
+		allowOrigin = OriginType.ANY,
+		allowCredential = true,
+	}: CORSOptions = {}): this {
+		let reqOrigin = this.getRequestHeader('origin') as string | null;
+		if (reqOrigin) {
+			reqOrigin += '';
+			const reqMethods = this.getRequestHeader('access-control-request-method') as string | null;
+			if (allowAnyMethods && reqMethods) {
+				allowMethods += ',' + reqMethods;
+			}
+			if (allowMethods) {
+				this.setResponseHeader('Access-Control-Allow-Methods', allowMethods);
+			}
+			const reqHeaders = this.getRequestHeader('access-control-request-headers') as string | string[] | null;
+			if (allowAnyHeaders && reqHeaders) {
+				allowHeaders += ',' + reqHeaders;
+			}
+			if (allowHeaders) {
+				this.setResponseHeader('Access-Control-Allow-Headers', allowHeaders);
+			}
+			if (allowCredential) {
+				this.setResponseHeader('Access-Control-Allow-Credentials', 'true');
+			}
+			if (typeof allowMaxAge === 'number' && allowMaxAge > 0) {
+				this.setResponseHeader('Access-Control-Max-Age', allowMaxAge);
+			}
+			if (allowOrigin === OriginType.ANY) {
+				this.setResponseHeader('Acess-Control-Allow-Origin', reqOrigin);
+				this.setResponseHeader('Vary', 'Origin');
+			} else if (allowOrigin === OriginType.PUBLIC) {
+				this.setResponseHeader('Acess-Control-Allow-Origin', '*');
+			} else if (typeof allowOrigin === 'string') {
+				this.setResponseHeader('Acess-Control-Allow-Origin', allowOrigin);
+				this.setResponseHeader('Vary', 'Origin');
+			}
+		}
 		return this;
 	}
 
