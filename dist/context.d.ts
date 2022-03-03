@@ -68,7 +68,7 @@ export default class Context {
 	get clientPort(): number | undefined;
 	get serverIP(): string | undefined;
 	get serverPort(): number | undefined;
-	get accessURL(): URL;
+	get accessUrl(): URL;
 	getRequestHeader(key?: string | null): string | http.IncomingHttpHeaders | string[] | undefined;
 	getResponseHeader(key?: string | null): string | number | string[] | http.OutgoingHttpHeaders | undefined;
 	setResponseHeader(key: string, value: string | number | readonly string[]): this;

@@ -145,7 +145,7 @@ class Context {
 	get serverPort() {
 		return this.req.socket.localPort;
 	}
-	get accessURL() {
+	get accessUrl() {
 		return getAccessURL(this.req);
 	}
 	getRequestHeader(key = null) {
