@@ -49,7 +49,6 @@ export default class Context {
 	req: http.IncomingMessage;
 	rsp: http.ServerResponse;
 	url: string;
-	ip?: string;
 	/**
 	 * In upper case
 	 */
@@ -65,6 +64,11 @@ export default class Context {
 	render?: Renderer;
 	isWebSocket: boolean;
 	constructor(req: http.IncomingMessage, rsp: http.ServerResponse);
+	get clientIP(): string | undefined;
+	get clientPort(): number | undefined;
+	get serverIP(): string | undefined;
+	get serverPort(): number | undefined;
+	get accessURL(): URL;
 	getRequestHeader(key?: string | null): string | http.IncomingHttpHeaders | string[] | undefined;
 	getResponseHeader(key?: string | null): string | number | string[] | http.OutgoingHttpHeaders | undefined;
 	setResponseHeader(key: string, value: string | number | readonly string[]): this;

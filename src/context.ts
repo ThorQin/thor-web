@@ -33,6 +33,64 @@ function flushStream(stream: zlib.Gzip): Promise<void> {
 	});
 }
 
+function getForwarded(req: http.IncomingMessage): { host: string | null; proto: string | null; port: string | null } {
+	const forwarded = req.headers.forwarded;
+	if (!forwarded || !/\s*[^=]+=[^;]+\s*(;\s*[^=]+=[^;]+\s*)/.test(forwarded)) {
+		return { host: null, proto: null, port: null };
+	}
+	let proto: string;
+	let m = /proto=([^;]+)/.exec(forwarded);
+	if (m) {
+		proto = m[1];
+	} else {
+		proto = 'http';
+	}
+	let host: string | null;
+	let port: string | null;
+	m = /host=([^;]+)/.exec(forwarded);
+	if (m) {
+		host = m[1].split(':')[0];
+		port = m[1].split(':')[1];
+	} else {
+		host = null;
+		port = proto === 'https' ? '443' : '80';
+	}
+	return { host, proto, port };
+}
+
+function getXForwarded(req: http.IncomingMessage): { host: string | null; proto: string | null; port: string | null } {
+	let xHost = req.headers['x-forwarded-host'];
+	if (xHost instanceof Array) {
+		xHost = xHost[0];
+	}
+	// eslint-disable-next-line prefer-const
+	let [host, port] = (xHost && xHost.split(':')) || [];
+	let xProto = req.headers['x-forwarded-proto'];
+	if (xProto instanceof Array) {
+		xProto = xProto[0];
+	}
+	let xPort = req.headers['x-forwarded-port'];
+	if (xPort instanceof Array) {
+		xPort = xPort[0];
+	}
+	if (xPort) port = xPort;
+	return { host, proto: xProto || null, port };
+}
+
+function getAccessURL(req: http.IncomingMessage): URL {
+	const f = getForwarded(req);
+	const xf = getXForwarded(req);
+	const hh = req.headers.host;
+	const [h, p] = (hh && hh.split(':')) || [];
+	const useProxy = !!(f.host || xf.host);
+	const proto = xf.proto || f.proto || 'http';
+	const host = xf.host || f.host || h || req.socket.localAddress;
+	const port = xf.port || f.port || p || (useProxy ? (proto === 'https' ? '443' : '80') : req.socket.localPort + '');
+	const base = proto + '://' + host + ':' + port;
+	// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+	return new URL(req.url!, base);
+}
+
 export type SendFileOption = {
 	statusCode?: number;
 	contentType?: string;
@@ -82,7 +140,6 @@ export default class Context {
 	req: http.IncomingMessage;
 	rsp: http.ServerResponse;
 	url: string;
-	ip?: string;
 	/**
 	 * In upper case
 	 */
@@ -100,14 +157,60 @@ export default class Context {
 
 	constructor(req: http.IncomingMessage, rsp: http.ServerResponse) {
 		this.req = req;
+		Object.defineProperty(this, 'req', {
+			writable: false,
+			configurable: false,
+		});
 		this.rsp = rsp;
-		const url = new URL(req.url || '', `http://${req.headers.host}/`);
+		Object.defineProperty(this, 'rsp', {
+			writable: false,
+			configurable: false,
+		});
+		const url = new URL(
+			req.url || '',
+			`http://${req.headers.host || req.socket.localAddress + ':' + req.socket.localPort}/`
+		);
 		this.url = url.href;
-		this.ip = req.connection.remoteAddress;
 		this.method = (req.method || 'GET').toUpperCase();
+		Object.defineProperty(this, 'method', {
+			writable: false,
+			configurable: false,
+		});
 		this.path = url.pathname;
+		Object.defineProperty(this, 'path', {
+			writable: false,
+			configurable: false,
+		});
 		this.query = url.search;
+		Object.defineProperty(this, 'query', {
+			writable: false,
+			configurable: false,
+		});
 		this.params = url.searchParams;
+		Object.defineProperty(this, 'params', {
+			writable: false,
+			configurable: false,
+		});
+	}
+
+	get clientIP(): string | undefined {
+		return this.req.socket.remoteAddress;
+	}
+
+	get clientPort(): number | undefined {
+		return this.req.socket.remotePort;
+	}
+
+	get serverIP(): string | undefined {
+		return this.req.socket.localAddress;
+	}
+
+	get serverPort(): number | undefined {
+		return this.req.socket.localPort;
+	}
+
+	get accessUrl(): URL {
+		return getAccessURL(this.req);
 	}
 
 	getRequestHeader(key: string | null = null): string | http.IncomingHttpHeaders | string[] | undefined {
