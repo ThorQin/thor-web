@@ -148,6 +148,17 @@ class Context {
 	get accessUrl() {
 		return getAccessURL(this.req);
 	}
+	getParams(schema) {
+		const param = {};
+		Array.from(this.params.keys()).forEach((k) => {
+			const v = this.params.getAll(k);
+			param[k] = v.length === 1 ? v[0] : v;
+		});
+		if (schema instanceof Object && typeof schema.validate === 'function') {
+			schema.validate(param);
+		}
+		return param;
+	}
 	getRequestHeader(key = null) {
 		if (key) {
 			return this.req.headers[key.toLowerCase()];

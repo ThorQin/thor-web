@@ -65,7 +65,7 @@ class App {
 		} else {
 			console.log(`Server listening on: ${port}`);
 		}
-		console.log(`Current work dir: ${tools_1.getRootDir()}`);
+		console.log(`Current work dir: ${(0, tools_1.getRootDir)()}`);
 		return this;
 	}
 	stop() {
@@ -98,6 +98,7 @@ class App {
 		templateDir,
 		controllerDir,
 		controllerPath,
+		apiDocPath,
 		wsDir,
 		wsPath,
 		wsMaxMessageSize,
@@ -146,6 +147,7 @@ class App {
 		app.use(index_1.controller, {
 			baseDir: controllerDir,
 			rootPath: controllerPath,
+			apiDocPath: apiDocPath,
 		});
 		app.use(index_1.webSocket, {
 			baseDir: wsDir,

@@ -2,6 +2,7 @@ import http from 'http';
 import { Schema } from 'thor-validation';
 import Context from './context';
 import { connection, server, Message, frame } from 'websocket';
+import { Rule } from 'thor-validation';
 
 export type WebSocketConnection = connection;
 export type WebSocketServer = server;
@@ -150,6 +151,9 @@ export interface Session {
 
 export interface Controller {
 	(ctx: Context, req: http.IncomingMessage, rsp: http.ServerResponse): Promise<unknown>;
+	body?: Rule;
+	params?: Rule;
+	desc?: string;
 }
 
 export interface SocketHandler {

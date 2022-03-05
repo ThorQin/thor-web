@@ -5,6 +5,7 @@ import stream from 'stream';
 import http from 'http';
 import { promises as fs } from 'fs';
 import { Application, BasicBodyParser, PermissionCheck, PrivilegeCheck, Renderer, Session } from './types';
+import { Schema } from 'thor-validation';
 
 async function* readFile(fd: fs.FileHandle, buffer: Buffer) {
 	let rd = await fd.read(buffer, 0, buffer.length);
@@ -137,16 +138,16 @@ export type CORSOptions = {
 };
 
 export default class Context {
-	req: http.IncomingMessage;
-	rsp: http.ServerResponse;
-	url: string;
+	readonly req: http.IncomingMessage;
+	readonly rsp: http.ServerResponse;
+	readonly url: string;
 	/**
 	 * In upper case
 	 */
-	method: string;
-	path: string;
-	query: string;
-	params: URLSearchParams;
+	readonly method: string;
+	readonly path: string;
+	readonly query: string;
+	readonly params: URLSearchParams;
 	app?: Application;
 	body?: BasicBodyParser;
 	session?: Session;
@@ -211,6 +212,18 @@ export default class Context {
 
 	get accessUrl(): URL {
 		return getAccessURL(this.req);
+	}
+
+	getParams(schema?: Schema): unknown {
+		const param: { [key: string]: string | string[] } = {};
+		Array.from(this.params.keys()).forEach((k) => {
+			const v = this.params.getAll(k);
+			param[k] = v.length === 1 ? v[0] : v;
+		});
+		if (schema instanceof Object && typeof schema.validate === 'function') {
+			schema.validate(param);
+		}
+		return param;
 	}
 
 	getRequestHeader(key: string | null = null): string | http.IncomingHttpHeaders | string[] | undefined {

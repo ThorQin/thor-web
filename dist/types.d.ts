@@ -3,6 +3,7 @@ import http from 'http';
 import { Schema } from 'thor-validation';
 import Context from './context';
 import { connection, server, Message, frame } from 'websocket';
+import { Rule } from 'thor-validation';
 export declare type WebSocketConnection = connection;
 export declare type WebSocketServer = server;
 export declare type WebSocketMessage = Message;
@@ -138,6 +139,9 @@ export interface Session {
 }
 export interface Controller {
 	(ctx: Context, req: http.IncomingMessage, rsp: http.ServerResponse): Promise<unknown>;
+	body?: Rule;
+	params?: Rule;
+	desc?: string;
 }
 export interface SocketHandler {
 	(connection: WebSocketConnection, app: Application): void;

@@ -5,7 +5,14 @@ var __importDefault =
 		return mod && mod.__esModule ? mod : { default: mod };
 	};
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.webSocket = exports.controller = exports.template = exports.bodyParser = exports.security = exports.staticServer = exports.session = void 0;
+exports.webSocket =
+	exports.controller =
+	exports.template =
+	exports.bodyParser =
+	exports.security =
+	exports.staticServer =
+	exports.session =
+		void 0;
 const session_1 = __importDefault(require('./session'));
 exports.session = session_1.default;
 const static_server_1 = __importDefault(require('./static-server'));

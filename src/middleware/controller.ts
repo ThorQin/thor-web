@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import path from 'path';
 import tools from '../utils/tools';
-// import url from 'url';
 import { ValidationError } from 'thor-validation';
 import { SecurityError } from './security';
 import { Application, Controller, Middleware, MiddlewareFactory } from '../types';
 import fs from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import Context from '../context';
+import { ApiFolder, loadApi, renderDoc } from './docs';
+import staticFactory from './static-server';
 
 type ScriptDefinition = Controller | { [key: string]: Controller } | null;
 
@@ -29,12 +30,16 @@ export class HttpError extends Error {
 export type ControllerCreateOptions = {
 	baseDir?: string;
 	rootPath?: string;
+	apiDocPath?: string;
 };
 
 class ControllerFactory implements MiddlewareFactory<ControllerCreateOptions> {
-	create(app: Application, { baseDir, rootPath = '/' }: ControllerCreateOptions = {}): Middleware {
+	create(app: Application, { baseDir, rootPath = '/', apiDocPath }: ControllerCreateOptions = {}): Middleware {
 		if (!rootPath) {
 			rootPath = '/';
+		}
+		if (apiDocPath && apiDocPath.endsWith('/')) {
+			apiDocPath = apiDocPath.substring(0, apiDocPath.length - 1);
 		}
 		if (!rootPath.startsWith('/')) {
 			rootPath = `/${rootPath}`;
@@ -133,6 +138,16 @@ class ControllerFactory implements MiddlewareFactory<ControllerCreateOptions> {
 			return p;
 		}
 
+		let apiFolder: ApiFolder | null = null;
+		let docServer: Middleware;
+		if (apiDocPath) {
+			apiFolder = loadApi(baseDir, '');
+			docServer = staticFactory.create(app, {
+				baseDir: path.normalize(__dirname + '/../../html'),
+				rootPath: apiDocPath,
+			});
+		}
+
 		async function runFn(
 			page: string,
 			method: string,
@@ -216,6 +231,10 @@ class ControllerFactory implements MiddlewareFactory<ControllerCreateOptions> {
 
 		return async function (ctx, req, rsp) {
 			let page = ctx.path;
+			if (apiFolder && apiDocPath && (page === apiDocPath || page.startsWith(apiDocPath + '/'))) {
+				await renderDoc(ctx, apiFolder, docServer, apiDocPath);
+				return true;
+			}
 			if (!page.startsWith(rootPath)) {
 				return false;
 			}

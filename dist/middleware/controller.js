@@ -45,10 +45,11 @@ exports.HttpError = void 0;
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const path_1 = __importDefault(require('path'));
 const tools_1 = __importDefault(require('../utils/tools'));
-// import url from 'url';
 const thor_validation_1 = require('thor-validation');
 const security_1 = require('./security');
 const fs_1 = __importDefault(require('fs'));
+const docs_1 = require('./docs');
+const static_server_1 = __importDefault(require('./static-server'));
 class HttpError extends Error {
 	constructor(code, msg) {
 		super(msg);
@@ -57,9 +58,12 @@ class HttpError extends Error {
 }
 exports.HttpError = HttpError;
 class ControllerFactory {
-	create(app, { baseDir, rootPath = '/' } = {}) {
+	create(app, { baseDir, rootPath = '/', apiDocPath } = {}) {
 		if (!rootPath) {
 			rootPath = '/';
+		}
+		if (apiDocPath && apiDocPath.endsWith('/')) {
+			apiDocPath = apiDocPath.substring(0, apiDocPath.length - 1);
 		}
 		if (!rootPath.startsWith('/')) {
 			rootPath = `/${rootPath}`;
@@ -157,6 +161,15 @@ class ControllerFactory {
 			}
 			return p;
 		}
+		let apiFolder = null;
+		let docServer;
+		if (apiDocPath) {
+			apiFolder = (0, docs_1.loadApi)(baseDir, '');
+			docServer = static_server_1.default.create(app, {
+				baseDir: path_1.default.normalize(__dirname + '/../../html'),
+				rootPath: apiDocPath,
+			});
+		}
 		async function runFn(page, method, fn, ctx, req, rsp) {
 			try {
 				const result = await fn(ctx, req, rsp);
@@ -224,6 +237,10 @@ class ControllerFactory {
 		}
 		return async function (ctx, req, rsp) {
 			let page = ctx.path;
+			if (apiFolder && apiDocPath && (page === apiDocPath || page.startsWith(apiDocPath + '/'))) {
+				await (0, docs_1.renderDoc)(ctx, apiFolder, docServer, apiDocPath);
+				return true;
+			}
 			if (!page.startsWith(rootPath)) {
 				return false;
 			}

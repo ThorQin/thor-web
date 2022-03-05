@@ -95,6 +95,10 @@ type StartOptions = {
 	 */
 	controllerPath?: string;
 	/**
+	 * 接口文档路径，不指定路径就不启用接口文档
+	 */
+	apiDocPath?: string;
+	/**
 	 * WebSocket handler 物理位置
 	 */
 	wsDir?: string;
@@ -180,6 +184,7 @@ class App implements Application {
 		templateDir,
 		controllerDir,
 		controllerPath,
+		apiDocPath,
 		wsDir,
 		wsPath,
 		wsMaxMessageSize,
@@ -228,6 +233,7 @@ class App implements Application {
 		app.use(controller, {
 			baseDir: controllerDir,
 			rootPath: controllerPath,
+			apiDocPath: apiDocPath,
 		});
 		app.use(webSocket, {
 			baseDir: wsDir,

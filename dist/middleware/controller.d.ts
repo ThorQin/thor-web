@@ -6,9 +6,10 @@ export declare class HttpError extends Error {
 export declare type ControllerCreateOptions = {
 	baseDir?: string;
 	rootPath?: string;
+	apiDocPath?: string;
 };
 declare class ControllerFactory implements MiddlewareFactory<ControllerCreateOptions> {
-	create(app: Application, { baseDir, rootPath }?: ControllerCreateOptions): Middleware;
+	create(app: Application, { baseDir, rootPath, apiDocPath }?: ControllerCreateOptions): Middleware;
 }
 declare const controllerFactory: ControllerFactory;
 export default controllerFactory;

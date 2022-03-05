@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import http from 'http';
 import { Application, BasicBodyParser, PermissionCheck, PrivilegeCheck, Renderer, Session } from './types';
+import { Schema } from 'thor-validation';
 export declare type SendFileOption = {
 	statusCode?: number;
 	contentType?: string;
@@ -46,16 +47,16 @@ export declare type CORSOptions = {
 	allowCredential?: boolean;
 };
 export default class Context {
-	req: http.IncomingMessage;
-	rsp: http.ServerResponse;
-	url: string;
+	readonly req: http.IncomingMessage;
+	readonly rsp: http.ServerResponse;
+	readonly url: string;
 	/**
 	 * In upper case
 	 */
-	method: string;
-	path: string;
-	query: string;
-	params: URLSearchParams;
+	readonly method: string;
+	readonly path: string;
+	readonly query: string;
+	readonly params: URLSearchParams;
 	app?: Application;
 	body?: BasicBodyParser;
 	session?: Session;
@@ -69,6 +70,7 @@ export default class Context {
 	get serverIP(): string | undefined;
 	get serverPort(): number | undefined;
 	get accessUrl(): URL;
+	getParams(schema?: Schema): unknown;
 	getRequestHeader(key?: string | null): string | http.IncomingHttpHeaders | string[] | undefined;
 	getResponseHeader(key?: string | null): string | number | string[] | http.OutgoingHttpHeaders | undefined;
 	setResponseHeader(key: string, value: string | number | readonly string[]): this;

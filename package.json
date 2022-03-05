@@ -22,7 +22,7 @@
 		"mime": "^3.0.0",
 		"thor-time": "^1.1.1",
 		"thor-tpl": "^1.1.8",
-		"thor-validation": "^1.1.6",
+		"thor-validation": "^1.1.8",
 		"uuid": "^8.3.2",
 		"websocket": "^1.0.34"
 	},
@@ -37,11 +37,12 @@
 		"eslint-config-prettier": "^8.3.0",
 		"eslint-plugin-prettier": "^4.0.0",
 		"prettier": "^2.5.1",
+		"shx": "^0.3.4",
 		"typescript": "^4.5.5"
 	},
 	"scripts": {
 		"build-cjs": "tsc -P tsconfig.json",
 		"build": "rm -rf ./dist/* && npm run build-cjs",
-		"postbuild": "prettier --write ./dist"
+		"postbuild": "prettier --write ./dist "
 	}
 }
