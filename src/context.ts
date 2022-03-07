@@ -576,7 +576,9 @@ export default class Context {
 		if (typeof code !== 'number') {
 			code = 500;
 		}
-		this.rsp.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' });
+		if (!this.rsp.headersSent) {
+			this.rsp.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' });
+		}
 		return this.end(message);
 	}
 
