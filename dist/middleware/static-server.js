@@ -213,7 +213,6 @@ class StaticFactory {
 								fileStream = (0, fs_1.createReadStream)(file);
 								if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
 									const zstream = zlib_1.default.createGzip();
-									zstream.pipe(ctx.rsp);
 									ctx.writeHead(200, {
 										'Cache-Control': 'no-cache',
 										'Content-Type': contentType,

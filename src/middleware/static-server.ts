@@ -253,7 +253,6 @@ class StaticFactory implements MiddlewareFactory<StaticOptions> {
 								fileStream = createReadStream(file);
 								if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
 									const zstream = zlib.createGzip();
-									zstream.pipe(ctx.rsp);
 									ctx.writeHead(200, {
 										'Cache-Control': 'no-cache',
 										'Content-Type': contentType,
