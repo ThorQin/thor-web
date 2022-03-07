@@ -513,7 +513,7 @@ class Context {
 	 * Close underlying socket connection
 	 */
 	close(error) {
-		this.req.connection.destroy(error);
+		this.req.socket.destroy(error);
 	}
 }
 exports.default = Context;

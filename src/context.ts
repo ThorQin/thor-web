@@ -606,6 +606,6 @@ export default class Context {
 	 * Close underlying socket connection
 	 */
 	close(error?: Error): void {
-		this.req.connection.destroy(error);
+		this.req.socket.destroy(error);
 	}
 }
