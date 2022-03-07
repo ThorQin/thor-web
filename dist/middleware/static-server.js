@@ -12,6 +12,9 @@ const tools_1 = __importDefault(require('../utils/tools'));
 const thor_time_1 = __importDefault(require('thor-time'));
 const mime_1 = __importDefault(require('mime'));
 const zlib_1 = __importDefault(require('zlib'));
+const stream_1 = __importDefault(require('stream'));
+const util_1 = require('util');
+const pipeline = (0, util_1.promisify)(stream_1.default.pipeline);
 function defaultSuffix() {
 	const suffix = [
 		'txt',
@@ -52,7 +55,7 @@ function getMimeType(suffix) {
 	return mime_1.default.getType(suffix) || 'application/octet-stream';
 }
 function compressible(suffix) {
-	return /^(txt|html?|css|js|json)$/.test(suffix);
+	return /^(txt|html?|css|js|json|xml)$/.test(suffix);
 }
 function gzip(buffer) {
 	return new Promise(function (resolve, reject) {
@@ -62,30 +65,6 @@ function gzip(buffer) {
 				return;
 			}
 			resolve(result);
-		});
-	});
-}
-async function* readFile(fd, buffer) {
-	let rd = await fd.read(buffer, 0, buffer.length);
-	while (rd.bytesRead > 0) {
-		yield rd;
-		rd = await fd.read(buffer, 0, buffer.length);
-	}
-}
-function flushStream(stream) {
-	return new Promise((resolve) => {
-		stream.flush(() => {
-			resolve();
-		});
-	});
-}
-function writeStream(stream, buffer) {
-	if (buffer.length <= 0) {
-		return Promise.resolve();
-	}
-	return new Promise((resolve) => {
-		stream.write(buffer, () => {
-			resolve();
 		});
 	});
 }
@@ -204,7 +183,7 @@ class StaticFactory {
 								cache.delete(file);
 							}
 						}
-						let fd = null;
+						let fileStream = null;
 						try {
 							const canGzip = compressible(m[1]);
 							if (stat.size <= cachedFileSize && process.env.NODE_ENV !== 'development') {
@@ -231,8 +210,7 @@ class StaticFactory {
 								}
 								return true;
 							} else {
-								fd = await fs_1.promises.open(file, 'r');
-								const buffer = Buffer.alloc(4096);
+								fileStream = (0, fs_1.createReadStream)(file);
 								if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
 									const zstream = zlib_1.default.createGzip();
 									zstream.pipe(ctx.rsp);
@@ -243,26 +221,22 @@ class StaticFactory {
 										'Content-Encoding': 'gzip',
 										'Transfer-Encoding': 'chunked',
 									});
-									for await (const rd of readFile(fd, buffer)) {
-										await writeStream(zstream, rd.buffer.slice(0, rd.bytesRead));
-									}
-									await flushStream(zstream);
+									await pipeline(fileStream, zstream, ctx.rsp);
 								} else {
 									ctx.writeHead(200, {
 										'Cache-Control': 'no-cache',
 										'Content-Type': contentType,
 										'Last-Modified': mtime.toUTCString(),
+										'Transfer-Encoding': 'chunked',
 									});
-									for await (const rd of readFile(fd, buffer)) {
-										await ctx.write(rd.buffer.slice(0, rd.bytesRead));
-									}
+									await pipeline(fileStream, ctx.rsp);
 								}
 								await ctx.end();
 								return true;
 							}
 						} finally {
-							if (fd) {
-								await fd.close();
+							if (fileStream) {
+								fileStream.close();
 							}
 						}
 					} else {

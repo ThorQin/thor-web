@@ -3,17 +3,12 @@ import mime from 'mime';
 import zlib from 'zlib';
 import stream from 'stream';
 import http from 'http';
-import { promises as fs } from 'fs';
+import { createReadStream } from 'fs';
+import { promisify } from 'util';
 import { Application, BasicBodyParser, PermissionCheck, PrivilegeCheck, Renderer, Session } from './types';
 import { Schema } from 'thor-validation';
 
-async function* readFile(fd: fs.FileHandle, buffer: Buffer) {
-	let rd = await fd.read(buffer, 0, buffer.length);
-	while (rd.bytesRead > 0) {
-		yield rd;
-		rd = await fd.read(buffer, 0, buffer.length);
-	}
-}
+const pipeline = promisify(stream.pipeline);
 
 function writeStream(stream: stream.Writable, buffer: Buffer | string): Promise<void> {
 	if (buffer.length <= 0) {
@@ -21,14 +16,6 @@ function writeStream(stream: stream.Writable, buffer: Buffer | string): Promise<
 	}
 	return new Promise((resolve) => {
 		stream.write(buffer, () => {
-			resolve();
-		});
-	});
-}
-
-function flushStream(stream: zlib.Gzip): Promise<void> {
-	return new Promise((resolve) => {
-		stream.flush(() => {
 			resolve();
 		});
 	});
@@ -447,34 +434,22 @@ export default class Context {
 		} else {
 			hs['Content-Disposition'] = "attachment; filename*=utf-8''" + encodeURIComponent(options.filename);
 		}
-
-		const fd = await fs.open(file, 'r');
+		hs['Transfer-Encoding'] = 'chunked';
+		const fileStream = createReadStream(file);
 		try {
-			const buffer = Buffer.alloc(4096);
 			if (options.gzip) {
 				hs['Content-Encoding'] = 'gzip';
-				hs['Transfer-Encoding'] = 'chunked';
 				this.rsp.writeHead(options.statusCode, hs);
 				const zstream = zlib.createGzip();
-				zstream.pipe(this.rsp);
-				for await (const rd of readFile(fd, buffer)) {
-					// totalSize += rd.bytesRead;
-					// console.log(`Read: ${rd.bytesRead}, total: ${totalSize}`);
-					await writeStream(zstream, rd.buffer.slice(0, rd.bytesRead));
-				}
-				await flushStream(zstream);
+				await pipeline(fileStream, zstream, this.rsp);
 			} else {
 				this.rsp.writeHead(options.statusCode, hs);
-				for await (const rd of readFile(fd, buffer)) {
-					// totalSize += rd.bytesRead;
-					// console.log(`Read: ${rd.bytesRead}, total: ${totalSize}`);
-					await this.write(rd.buffer.slice(0, rd.bytesRead));
-				}
+				await pipeline(fileStream, this.rsp);
 			}
 		} finally {
-			await fd.close();
+			fileStream.close();
+			await this.end();
 		}
-		await this.end();
 	}
 
 	/**

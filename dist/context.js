@@ -9,27 +9,16 @@ exports.OriginType = void 0;
 const path_1 = __importDefault(require('path'));
 const mime_1 = __importDefault(require('mime'));
 const zlib_1 = __importDefault(require('zlib'));
+const stream_1 = __importDefault(require('stream'));
 const fs_1 = require('fs');
-async function* readFile(fd, buffer) {
-	let rd = await fd.read(buffer, 0, buffer.length);
-	while (rd.bytesRead > 0) {
-		yield rd;
-		rd = await fd.read(buffer, 0, buffer.length);
-	}
-}
+const util_1 = require('util');
+const pipeline = (0, util_1.promisify)(stream_1.default.pipeline);
 function writeStream(stream, buffer) {
 	if (buffer.length <= 0) {
 		return Promise.resolve();
 	}
 	return new Promise((resolve) => {
 		stream.write(buffer, () => {
-			resolve();
-		});
-	});
-}
-function flushStream(stream) {
-	return new Promise((resolve) => {
-		stream.flush(() => {
 			resolve();
 		});
 	});
@@ -367,33 +356,22 @@ class Context {
 		} else {
 			hs['Content-Disposition'] = "attachment; filename*=utf-8''" + encodeURIComponent(options.filename);
 		}
-		const fd = await fs_1.promises.open(file, 'r');
+		hs['Transfer-Encoding'] = 'chunked';
+		const fileStream = (0, fs_1.createReadStream)(file);
 		try {
-			const buffer = Buffer.alloc(4096);
 			if (options.gzip) {
 				hs['Content-Encoding'] = 'gzip';
-				hs['Transfer-Encoding'] = 'chunked';
 				this.rsp.writeHead(options.statusCode, hs);
 				const zstream = zlib_1.default.createGzip();
-				zstream.pipe(this.rsp);
-				for await (const rd of readFile(fd, buffer)) {
-					// totalSize += rd.bytesRead;
-					// console.log(`Read: ${rd.bytesRead}, total: ${totalSize}`);
-					await writeStream(zstream, rd.buffer.slice(0, rd.bytesRead));
-				}
-				await flushStream(zstream);
+				await pipeline(fileStream, zstream, this.rsp);
 			} else {
 				this.rsp.writeHead(options.statusCode, hs);
-				for await (const rd of readFile(fd, buffer)) {
-					// totalSize += rd.bytesRead;
-					// console.log(`Read: ${rd.bytesRead}, total: ${totalSize}`);
-					await this.write(rd.buffer.slice(0, rd.bytesRead));
-				}
+				await pipeline(fileStream, this.rsp);
 			}
 		} finally {
-			await fd.close();
+			fileStream.close();
+			await this.end();
 		}
-		await this.end();
 	}
 	/**
 	 * Send 302 redirection
