@@ -1,10 +1,14 @@
-import { promises as fs } from 'fs';
+import { createReadStream, promises as fs, ReadStream } from 'fs';
 import path from 'path';
 import tools, { FileStat } from '../utils/tools';
 import time from 'thor-time';
 import mime from 'mime';
 import zlib from 'zlib';
+import stream from 'stream';
+import { promisify } from 'util';
 import { Application, Middleware, MiddlewareFactory } from '../types';
+
+const pipeline = promisify(stream.pipeline);
 
 export function defaultSuffix(): string[] {
 	const suffix = [
@@ -47,7 +51,7 @@ function getMimeType(suffix: string) {
 }
 
 function compressible(suffix: string) {
-	return /^(txt|html?|css|js|json)$/.test(suffix);
+	return /^(txt|html?|css|js|json|xml)$/.test(suffix);
 }
 
 function gzip(buffer: Buffer): Promise<Buffer> {
@@ -58,33 +62,6 @@ function gzip(buffer: Buffer): Promise<Buffer> {
 				return;
 			}
 			resolve(result);
-		});
-	});
-}
-
-async function* readFile(fd: fs.FileHandle, buffer: Buffer) {
-	let rd = await fd.read(buffer, 0, buffer.length);
-	while (rd.bytesRead > 0) {
-		yield rd;
-		rd = await fd.read(buffer, 0, buffer.length);
-	}
-}
-
-function flushStream(stream: zlib.Gzip): Promise<void> {
-	return new Promise((resolve) => {
-		stream.flush(() => {
-			resolve();
-		});
-	});
-}
-
-function writeStream(stream: zlib.Gzip, buffer: Buffer): Promise<void> {
-	if (buffer.length <= 0) {
-		return Promise.resolve();
-	}
-	return new Promise<void>((resolve) => {
-		stream.write(buffer, () => {
-			resolve();
 		});
 	});
 }
@@ -246,7 +223,7 @@ class StaticFactory implements MiddlewareFactory<StaticOptions> {
 							}
 						}
 
-						let fd = null;
+						let fileStream: ReadStream | null = null;
 						try {
 							const canGzip = compressible(m[1]);
 							if (stat.size <= cachedFileSize && process.env.NODE_ENV !== 'development') {
@@ -273,11 +250,9 @@ class StaticFactory implements MiddlewareFactory<StaticOptions> {
 								}
 								return true;
 							} else {
-								fd = await fs.open(file, 'r');
-								const buffer = Buffer.alloc(4096);
+								fileStream = createReadStream(file);
 								if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
 									const zstream = zlib.createGzip();
-									zstream.pipe(ctx.rsp);
 									ctx.writeHead(200, {
 										'Cache-Control': 'no-cache',
 										'Content-Type': contentType,
@@ -285,27 +260,22 @@ class StaticFactory implements MiddlewareFactory<StaticOptions> {
 										'Content-Encoding': 'gzip',
 										'Transfer-Encoding': 'chunked',
 									});
-
-									for await (const rd of readFile(fd, buffer)) {
-										await writeStream(zstream, rd.buffer.slice(0, rd.bytesRead));
-									}
-									await flushStream(zstream);
+									await pipeline(fileStream, zstream, ctx.rsp);
 								} else {
 									ctx.writeHead(200, {
 										'Cache-Control': 'no-cache',
 										'Content-Type': contentType,
 										'Last-Modified': mtime.toUTCString(),
+										'Transfer-Encoding': 'chunked',
 									});
-									for await (const rd of readFile(fd, buffer)) {
-										await ctx.write(rd.buffer.slice(0, rd.bytesRead));
-									}
+									await pipeline(fileStream, ctx.rsp);
 								}
 								await ctx.end();
 								return true;
 							}
 						} finally {
-							if (fd) {
-								await fd.close();
+							if (fileStream) {
+								fileStream.close();
 							}
 						}
 					} else {
