@@ -19,15 +19,93 @@
 				margin: 0;
 				color: rgba(11, 77, 153, 0.533);
 			}
+			#panel {
+				display: flex;
+				flex-direction: column;
+			}
+			#methods {
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				border-top: 1px solid #ddd;
+			}
+			#methods > div{
+				padding: 20px;
+				font-size: 24px;
+				font-weight: normal;
+				color: #ccc;
+				cursor: pointer;
+				user-select: none;
+				text-align: center;
+			}
+			#methods > span{
+				color: #ddd;
+			}
+			#methods > div.active {
+				color: #8080ff;
+				text-shadow: 0 0 1px #8080ff, 0 0 1px #8080ff;
+
+
+			}
+			#method-detail {
+				flex:1;
+				height: 0;
+				display: flex;
+				flex-direction: row;
+				border-top: 1px solid #ddd;
+			}
+			#method-result {
+				display: flex;
+				flex-direction: column;
+			}
+			#method-query {
+				display: flex;
+				flex-direction: column;
+			}
+			#go {
+				padding: 15px 20px;
+				border: none;
+				background: #4070ff;
+				color: white;
+			}
+			div.param-tab {
+				padding: 15px 20px;
+    			color: #88c;
+				cursor: pointer;
+				margin: 5px;
+				white-space: nowrap;
+			}
+			div.param-tab.active {
+				padding: 15px 20px;
+    			color: #8080ff;
+				cursor: pointer;
+				box-shadow: 1px 1px 3px #888 inset;
+				background-color: white;
+			}
+			#comment {
+				padding: 20px;
+				background: #f5f5f5;
+				color: #58c;
+				overflow: auto;
+				white-space: pre-wrap;
+				max-height: 100px;
+			}
+			button#go:hover {
+				background-color: #3060ff;
+			}
+			button#go:active {
+				background-color: #2050ff;
+			}
+
 		</style>
 		<script>
 			$(function() {
-				let downX;
-				let downWidth;
+
 				let list = $$("list");
+				let queryPanel = $("#method-query")[0];
 				$("#splitter").on('mousedown', (e) => {
-					downX = e.clientX;
-					downWidth = list._.offsetWidth;
+					let downX = e.clientX;
+					let downWidth = list._.offsetWidth;
 					tui.widget.openDragMask((e) => {
 						let w = downWidth + e.clientX - downX;
 						if (w >= 0 && w <= 700 ) {
@@ -37,6 +115,18 @@
 						downX = null;
 					});
 				});
+				$("#method-splitter").on('mousedown', (e) => {
+					let downX = e.clientX;
+					let downWidth = queryPanel.offsetWidth;
+					tui.widget.openDragMask((e) => {
+						let w = downWidth + (e.clientX - downX);
+						if (w >= 350 && w < 900 ) {
+							queryPanel.style.width = w + 'px';
+						}
+					}, (e) => {
+						downX = null;
+					});
+				})
 				$get('apis.json').then(result => {
 					function trans(item) {
 						item.expand = true;
@@ -51,18 +141,164 @@
 					}
 					result.children.forEach(i => trans(i));
 					list.set('tree', result.children);
-				})
+				});
+				let currentMethod = null;
+				function showMethod(key, method) {
+					currentMethod = method;
+					$('#methods>div').removeClass('active');
+					$(`#methods>div[name=${key}]`).addClass('active');
+					$("#comment").text(method.desc || 'Description not exists');
+					$('#method-query div.param-tab').removeClass('active');
+					$('#method-query div.param-tab:nth-child(1)').addClass('active');
+					showParamForm();
+					$('#method-result div.param-tab').removeClass('active');
+					$('#method-result div.param-tab:nth-child(1)').addClass('active');
+				}
+				function showParamForm() {
+					showForm($('#paramForm'), currentMethod.param);
+					$('#paramForm').show();
+					$('#bodyForm').hide();
+				}
+				function showBodyForm() {
+					showForm($('#bodyForm'), currentMethod.body);
+					$('#paramForm').hide();
+					$('#bodyForm').show();
+				}
+
+				const MARGIN = 40;
+
+				function showUnionForm(parentDiv, rule, level) {
+					let div = document.createElement('div')
+					div.style.marginLeft = MARGIN * level + 'px';
+					let select = document.createElement('select')
+					let divs = []
+					select.onchange = function(e) {
+						divs.forEach(d => d.style.display = 'hidden');
+						divs[select.selectedIndex].style.display = 'block';
+					};
+					div.appendChild(select);
+					rule.rules.forEach(r => {
+						select.options.add(r.type);
+						let subDiv = document.createElement('div')
+						subDiv.style.display = 'hidden';
+						divs.push(subDiv);
+						div.appendChild(subDiv);
+						showForm(subDiv, r, level+1);
+					})
+					parentDiv.appendChild(div);
+				}
+
+				function showNeedForm(div, rule, level) {
+					let div = document.createElement('div')
+					div.style.marginLeft = MARGIN * level + 'px';
+					div.innerHTML = `
+						<div><input type="checkbox"><span>Provide Value</span></div>
+						<div name="box"></div>
+					`;
+					let chk = div.querySelector('input');
+					let box = div.querySelector('div[name=box]');
+					chk.onchange = (e) => {
+						box.style.display = chk.checked ? 'block' : 'none';
+					};
+					showForm(box, rule.rule, level);
+					parentDiv.appendChild(div);
+				}
+
+				function showObjectForm(div, rule, level) {
+					let div = document.createElement('div')
+					div.style.marginLeft = MARGIN * level + 'px';
+					rule.rules.forEach(r => {
+						// TODO:
+					});
+
+					parentDiv.appendChild(div);
+				}
+				function showForm(parentDiv, rule, level) {
+					if (rule.type === 'need') {
+						showNeedForm(parentDiv, rule, level)
+					} else if (rule.type === 'union') {
+						showUnionForm(parentDiv, rule, level)
+					} else if (rule.type === 'object') {
+						showObjectForm(parentDiv, rule, level)
+					}
+				}
+				list.on('rowclick', (e) => {
+					let row = list.get('data').get(e.data.row).item;
+					if (row.type !== 'api') {
+						$('#panel').hide();
+						return;
+					} else {
+						$('#panel').show();
+					}
+					$('#api-path').text(row.path);
+					let methods = Object.keys(row.methods).map((m, i) => `<div name="${m}">${m.toUpperCase()}</div>`).join('<span>|</span>');
+					$('#methods').html(methods);
+					$('#methods>div').click(e => {
+						let key = e.target.getAttribute('name');
+						showMethod(key, row.methods[key]);
+					});
+					showMethod(Object.keys(row.methods)[0], row.methods[Object.keys(row.methods)[0]]);
+				});
+				$('#method-query div.param-tab').click((e) => {
+					$('#method-query div.param-tab').removeClass('active');
+					$(e.currentTarget).addClass('active');
+					if ($(e.currentTarget).attr('name') === 'param') {
+						showParamForm();
+					} else {
+						showBodyForm();
+					}
+				});
+				$('#method-result div.param-tab').click((e) => {
+					$('#method-result div.param-tab').removeClass('active');
+					$(e.currentTarget).addClass('active');
+				});
+
 			})
 		</script>
 	</head>
 	<body style="display:flex;flex-direction: column; height: 100%;">
-		<h2 style="padding: 20px;background-color: #f0f0f0; box-shadow: 0px 1px 5px #8888;z-index:10">
-			API DOCs
-		</h2>
-		<div style="flex:1;display: flex;flex-direction: row;align-items: stretch;">
-			<tui:list id="list" style="width: 400px;height:auto;border: none;"></tui:list>
-			<div id="splitter" style="width: 14px;background-color: #eee;"></div>
+		<div style="display: flex;flex-direction: row;background-color: #f0f0f0; box-shadow: 0px 1px 5px #8888;z-index:10">
+			<h2 style="padding: 20px;">
+				API Manual
+			</h2>
+			<h2 id="api-path" style="flex:1;padding: 20px;text-align: right;">
 
+			</h2>
+		</div>
+		<div style="flex:1;display: flex;flex-direction: row;align-items: stretch;height:0">
+			<tui:list id="list" style="width: 300px;height:auto;border: none;"></tui:list>
+			<div id="splitter" style="width: 12px;background-color: #eee;background: #f5f5f5 no-repeat url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAApCAYAAAABFMhiAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAAVpJREFUOI2tldtOwzAMhr+UDnHoehhcMHj/N+P0ALTADi0XcVYnTVAm7ZciWbZn+0vSDC6kUtZCRcK3lbWIx6pMwEHZSdXAA2CUz4ivjo3UAPfASvlW4quJ6BaoxL6ShfhudMtQBfAs9lvIkYIeYyOEWgMbltAbiZ3aO7UybwhdSQyYwQD2wA74lkIGex4j8CV2FNoAL2JnQUMmdAV0qovr3jGfj9ehk6QeywJwjd2hCcvhQR8kccCHnqTI3rUO5aAn4J0AOvY9ECalpA9IQ7fYGwvEoQd86FpxeNBHLNigOhyZd+5faHe9s6GzdMf8KRaqWCMxwId2D8APPnQjYw3gQ49YsB4fukBdlxT0VuwPMq931makoGvOhG5JQE9YyF75Rsk5XZeLQBsyoVNv61piiw6PUn2HD91hWV5dJa0YdIl93H7dvDGGJ7E/yYQuJdGEP0gp+S96tv4As+lTPTtuJnUAAAAASUVORK5CYII=) center; "></div>
+			<div id="panel" style="flex:1;display: none;">
+				<div id="methods">
+
+				</div>
+				<div id="method-detail">
+					<div id="method-query" style="width:450px">
+						<div style="display: flex;flex-direction: row;align-items: center">
+							<div name="param" class="param-tab active"><i class="fa fa-list"></i> param</div>
+							<div name="body" class="param-tab"><i class="fa fa-list-alt"></i> body</div>
+							<div style="flex:1;"></div>
+							<button id="go" style="padding:10px 30px;margin: 5px;">GO</button>
+						</div>
+						<div style="background-color: white;flex:1;overflow: auto;border-top:1px solid #ddd;height:0">
+							<div id="paramForm" class="req-form"></div>
+							<div id="bodyForm" class="req-form" style="display: none;"></div>
+						</div>
+					</div>
+					<div id="method-splitter" style="width: 12px;background-color: #eee;background: #f5f5f5 no-repeat url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAApCAYAAAABFMhiAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAAVpJREFUOI2tldtOwzAMhr+UDnHoehhcMHj/N+P0ALTADi0XcVYnTVAm7ZciWbZn+0vSDC6kUtZCRcK3lbWIx6pMwEHZSdXAA2CUz4ivjo3UAPfASvlW4quJ6BaoxL6ShfhudMtQBfAs9lvIkYIeYyOEWgMbltAbiZ3aO7UybwhdSQyYwQD2wA74lkIGex4j8CV2FNoAL2JnQUMmdAV0qovr3jGfj9ehk6QeywJwjd2hCcvhQR8kccCHnqTI3rUO5aAn4J0AOvY9ECalpA9IQ7fYGwvEoQd86FpxeNBHLNigOhyZd+5faHe9s6GzdMf8KRaqWCMxwId2D8APPnQjYw3gQ49YsB4fukBdlxT0VuwPMq931makoGvOhG5JQE9YyF75Rsk5XZeLQBsyoVNv61piiw6PUn2HD91hWV5dJa0YdIl93H7dvDGGJ7E/yYQuJdGEP0gp+S96tv4As+lTPTtuJnUAAAAASUVORK5CYII=) center; "></div>
+					<div id="method-result" style="flex:1">
+						<div style="display: flex;flex-direction: row;align-items: center;">
+							<div name="preview" class="param-tab active"><i class="fa fa-list"></i> preview</div>
+							<div name="source" class="param-tab"><i class="fa fa-code"></i> source</div>
+						</div>
+						<div style="background-color: white;flex:1;overflow: auto;border-top:1px solid #ddd">
+						</div>
+					</div>
+				</div>
+				<div id="comment">
+
+				</div>
+			</div>
 		</div>
 	</body>
 </html>

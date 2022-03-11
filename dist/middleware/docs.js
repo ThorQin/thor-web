@@ -12,7 +12,7 @@ const ORDER = {
 	api: 1,
 	folder: 0,
 };
-function loadApi(apiDir, pathName) {
+function loadApi(apiDir, pathName, fullPath) {
 	const folder = {
 		type: 'folder',
 		name: pathName,
@@ -28,7 +28,7 @@ function loadApi(apiDir, pathName) {
 		const subFile = path_1.default.resolve(apiDir, f);
 		const stat = fs_1.default.statSync(subFile);
 		if (stat.isDirectory()) {
-			const subFolder = loadApi(subFile, f);
+			const subFolder = loadApi(subFile, f, path_1.default.resolve(fullPath, f));
 			if (subFolder) folder.children.push(subFolder);
 		} else if (stat.isFile() && f.endsWith('.js')) {
 			try {
@@ -37,9 +37,11 @@ function loadApi(apiDir, pathName) {
 				if (typeof module === 'function') {
 					module = { default: module };
 				}
+				const apiName = f.substring(0, f.length - 3);
 				const api = {
 					type: 'api',
-					name: f.substring(0, f.length - 3),
+					path: path_1.default.resolve(fullPath, apiName),
+					name: apiName,
 					methods: {},
 				};
 				['post', 'get', 'head', 'put', 'delete', 'options', 'trace', 'patch', 'default'].forEach((m) => {

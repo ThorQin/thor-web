@@ -22,6 +22,7 @@ interface ApiBase {
 
 interface ApiEntry extends ApiBase {
 	type: 'api';
+	path: string;
 	methods: {
 		[key: string]: ApiDefine;
 	};
@@ -32,7 +33,7 @@ export interface ApiFolder extends ApiBase {
 	children: (ApiEntry | ApiFolder)[];
 }
 
-export function loadApi(apiDir: string, pathName: string): ApiFolder | null {
+export function loadApi(apiDir: string, pathName: string, fullPath: string): ApiFolder | null {
 	const folder: ApiFolder = {
 		type: 'folder',
 		name: pathName,
@@ -49,7 +50,7 @@ export function loadApi(apiDir: string, pathName: string): ApiFolder | null {
 		const subFile = path.resolve(apiDir, f);
 		const stat = fs.statSync(subFile);
 		if (stat.isDirectory()) {
-			const subFolder = loadApi(subFile, f);
+			const subFolder = loadApi(subFile, f, path.resolve(fullPath, f));
 			if (subFolder) folder.children.push(subFolder);
 		} else if (stat.isFile() && f.endsWith('.js')) {
 			try {
@@ -58,9 +59,11 @@ export function loadApi(apiDir: string, pathName: string): ApiFolder | null {
 				if (typeof module === 'function') {
 					module = { default: module };
 				}
+				const apiName = f.substring(0, f.length - 3);
 				const api: ApiEntry = {
 					type: 'api',
-					name: f.substring(0, f.length - 3),
+					path: path.resolve(fullPath, apiName),
+					name: apiName,
 					methods: {},
 				};
 				['post', 'get', 'head', 'put', 'delete', 'options', 'trace', 'patch', 'default'].forEach((m) => {

@@ -12,6 +12,7 @@ interface ApiBase {
 }
 interface ApiEntry extends ApiBase {
 	type: 'api';
+	path: string;
 	methods: {
 		[key: string]: ApiDefine;
 	};
@@ -20,7 +21,7 @@ export interface ApiFolder extends ApiBase {
 	type: 'folder';
 	children: (ApiEntry | ApiFolder)[];
 }
-export declare function loadApi(apiDir: string, pathName: string): ApiFolder | null;
+export declare function loadApi(apiDir: string, pathName: string, fullPath: string): ApiFolder | null;
 export declare function renderDoc(
 	ctx: Context,
 	apiFolder: ApiFolder,
