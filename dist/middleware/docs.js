@@ -12,76 +12,95 @@ const ORDER = {
 	api: 1,
 	folder: 0,
 };
-function loadApi(apiDir, pathName, fullPath) {
-	const folder = {
-		type: 'folder',
-		name: pathName,
-		children: [],
-	};
-	if (!fs_1.default.existsSync(apiDir)) {
+function loadEntry(apiFile, fullPath) {
+	try {
+		// eslint-disable-next-line @typescript-eslint/no-var-requires
+		let module = require(apiFile);
+		if (typeof module === 'function') {
+			module = { default: module, title: module.title };
+		}
+		let apiName = path_1.default.basename(apiFile);
+		apiName = apiName.substring(0, apiName.length - 3);
+		const api = {
+			type: 'api',
+			path: path_1.default.resolve(fullPath, apiName),
+			title: typeof module.title === 'string' ? module.title : undefined,
+			name: apiName,
+			methods: {},
+		};
+		['post', 'get', 'head', 'put', 'delete', 'options', 'trace', 'patch', 'default'].forEach((m) => {
+			const fn = module[m];
+			if (typeof fn === 'function') {
+				api.methods[m] = {
+					body: fn.body,
+					query: fn.query,
+					result: fn.result,
+					desc: fn.desc,
+					title: fn.title,
+				};
+			}
+		});
+		return api;
+	} catch {
+		console.log(`Load api doc ' ${apiFile}' failed, ignored.`);
 		return null;
 	}
+}
+function loadApi(apiDir, fullPath) {
+	const result = [];
+	if (!fs_1.default.existsSync(apiDir)) {
+		return result;
+	}
 	if (!fs_1.default.statSync(apiDir).isDirectory()) {
-		return null;
+		return result;
 	}
 	fs_1.default.readdirSync(apiDir).forEach((f) => {
 		const subFile = path_1.default.resolve(apiDir, f);
 		const stat = fs_1.default.statSync(subFile);
 		if (stat.isDirectory()) {
-			const subFolder = loadApi(subFile, f, path_1.default.resolve(fullPath, f));
-			if (subFolder) folder.children.push(subFolder);
+			const folder = {
+				type: 'folder',
+				path: path_1.default.resolve(fullPath, f),
+				name: f,
+				methods: {},
+				children: [],
+			};
+			const indexFile = path_1.default.resolve(subFile, 'index.js');
+			const indexStat = fs_1.default.statSync(indexFile);
+			if (indexStat.isFile()) {
+				const indexApi = loadEntry(indexFile, path_1.default.resolve(fullPath, f, 'index'));
+				if (indexApi) {
+					folder.title = indexApi.title;
+					folder.methods = indexApi.methods;
+				}
+			}
+			folder.children = loadApi(subFile, path_1.default.resolve(fullPath, f));
+			if (folder.title || folder.children.length > 0) {
+				result.push(folder);
+			}
 		} else if (stat.isFile() && f.endsWith('.js')) {
-			try {
-				// eslint-disable-next-line @typescript-eslint/no-var-requires
-				let module = require(subFile);
-				if (typeof module === 'function') {
-					module = { default: module };
-				}
-				const apiName = f.substring(0, f.length - 3);
-				const api = {
-					type: 'api',
-					path: path_1.default.resolve(fullPath, apiName),
-					name: apiName,
-					methods: {},
-				};
-				['post', 'get', 'head', 'put', 'delete', 'options', 'trace', 'patch', 'default'].forEach((m) => {
-					const fn = module[m];
-					if (typeof fn === 'function') {
-						api.methods[m] = {
-							body: fn.body,
-							params: fn.params,
-							desc: fn.desc,
-						};
-					}
-				});
-				if (Object.keys(api.methods).length > 0) {
-					folder.children.push(api);
-				}
-			} catch {
-				console.log(`Load api doc ' ${subFile}' failed, ignored.`);
+			const api = loadEntry(path_1.default.resolve(apiDir, f), fullPath);
+			if (api && Object.keys(api.methods).length > 0) {
+				result.push(api);
 			}
 		}
 	});
-	if (folder.children.length > 0) {
-		folder.children.sort((a, b) => {
-			const v = ORDER[a.type] - ORDER[b.type];
-			if (v === 0) {
-				return (a.name + '').localeCompare(b.name + '');
-			} else {
-				return v;
-			}
-		});
-		return folder;
-	} else {
-		return null;
-	}
+	result.sort((a, b) => {
+		const v = ORDER[a.type] - ORDER[b.type];
+		if (v === 0) {
+			return (a.name + '').localeCompare(b.name + '');
+		} else {
+			return v;
+		}
+	});
+	return result;
 }
 exports.loadApi = loadApi;
-async function renderDoc(ctx, apiFolder, middleware, apiDocPath) {
+async function renderDoc(ctx, docs, middleware, apiDocPath) {
 	if (ctx.path === apiDocPath) {
 		await ctx.redirect(apiDocPath + '/');
 	} else if (ctx.path === path_1.default.resolve(apiDocPath, 'apis.json')) {
-		await ctx.sendJson(apiFolder);
+		await ctx.sendJson(docs);
 	} else {
 		const processed = await middleware(ctx, ctx.req, ctx.rsp);
 		if (!processed) {

@@ -7,7 +7,7 @@ import { Application, Controller, Middleware, MiddlewareFactory } from '../types
 import fs from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import Context from '../context';
-import { ApiFolder, loadApi, renderDoc } from './docs';
+import { ApiEntry, ApiFolder, loadApi, renderDoc } from './docs';
 import staticFactory from './static-server';
 
 type ScriptDefinition = Controller | { [key: string]: Controller } | null;
@@ -138,10 +138,10 @@ class ControllerFactory implements MiddlewareFactory<ControllerCreateOptions> {
 			return p;
 		}
 
-		let apiFolder: ApiFolder | null = null;
+		let docs: (ApiFolder | ApiEntry)[];
 		let docServer: Middleware;
 		if (apiDocPath) {
-			apiFolder = loadApi(baseDir, '', '/');
+			docs = loadApi(baseDir, '/');
 			docServer = staticFactory.create(app, {
 				baseDir: path.normalize(__dirname + '/../../html'),
 				rootPath: apiDocPath,
@@ -231,8 +231,8 @@ class ControllerFactory implements MiddlewareFactory<ControllerCreateOptions> {
 
 		return async function (ctx, req, rsp) {
 			let page = ctx.path;
-			if (apiFolder && apiDocPath && (page === apiDocPath || page.startsWith(apiDocPath + '/'))) {
-				await renderDoc(ctx, apiFolder, docServer, apiDocPath);
+			if (docs && apiDocPath && (page === apiDocPath || page.startsWith(apiDocPath + '/'))) {
+				await renderDoc(ctx, docs, docServer, apiDocPath);
 				return true;
 			}
 			if (!page.startsWith(rootPath)) {

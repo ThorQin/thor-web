@@ -161,10 +161,10 @@ class ControllerFactory {
 			}
 			return p;
 		}
-		let apiFolder = null;
+		let docs;
 		let docServer;
 		if (apiDocPath) {
-			apiFolder = (0, docs_1.loadApi)(baseDir, '', '/');
+			docs = (0, docs_1.loadApi)(baseDir, '/');
 			docServer = static_server_1.default.create(app, {
 				baseDir: path_1.default.normalize(__dirname + '/../../html'),
 				rootPath: apiDocPath,
@@ -237,8 +237,8 @@ class ControllerFactory {
 		}
 		return async function (ctx, req, rsp) {
 			let page = ctx.path;
-			if (apiFolder && apiDocPath && (page === apiDocPath || page.startsWith(apiDocPath + '/'))) {
-				await (0, docs_1.renderDoc)(ctx, apiFolder, docServer, apiDocPath);
+			if (docs && apiDocPath && (page === apiDocPath || page.startsWith(apiDocPath + '/'))) {
+				await (0, docs_1.renderDoc)(ctx, docs, docServer, apiDocPath);
 				return true;
 			}
 			if (!page.startsWith(rootPath)) {
