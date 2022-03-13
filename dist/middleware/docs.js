@@ -66,12 +66,14 @@ function loadApi(apiDir, fullPath) {
 				children: [],
 			};
 			const indexFile = path_1.default.resolve(subFile, 'index.js');
-			const indexStat = fs_1.default.statSync(indexFile);
-			if (indexStat.isFile()) {
-				const indexApi = loadEntry(indexFile, path_1.default.resolve(fullPath, f, 'index'));
-				if (indexApi) {
-					folder.title = indexApi.title;
-					folder.methods = indexApi.methods;
+			if (fs_1.default.existsSync(indexFile)) {
+				const indexStat = fs_1.default.statSync(indexFile);
+				if (indexStat.isFile()) {
+					const indexApi = loadEntry(indexFile, path_1.default.resolve(fullPath, f, 'index'));
+					if (indexApi) {
+						folder.title = indexApi.title;
+						folder.methods = indexApi.methods;
+					}
 				}
 			}
 			folder.children = loadApi(subFile, path_1.default.resolve(fullPath, f));

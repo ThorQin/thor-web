@@ -96,12 +96,14 @@ export function loadApi(apiDir: string, fullPath: string): (ApiFolder | ApiEntry
 				children: [],
 			};
 			const indexFile = path.resolve(subFile, 'index.js');
-			const indexStat = fs.statSync(indexFile);
-			if (indexStat.isFile()) {
-				const indexApi = loadEntry(indexFile, path.resolve(fullPath, f, 'index'));
-				if (indexApi) {
-					folder.title = indexApi.title;
-					folder.methods = indexApi.methods;
+			if (fs.existsSync(indexFile)) {
+				const indexStat = fs.statSync(indexFile);
+				if (indexStat.isFile()) {
+					const indexApi = loadEntry(indexFile, path.resolve(fullPath, f, 'index'));
+					if (indexApi) {
+						folder.title = indexApi.title;
+						folder.methods = indexApi.methods;
+					}
 				}
 			}
 			folder.children = loadApi(subFile, path.resolve(fullPath, f));
