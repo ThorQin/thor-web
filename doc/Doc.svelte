@@ -1,6 +1,7 @@
 <script type="ts">
 	import { any, ApiDefine, ApiEntry } from './api';
 	import IconStarBox from 'svelte-material-icons/StarBox.svelte';
+	import Icon from 'svelte-material-icons/SendCircle.svelte';
 	import Subject from './Subject.svelte';
 	import Rule from './Rule.svelte';
 	export let item: ApiEntry;
@@ -31,27 +32,39 @@
 		<div class="method">
 			<IconStarBox color="#f080a8" />
 			<span style="margin-left: 10px;flex:1">{getMethodName(key, method)}</span>
-			<button>测试</button>
+			<Icon size={'1.2rem'} /><a style="margin-left:8px;font-size:1.2rem" href="javascript:void(0)">测试一下</a>
 		</div>
 		{#if method.desc}
-			<div>
-				<div><Subject title="接口说明"/></div>
-				<code>{method.desc}</code>
-			</div>
+		<div>
+			<div><Subject title="接口说明"/></div>
+			<code>{method.desc}</code>
+		</div>
 		{/if}
 		<div>
 			<div><Subject title="查询参数(query)"/></div>
+			{#if typeof method.query === 'string'}
+			<code>{method.query}</code>
+			{:else}
 			<div class="code"><Rule rule={any(method.query)} /></div>
+			{/if}
 		</div>
 		{#if key === 'post' || key === 'put' || method.body}
 		<div>
 			<div><Subject title="请求体(body)"/></div>
+			{#if typeof method.body === 'string'}
+			<code>{method.body}</code>
+			{:else}
 			<div class="code"><Rule rule={any(method.body)} /></div>
+			{/if}
 		</div>
 		{/if}
 		<div>
 			<div><Subject title="返回内容(response)"/></div>
+			{#if typeof method.result === 'string'}
+			<code>{method.result}</code>
+			{:else}
 			<div class="code"><Rule rule={any(method.result)} /></div>
+			{/if}
 		</div>
 	{/each}
 </div>
@@ -69,7 +82,7 @@
 		color: #555;
 		font-size: 2rem;
 		font-family: 'Courier New', Courier, monospace;
-		border-bottom: 1px solid #ddd;
+		border-bottom: 1px solid #f080a8;
 		margin-top: 30px;
 	}
 	div.main {

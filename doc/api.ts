@@ -5,9 +5,12 @@ import type {
 	CheckRule,
 	DateRule,
 	EqualRule,
+	NeedRule,
 	PatternRule,
+	PrimitiveRule,
 	RangeRule,
 	Rule,
+	UnionRule,
 	ValueRule,
 } from 'thor-validation';
 
@@ -78,6 +81,39 @@ export function getCheckDesc(
 		return '无';
 	}
 }
+
+export function getRuleCheckDesc(r: PrimitiveRule | NeedRule | UnionRule): string {
+	if (r.type === 'need') {
+		if (r.rule) {
+			return getRuleCheckDesc(r.rule);
+		} else {
+			return '无';
+		}
+	} else if (r.type === 'union') {
+		return '';
+	} else {
+		return getCheckDesc(any(r.rules));
+	}
+}
+
+export function getRuleTypeName(r: Rule): string {
+	if (r.type === 'need') {
+		return (r as NeedRule).rule ? getRuleTypeName(any((r as NeedRule).rule)) : '未指定类型';
+	} else if (r.type === 'union') {
+		let txt = (r as UnionRule).rules
+			.filter((sr) => sr.type !== 'mismatch')
+			.map((sr) => typeToName(sr.type))
+			.join(',');
+		if (!txt) {
+			txt = '未指定类型';
+		}
+		return txt;
+	} else {
+		return typeToName(r.type);
+	}
+}
+
+
 
 function getAnyDesc(r: AnyRule): string {
 	return '(' + getChecks(any(r.rules)).join(' 或 ') + ')';

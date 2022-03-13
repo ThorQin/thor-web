@@ -1,27 +1,60 @@
 <script type="ts">
-	import Icon from 'svelte-material-icons/Anchor.svelte';
-	import type { PrimitiveRule } from 'thor-validation';
+	import Icon from 'svelte-material-icons/CodeBrackets.svelte';
+	import type {  ItemRule, PrimitiveRule, Rule } from 'thor-validation';
+	import RObject from './RObject.svelte';
+	import RArray from './RArray.svelte';
+	import RUnion from './RUnion.svelte';
+	import RValue from './RValue.svelte';
 	import RNeed from './RNeed.svelte';
+	import { getRuleCheckDesc, getRuleTypeName } from '../api';
 	export let rule: PrimitiveRule;
 	export let need: boolean;
-</script>
-<div class="subject">
-	{#if rule.rules.length > 0}
+	export let level: number;
 
+	function getSubType(r: ItemRule): string {
+		if (r.rule) {
+			return getRuleTypeName(r.rule);
+		} else {
+			return '未指定类型';
+		}
+	}
+
+	let itemRule = rule.rules.filter(r => r.type === 'item')[0] as ItemRule | undefined;
+	let subType = itemRule ? getSubType(itemRule) : '未指定';
+</script>
+
+<div style="margin-left: {level * 40}px">
+	<div class="type">
+		<Icon />
+		<span style="margin-left:10px">数组</span>
+		{@html need ? ' <span style="color:red">(必须)</span>' : ''}，元素数量规则：{getRuleCheckDesc(rule)}，元素类型：{subType}
+	</div>
+	{#if itemRule}
+		{#if itemRule.rule.type === 'object'}
+			<RObject rule={itemRule.rule} need={false} level={1} />
+		{:else if itemRule.rule.type === 'array'}
+			<RArray rule={itemRule.rule} need={false} level={1} />
+		{:else if itemRule.rule.type === 'union'}
+			<RUnion rule={itemRule.rule} need={false} level={1}/>
+		{:else if itemRule.rule.type === 'need'}
+			<RNeed rule={itemRule.rule} level={1} />
+		{:else if itemRule.rule.type === 'string'}
+			<RValue rule={itemRule.rule} need={false} level={1}/>
+		{:else if itemRule.rule.type === 'number'}
+			<RValue rule={itemRule.rule} need={false} level={1}/>
+		{:else if itemRule.rule.type === 'boolean'}
+			<RValue rule={itemRule.rule} need={false} level={1}/>
+		{:else if itemRule.rule.type === 'date'}
+			<RValue rule={itemRule.rule} need={false} level={1}/>
+		{:else}
+			<div class="error">未知规则，请联系开发人员报告这个错误。</div>
+		{/if}
 	{:else}
-	<div class="error">未知规则，请联系开发人员报告这个错误。</div>
+	<div class="undefined">未指定元素类型。</div>
 	{/if}
 </div>
+
 <style>
-	div.subject {
-		display: block;
-		padding: 20px;
-		font-size: 1.2rem;
-		line-height: 2rem;
-		font-family: 'Courier New', Courier, monospace;
-		background-color: #f8f8f8;
-		border-radius: 5px;
-	}
 	div.undefined {
 		color: #888;
 	}

@@ -63,3 +63,16 @@ button:not(:disabled):active {
 button:focus {
 	border-color: #666;
 }
+
+div.type {
+	display: flex;
+	align-items: center;
+	background-color: #ddd;
+	padding: 0px 10px;
+	font-size: 1rem;
+	height: 2.5rem;
+	margin-top: 2px;
+}
+div.type span {
+	display: inline-block;
+}

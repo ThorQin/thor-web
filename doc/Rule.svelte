@@ -10,21 +10,21 @@
 </script>
 {#if rule}
 	{#if rule.type === 'need'}
-	<RNeed rule={rule} />
+	<RNeed rule={rule} level={0}/>
 	{:else if rule.type === 'union'}
-	<RUnion rule={rule} need={false} />
+	<RUnion rule={rule} need={false} level={0}/>
 	{:else if rule.type === 'object'}
-	<RObject rule={rule} need={false} />
+	<RObject rule={rule} need={false} level={0}/>
 	{:else if rule.type === 'array'}
-	<RArray rule={rule} need={false} />
+	<RArray rule={rule} need={false} level={0} />
 	{:else if rule.type === 'string'}
-	<RValue rule={rule} need={false} />
+	<RValue rule={rule} need={false} level={0} />
 	{:else if rule.type === 'number'}
-	<RValue rule={rule} need={false} />
+	<RValue rule={rule} need={false} level={0} />
 	{:else if rule.type === 'boolean'}
-	<RValue rule={rule} need={false} />
+	<RValue rule={rule} need={false} level={0} />
 	{:else if rule.type === 'date'}
-	<RValue rule={rule} need={false} />
+	<RValue rule={rule} need={false} level={0} />
 	{:else}
 	<span class="error">未知规则，请联系开发人员报告这个错误。</span>
 	{/if}

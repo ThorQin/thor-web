@@ -2,9 +2,9 @@ import Context from '../context';
 import { Rule } from 'thor-validation';
 import { Middleware } from '../types';
 export interface ApiDefine {
-	body?: Rule;
-	query?: Rule;
-	result?: Rule;
+	body?: Rule | string;
+	query?: Rule | string;
+	result?: Rule | string;
 	title?: string;
 	desc?: string;
 }

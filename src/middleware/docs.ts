@@ -10,9 +10,9 @@ const ORDER = {
 };
 
 export interface ApiDefine {
-	body?: Rule;
-	query?: Rule;
-	result?: Rule;
+	body?: Rule | string;
+	query?: Rule | string;
+	result?: Rule | string;
 	title?: string;
 	desc?: string;
 }
