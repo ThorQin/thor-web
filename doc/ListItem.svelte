@@ -11,7 +11,7 @@
 	let active = false;
 	function clickRow() {
 		expend = !expend;
-		if (item.type === 'api') {
+		if (item.type === 'api' && !active) {
 			active = true;
 			setActive(item, () => {
 				active = false;

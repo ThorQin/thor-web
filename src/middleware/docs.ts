@@ -40,6 +40,20 @@ export interface ApiFolder extends ApiBase {
 	children: (ApiEntry | ApiFolder)[];
 }
 
+function urlJoin(...parts: string[]): string {
+	return parts
+		.map((p, idx) => {
+			if (!p.startsWith('/')) {
+				p = '/' + p;
+			}
+			if (idx < parts.length - 1 && p.endsWith('/')) {
+				p = p.substring(0, p.length - 1);
+			}
+			return p;
+		})
+		.join('');
+}
+
 function loadEntry(apiFile: string, fullPath: string): ApiEntry | null {
 	try {
 		// eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -51,7 +65,7 @@ function loadEntry(apiFile: string, fullPath: string): ApiEntry | null {
 		apiName = apiName.substring(0, apiName.length - 3);
 		const api: ApiEntry = {
 			type: 'api',
-			path: path.resolve(fullPath, apiName),
+			path: urlJoin(fullPath, apiName),
 			title: typeof module.title === 'string' ? module.title : undefined,
 			name: apiName,
 			methods: {},
@@ -69,8 +83,8 @@ function loadEntry(apiFile: string, fullPath: string): ApiEntry | null {
 			}
 		});
 		return api;
-	} catch {
-		console.log(`Load api doc ' ${apiFile}' failed, ignored.`);
+	} catch (e) {
+		console.log(`Load api doc ' ${apiFile}' failed, ignored: `, e);
 		return null;
 	}
 }
@@ -90,7 +104,7 @@ export function loadApi(apiDir: string, fullPath: string): (ApiFolder | ApiEntry
 		if (stat.isDirectory()) {
 			const folder: ApiFolder = {
 				type: 'folder',
-				path: path.resolve(fullPath, f),
+				path: urlJoin(fullPath, f),
 				name: f,
 				methods: {},
 				children: [],
@@ -99,14 +113,14 @@ export function loadApi(apiDir: string, fullPath: string): (ApiFolder | ApiEntry
 			if (fs.existsSync(indexFile)) {
 				const indexStat = fs.statSync(indexFile);
 				if (indexStat.isFile()) {
-					const indexApi = loadEntry(indexFile, path.resolve(fullPath, f, 'index'));
+					const indexApi = loadEntry(indexFile, urlJoin(fullPath, f));
 					if (indexApi) {
 						folder.title = indexApi.title;
 						folder.methods = indexApi.methods;
 					}
 				}
 			}
-			folder.children = loadApi(subFile, path.resolve(fullPath, f));
+			folder.children = loadApi(subFile, urlJoin(fullPath, f));
 			if (folder.title || folder.children.length > 0) {
 				result.push(folder);
 			}
@@ -136,7 +150,7 @@ export async function renderDoc(
 ): Promise<void> {
 	if (ctx.path === apiDocPath) {
 		await ctx.redirect(apiDocPath + '/');
-	} else if (ctx.path === path.resolve(apiDocPath, 'apis.json')) {
+	} else if (ctx.path === urlJoin(apiDocPath, 'apis.json')) {
 		await ctx.sendJson(docs);
 	} else {
 		const processed = await middleware(ctx, ctx.req, ctx.rsp);

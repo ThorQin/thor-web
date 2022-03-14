@@ -17,7 +17,7 @@
 		let desc = r.desc ? r.desc + '' : '';
 		if (r.rule) {
 			let txt = getRuleCheckDesc(r.rule);
-			if (txt) {
+			if (txt && txt !== '无') {
 				return desc + ' 规则：' + txt;
 			} else {
 				return desc;
@@ -71,7 +71,7 @@ function getSubTypeNoNeed(r: PropRule): string {
 		{#each rule.rules.filter(r => r.type === 'prop') as r}
 		<div class="line">
 			<span>{getName(r)}</span>
-			<span>{getSubType(any(r))}{@html isNeed(any(r)) ? '<span style="color:red">(必须)</span>' : ''}</span>
+			<span class="type">{getSubType(any(r))}{@html isNeed(any(r)) ? '<span style="color:red">(必须)</span>' : ''}</span>
 			<span class="desc">{getDesc(any(r))}</span>
 		</div>
 		{#if getSubTypeNoNeed(any(r)) === 'object'}
@@ -113,8 +113,14 @@ function getSubTypeNoNeed(r: PropRule): string {
 		text-align: left;
 		flex: 1;
 	}
+	div.line > span.type {
+		margin-left: 10px;
+		margin-right: 10px;
+	}
 	div.line > span.desc {
 		text-align: left;
 		flex: 3;
+		word-wrap: break-word;
+		word-break: break-all;
 	}
 </style>

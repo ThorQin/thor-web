@@ -12,7 +12,7 @@
 	{#if rule.rules.length > 0}
 		{#each rule.rules.filter(r => r.type !== 'mismatch') as subRule, index}
 			{#if index > 0}
-			<div class="or"><span>或</span></div>
+			<div class="or"><span>- 或 -</span></div>
 			{/if}
 			{#if subRule.type === 'object'}
 			<RObject rule={subRule} need={need} level={0}/>
@@ -46,12 +46,10 @@
 		text-align: left;
 	}
 	div.or>span {
-    display: inline-block;
-    font-size: 0.8rem;
-		line-height: 0.8rem;
+    font-size: 1.2rem;
+    line-height: 1.2rem;
     padding: 8px 20px;
     border-radius: 30px;
-    background-color: #faa;
-    color: white;
+    color: #29f;
 	}
 </style>

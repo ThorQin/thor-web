@@ -70,9 +70,10 @@ export function typeToName(type: string): string {
 }
 
 export function getCheckDesc(
-	rules: (AnyRule | AllRule | ValueRule | DateRule | EqualRule | RangeRule | BetweenRule | PatternRule)[]
+	rules: (AnyRule | AllRule | ValueRule | DateRule | EqualRule | RangeRule | BetweenRule | PatternRule)[],
+	valueType: string
 ): string {
-	const text = getChecks(rules);
+	const text = getChecks(rules, valueType);
 	if (text.length > 1) {
 		return text.join(' 且 ');
 	} else if (text.length === 1) {
@@ -92,7 +93,7 @@ export function getRuleCheckDesc(r: PrimitiveRule | NeedRule | UnionRule): strin
 	} else if (r.type === 'union') {
 		return '';
 	} else {
-		return getCheckDesc(any(r.rules));
+		return getCheckDesc(any(r.rules), r.type);
 	}
 }
 
@@ -113,43 +114,49 @@ export function getRuleTypeName(r: Rule): string {
 	}
 }
 
-
-
-function getAnyDesc(r: AnyRule): string {
-	return '(' + getChecks(any(r.rules)).join(' 或 ') + ')';
+function getAnyDesc(r: AnyRule, valueType: string): string {
+	return '(' + getChecks(any(r.rules), valueType).join(' 或 ') + ')';
 }
 
 function getChecks(
-	rules: (AnyRule | AllRule | ValueRule | DateRule | EqualRule | RangeRule | BetweenRule | PatternRule)[]
+	rules: (AnyRule | AllRule | ValueRule | DateRule | EqualRule | RangeRule | BetweenRule | PatternRule)[],
+	valueType: string
 ): string[] {
+	function getPrefix(type: string): string {
+		if (valueType !== 'string' || type === 'pattern') {
+			return '';
+		} else {
+			return '长度';
+		}
+	}
 	const text = rules
 		.map((r) => {
 			if (r.type === 'all') {
-				return getCheckDesc(any(r.rules));
+				return getCheckDesc(any(r.rules), valueType);
 			} else if (r.type === 'any') {
-				return getAnyDesc(r);
+				return getAnyDesc(r, valueType);
 			} else if (r.type === 'after') {
-				return `在[${r.value}]之后`;
+				return `${getPrefix(r.type)}在[${r.value}]之后`;
 			} else if (r.type === 'before') {
-				return `在[${r.value}]之前`;
+				return `${getPrefix(r.type)}在[${r.value}]之前`;
 			} else if (r.type === 'between') {
-				return `在[${r.begin}]和[${r.end}]之间`;
+				return `${getPrefix(r.type)}在[${r.begin}]和[${r.end}]之间`;
 			} else if (r.type === 'begin') {
-				return `开始于[${r.value}]`;
+				return `${getPrefix(r.type)}开始于[${r.value}]`;
 			} else if (r.type === 'end') {
-				return `结束于[${r.value}]`;
+				return `${getPrefix(r.type)}结束于[${r.value}]`;
 			} else if (r.type === 'equal') {
-				return `等于[${r.value}]`;
+				return `${getPrefix(r.type)}等于[${r.value}]`;
 			} else if (r.type === 'less') {
-				return `小于[${r.value}]`;
+				return `${getPrefix(r.type)}小于[${r.value}]`;
 			} else if (r.type === 'more') {
-				return `大于[${r.value}]`;
+				return `${getPrefix(r.type)}大于[${r.value}]`;
 			} else if (r.type === 'min') {
-				return `大于等于[${r.value}]`;
+				return `${getPrefix(r.type)}大于等于[${r.value}]`;
 			} else if (r.type === 'max') {
-				return `小于等于[${r.value}]`;
+				return `${getPrefix(r.type)}小于等于[${r.value}]`;
 			} else if (r.type === 'range') {
-				return `介于[${r.min}]和[${r.max}]之间`;
+				return `${getPrefix(r.type)}介于[${r.min}]和[${r.max}]之间`;
 			} else if (r.type === 'pattern') {
 				return `匹配表达式：${r.regex}`;
 			} else {

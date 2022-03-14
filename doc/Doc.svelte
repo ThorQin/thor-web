@@ -40,14 +40,16 @@
 			<code>{method.desc}</code>
 		</div>
 		{/if}
+		{#if method.query}
 		<div>
-			<div><Subject title="查询参数(query)"/></div>
+			<div><Subject title="URL参数(query)"/></div>
 			{#if typeof method.query === 'string'}
 			<code>{method.query}</code>
 			{:else}
 			<div class="code"><Rule rule={any(method.query)} /></div>
 			{/if}
 		</div>
+		{/if}
 		{#if key === 'post' || key === 'put' || method.body}
 		<div>
 			<div><Subject title="请求体(body)"/></div>
@@ -97,5 +99,10 @@
 		font-family: 'Courier New', Courier, monospace;
 		background-color: #f8f8f8;
 		border-radius: 5px;
+	}
+	code {
+		white-space: pre-line;
+		word-wrap: break-word;
+		word-break: normal;
 	}
 </style>
