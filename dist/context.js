@@ -12,7 +12,19 @@ const zlib_1 = __importDefault(require('zlib'));
 const stream_1 = __importDefault(require('stream'));
 const fs_1 = require('fs');
 const util_1 = require('util');
+const controller_1 = require('./middleware/controller');
 const pipeline = (0, util_1.promisify)(stream_1.default.pipeline);
+const isReadableFile = function (path) {
+	return new Promise((resolve) => {
+		(0, fs_1.access)(path, fs_1.constants.F_OK | fs_1.constants.R_OK, (err) => {
+			if (err) {
+				resolve(false);
+			} else {
+				resolve(true);
+			}
+		});
+	});
+};
 function writeStream(stream, buffer) {
 	if (buffer.length <= 0) {
 		return Promise.resolve();
@@ -330,6 +342,9 @@ class Context {
 	 * @param {SendFileOption} options File download options
 	 */
 	async sendFile(file, options) {
+		if (!(await isReadableFile(file))) {
+			throw new controller_1.HttpError(404, 'File not found');
+		}
 		if (!options) {
 			options = {};
 		}

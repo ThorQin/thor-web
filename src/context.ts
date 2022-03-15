@@ -3,12 +3,24 @@ import mime from 'mime';
 import zlib from 'zlib';
 import stream from 'stream';
 import http from 'http';
-import { createReadStream } from 'fs';
+import { createReadStream, access, PathLike, constants } from 'fs';
 import { promisify } from 'util';
 import { Application, BasicBodyParser, PermissionCheck, PrivilegeCheck, Renderer, Session } from './types';
 import { Schema } from 'thor-validation';
+import { HttpError } from './middleware/controller';
 
 const pipeline = promisify(stream.pipeline);
+const isReadableFile = function (path: PathLike): Promise<boolean> {
+	return new Promise<boolean>((resolve) => {
+		access(path, constants.F_OK | constants.R_OK, (err) => {
+			if (err) {
+				resolve(false);
+			} else {
+				resolve(true);
+			}
+		});
+	});
+};
 
 function writeStream(stream: stream.Writable, buffer: Buffer | string): Promise<void> {
 	if (buffer.length <= 0) {
@@ -407,6 +419,10 @@ export default class Context {
 	 * @param {SendFileOption} options File download options
 	 */
 	async sendFile(file: string, options: SendFileOption): Promise<void> {
+		if (!(await isReadableFile(file))) {
+			throw new HttpError(404, 'File not found');
+		}
+
 		if (!options) {
 			options = {};
 		}
