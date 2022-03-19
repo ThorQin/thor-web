@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { ApiEntry, ApiFolder } from './api';
+	import type { ApiDefine, ApiEntry, ApiFolder } from './api';
 	import ListItem from './ListItem.svelte';
 	import IconDoc from 'svelte-material-icons/FileDocument.svelte';
 	import IconSearch from 'svelte-material-icons/Magnify.svelte';
 	import IconClose from 'svelte-material-icons/Close.svelte';
 	import Doc from './Doc.svelte';
+import Test from './Test.svelte';
 	let api: (ApiFolder | ApiEntry)[] = [];
 	let isFocused: boolean = false;
 	let entryList: ApiEntry[] = [];
@@ -58,6 +59,13 @@
 			(item.title && (item.title + '').toLowerCase().indexOf(searchText.trim().toLowerCase()) >= 0 )
 		});
 	}
+	let testMethod: (ApiDefine & {path: string, method: string}) | undefined;
+	function onTest(method: ApiDefine & {path: string, method: string}) {
+		testMethod = method;
+	}
+	function onCloseTest() {
+		testMethod = undefined;
+	}
 </script>
 
 <main>
@@ -85,12 +93,15 @@
 		<div class="drag"></div>
 		<div class="content">
 			{#if activeItem}
-				<Doc item={activeItem} />
+				<Doc item={activeItem} {onTest}/>
 			{:else}
 				<div class="doc-free"><span>Welcome !</span></div>
 			{/if}
 		</div>
 	</div>
+	{#if testMethod }
+	<Test {testMethod} onClose={onCloseTest} />
+	{/if}
 </main>
 
 <style>
@@ -100,6 +111,7 @@
 		display: flex;
 		flex-direction: column;
 	}
+
 	div.title {
 		display: flex;
 		align-items: center;
