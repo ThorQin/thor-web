@@ -32,10 +32,12 @@ import type { NeedRule, PrimitiveRule, PropRule, Rule } from "thor-validation";
 	}
 
 	$: hasBody = (m === 'POST' || m === 'PUT' || m === 'PATCH' || m === 'DELETE');
-
 	$: postBody = hasBody && testMethod.body && testMethod.body.type ? JSON.stringify(getRuleExample(testMethod.body), null, 2) : '';
+	let finalBody: string;
+	$: {
+		finalBody = postBody;
+	}
 
-	let finalBody = postBody;
 	function setBody(e) {
 		finalBody = e.target.value;
 	}

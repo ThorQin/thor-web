@@ -164,7 +164,7 @@ class ControllerFactory {
 		let docs;
 		let docServer;
 		if (apiDocPath) {
-			docs = (0, docs_1.loadApi)(baseDir, '/');
+			docs = (0, docs_1.loadApi)(baseDir, rootPath);
 			docServer = static_server_1.default.create(app, {
 				baseDir: path_1.default.normalize(__dirname + '/../../html'),
 				rootPath: apiDocPath,
