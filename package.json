@@ -17,12 +17,12 @@
 	"author": "Thor Qin",
 	"license": "MIT",
 	"private": false,
-	"dependencies": {
+	"peerDependencies": {
 		"iconv-lite": "^0.6.3",
 		"mime": "^3.0.0",
 		"thor-time": "^1.1.1",
 		"thor-tpl": "^1.1.8",
-		"thor-validation": "^1.1.10",
+		"thor-validation": "^1.1.11",
 		"uuid": "^8.3.2",
 		"websocket": "^1.0.34"
 	},
