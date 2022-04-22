@@ -1,4 +1,40 @@
 'use strict';
+var __createBinding =
+	(this && this.__createBinding) ||
+	(Object.create
+		? function (o, m, k, k2) {
+				if (k2 === undefined) k2 = k;
+				Object.defineProperty(o, k2, {
+					enumerable: true,
+					get: function () {
+						return m[k];
+					},
+				});
+		  }
+		: function (o, m, k, k2) {
+				if (k2 === undefined) k2 = k;
+				o[k2] = m[k];
+		  });
+var __setModuleDefault =
+	(this && this.__setModuleDefault) ||
+	(Object.create
+		? function (o, v) {
+				Object.defineProperty(o, 'default', { enumerable: true, value: v });
+		  }
+		: function (o, v) {
+				o['default'] = v;
+		  });
+var __importStar =
+	(this && this.__importStar) ||
+	function (mod) {
+		if (mod && mod.__esModule) return mod;
+		var result = {};
+		if (mod != null)
+			for (var k in mod)
+				if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+		__setModuleDefault(result, mod);
+		return result;
+	};
 var __importDefault =
 	(this && this.__importDefault) ||
 	function (mod) {
@@ -9,7 +45,7 @@ exports.OriginType = void 0;
 const path_1 = __importDefault(require('path'));
 const mime_1 = __importDefault(require('mime'));
 const zlib_1 = __importDefault(require('zlib'));
-const stream_1 = __importDefault(require('stream'));
+const stream_1 = __importStar(require('stream'));
 const fs_1 = require('fs');
 const util_1 = require('util');
 const controller_1 = require('./middleware/controller');
@@ -315,14 +351,16 @@ class Context {
 	 * Send content to client
 	 */
 	send(data, contentType) {
-		this.rsp.writeHead(200, {
+		const options = {};
+		if (!this.rsp.hasHeader('content-type')) {
 			// eslint-disable-next-line prettier/prettier
-			'Content-Type': contentType
+			options['Content-Type'] = contentType
 				? contentType
 				: typeof data === 'string'
 				? 'text/plain; charset=utf-8'
-				: 'application/octet-stream',
-		});
+				: 'application/octet-stream';
+		}
+		this.rsp.writeHead(200, options);
 		return this.end(data);
 	}
 	/**
@@ -337,14 +375,11 @@ class Context {
 	sendJson(obj) {
 		return this.send(JSON.stringify(obj), 'application/json; charset=utf-8');
 	}
-	/**
-	 * @param {string} file File path
+	/** Send file content to client
+	 * @param {string | NodeJS.ReadableStream | Buffer} file File path
 	 * @param {SendFileOption} options File download options
 	 */
 	async sendFile(file, options) {
-		if (!(await isReadableFile(file))) {
-			throw new controller_1.HttpError(404, 'File not found');
-		}
 		if (!options) {
 			options = {};
 		}
@@ -352,7 +387,10 @@ class Context {
 			options.statusCode = 200;
 		}
 		if (!options.filename) {
-			options.filename = path_1.default.basename(file);
+			options.filename =
+				typeof file === 'string'
+					? path_1.default.basename(file)
+					: `data.${mime_1.default.getExtension(options.contentType || 'application/octet-stream') ?? 'bin'}`;
 		}
 		if (!/^[^/]+\/[^/]+$/.test(options.contentType || '')) {
 			const ct = mime_1.default.getType(options.filename);
@@ -372,7 +410,22 @@ class Context {
 			hs['Content-Disposition'] = "attachment; filename*=utf-8''" + encodeURIComponent(options.filename);
 		}
 		hs['Transfer-Encoding'] = 'chunked';
-		const fileStream = (0, fs_1.createReadStream)(file);
+		let fileStream;
+		if (typeof file === 'string') {
+			if (!(await isReadableFile(file))) {
+				throw new controller_1.HttpError(404, 'File not found');
+			}
+			fileStream = (0, fs_1.createReadStream)(file);
+		} else if (file instanceof stream_1.Readable) {
+			fileStream = file;
+		} else if (file instanceof Buffer) {
+			fileStream = stream_1.Readable.from(file);
+		} else {
+			throw new controller_1.HttpError(
+				404,
+				'Invalid parameters: only file path, readable stream and a buffer are accepted!'
+			);
+		}
 		try {
 			if (options.gzip) {
 				hs['Content-Encoding'] = 'gzip';
@@ -384,7 +437,6 @@ class Context {
 				await pipeline(fileStream, this.rsp);
 			}
 		} finally {
-			fileStream.close();
 			await this.end();
 		}
 	}
