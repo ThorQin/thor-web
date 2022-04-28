@@ -1,4 +1,40 @@
 'use strict';
+var __createBinding =
+	(this && this.__createBinding) ||
+	(Object.create
+		? function (o, m, k, k2) {
+				if (k2 === undefined) k2 = k;
+				Object.defineProperty(o, k2, {
+					enumerable: true,
+					get: function () {
+						return m[k];
+					},
+				});
+		  }
+		: function (o, m, k, k2) {
+				if (k2 === undefined) k2 = k;
+				o[k2] = m[k];
+		  });
+var __setModuleDefault =
+	(this && this.__setModuleDefault) ||
+	(Object.create
+		? function (o, v) {
+				Object.defineProperty(o, 'default', { enumerable: true, value: v });
+		  }
+		: function (o, v) {
+				o['default'] = v;
+		  });
+var __importStar =
+	(this && this.__importStar) ||
+	function (mod) {
+		if (mod && mod.__esModule) return mod;
+		var result = {};
+		if (mod != null)
+			for (var k in mod)
+				if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+		__setModuleDefault(result, mod);
+		return result;
+	};
 var __importDefault =
 	(this && this.__importDefault) ||
 	function (mod) {
@@ -8,7 +44,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 exports.defaultSuffix = void 0;
 const fs_1 = require('fs');
 const path_1 = __importDefault(require('path'));
-const tools_1 = __importDefault(require('../utils/tools'));
+const tools_1 = __importStar(require('../utils/tools'));
 const thor_time_1 = __importDefault(require('thor-time'));
 const mime_1 = __importDefault(require('mime'));
 const zlib_1 = __importDefault(require('zlib'));
@@ -91,11 +127,13 @@ class StaticFactory {
 			suffixSet = new Set(defaultSuffix().concat(...suffix));
 		}
 		const cache = new Map();
+		const zipedSizeCache = new Map();
+		const fileSizeCache = new Map();
 		async function loadCache(file, stat, canGzip) {
 			const fd = await fs_1.promises.open(file, 'r');
 			try {
 				const data = await fd.readFile();
-				const cacheItem = { mtime: stat.mtime, data: data, gzipData: null };
+				const cacheItem = { mtime: stat.mtime?.getTime(), data: data, gzipData: null };
 				if (stat.size >= enableGzipSize && canGzip) {
 					const gziped = await gzip(data);
 					cacheItem.gzipData = gziped;
@@ -150,23 +188,25 @@ class StaticFactory {
 								}
 							}
 						}
-						if (cache.has(file)) {
+						const cachedPromise = cache.get(file);
+						if (cachedPromise) {
 							let cachedFile;
 							try {
-								cachedFile = await cache.get(file);
+								cachedFile = await cachedPromise;
 							} catch (e) {
 								cache.delete(file);
 								throw e;
 							}
-							if (cachedFile.mtime && stat.mtime && cachedFile.mtime >= stat.mtime) {
+							if (cachedFile.mtime && stat.mtime && cachedFile.mtime == stat.mtime.getTime()) {
 								const canGzip = compressible(m[1]);
-								if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
+								if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip && cachedFile.gzipData) {
 									ctx.writeHead(200, {
 										'Cache-Control': 'no-cache',
 										'Content-Type': contentType,
 										'Last-Modified': stat.mtime.toUTCString(),
 										'Content-Encoding': 'gzip',
-										'Transfer-Encoding': 'chunked',
+										'Content-Length': cachedFile.gzipData.byteLength,
+										// 'Transfer-Encoding': 'chunked',
 									});
 									// Send Gzip Data
 									await ctx.end(cachedFile.gzipData);
@@ -175,6 +215,7 @@ class StaticFactory {
 										'Cache-Control': 'no-cache',
 										'Content-Type': contentType,
 										'Last-Modified': stat.mtime.toUTCString(),
+										'Content-Length': cachedFile.data.byteLength,
 									});
 									await ctx.end(cachedFile.data);
 								}
@@ -190,13 +231,14 @@ class StaticFactory {
 								const promise = loadCache(file, stat, canGzip);
 								cache.set(file, promise);
 								const cacheItem = await promise;
-								if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
+								if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip && cacheItem.gzipData) {
 									ctx.writeHead(200, {
 										'Cache-Control': 'no-cache',
 										'Content-Type': contentType,
 										'Last-Modified': mtime.toUTCString(),
 										'Content-Encoding': 'gzip',
-										'Transfer-Encoding': 'chunked',
+										'Content-Length': cacheItem.gzipData.byteLength,
+										// 'Transfer-Encoding': 'chunked',
 									});
 									// Send Gzip Data
 									await ctx.end(cacheItem.gzipData);
@@ -205,6 +247,7 @@ class StaticFactory {
 										'Cache-Control': 'no-cache',
 										'Content-Type': contentType,
 										'Last-Modified': mtime.toUTCString(),
+										'Content-Length': cacheItem.data.byteLength,
 									});
 									await ctx.end(cacheItem.data);
 								}
@@ -213,22 +256,40 @@ class StaticFactory {
 								fileStream = (0, fs_1.createReadStream)(file);
 								if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
 									const zstream = zlib_1.default.createGzip();
-									ctx.writeHead(200, {
+									const headers = {
 										'Cache-Control': 'no-cache',
 										'Content-Type': contentType,
 										'Last-Modified': mtime.toUTCString(),
 										'Content-Encoding': 'gzip',
-										'Transfer-Encoding': 'chunked',
-									});
-									await pipeline(fileStream, zstream, ctx.rsp);
+									};
+									const sizeInfo = zipedSizeCache.get(file);
+									if (sizeInfo && sizeInfo.mtime == stat.mtime?.getTime()) {
+										headers['Content-Length'] = sizeInfo.size;
+										ctx.writeHead(200, headers);
+										await pipeline(fileStream, zstream, ctx.rsp);
+									} else {
+										ctx.writeHead(200, headers);
+										const sizeCounter = new tools_1.Counter();
+										await pipeline(fileStream, zstream, sizeCounter, ctx.rsp);
+										zipedSizeCache.set(file, { mtime: stat.mtime?.getTime(), size: sizeCounter.size });
+									}
 								} else {
-									ctx.writeHead(200, {
+									const headers = {
 										'Cache-Control': 'no-cache',
 										'Content-Type': contentType,
 										'Last-Modified': mtime.toUTCString(),
-										'Transfer-Encoding': 'chunked',
-									});
-									await pipeline(fileStream, ctx.rsp);
+									};
+									const sizeInfo = fileSizeCache.get(file);
+									if (sizeInfo && sizeInfo.mtime == stat.mtime?.getTime()) {
+										headers['Content-Length'] = sizeInfo.size;
+										ctx.writeHead(200, headers);
+										await pipeline(fileStream, ctx.rsp);
+									} else {
+										ctx.writeHead(200, headers);
+										const sizeCounter = new tools_1.Counter();
+										await pipeline(fileStream, sizeCounter, ctx.rsp);
+										fileSizeCache.set(file, { mtime: stat.mtime?.getTime(), size: sizeCounter.size });
+									}
 								}
 								await ctx.end();
 								return true;

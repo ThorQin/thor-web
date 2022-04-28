@@ -5,9 +5,10 @@ var __importDefault =
 		return mod && mod.__esModule ? mod : { default: mod };
 	};
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.getRootDir = exports.isFile = exports.fileStat = void 0;
+exports.Counter = exports.getRootDir = exports.isFile = exports.fileStat = void 0;
 const fs_1 = require('fs');
 const path_1 = __importDefault(require('path'));
+const stream_1 = require('stream');
 async function fileStat(file) {
 	try {
 		const stat = await fs_1.promises.stat(file);
@@ -34,6 +35,18 @@ function getRootDir() {
 	}
 }
 exports.getRootDir = getRootDir;
+class Counter extends stream_1.Transform {
+	constructor() {
+		super(...arguments);
+		this.size = 0;
+	}
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	_transform(chunk, encoding, callback) {
+		this.size += chunk.length;
+		callback(null, chunk);
+	}
+}
+exports.Counter = Counter;
 exports.default = {
 	getRootDir: getRootDir,
 	fileStat: fileStat,

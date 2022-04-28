@@ -1,5 +1,6 @@
 import { PathLike, promises as fs } from 'fs';
 import path from 'path';
+import { Transform, TransformCallback } from 'stream';
 
 export interface FileStat {
 	isFile: boolean;
@@ -31,6 +32,15 @@ export function getRootDir(): string {
 		return js.substring(0, js.lastIndexOf(path.sep));
 	} else {
 		return js;
+	}
+}
+
+export class Counter extends Transform {
+	size = 0;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	_transform(chunk: any, encoding: BufferEncoding, callback: TransformCallback): void {
+		this.size += chunk.length;
+		callback(null, chunk);
 	}
 }
 
