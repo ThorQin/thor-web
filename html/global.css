@@ -76,3 +76,20 @@ div.type {
 div.type span {
 	display: inline-block;
 }
+
+div.line svg {
+	flex-shrink: 0;
+}
+
+div.drag-mask {
+	display: block;
+	position: fixed;
+	left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #0000;
+	opacity: 0;
+	cursor: ew-resize;
+	z-index: 10000;
+}

@@ -2,37 +2,36 @@
 
 This framework is a light-weight, easy to use library. It provided most commonly used middlewares to let you can develop a full featured web application.
 
-
 # Getting start:
 
-## Create web project
+## Use npm command to create a simple project:
 
-```npx thor-web <project-name>```
-
-
-## Generated project structure:
-
+```bash
+npx thor-web my-project
 ```
-project-folder
-   package.json
-   README.md
-   LICENSE
-   index.mjs
- + www
-     index.html
- + controllers
-     about.mjs
-     echo.mjs
- + templates
-     about.html  
+
+## Use 'degit' to create the project
+
+1. Create a simplest demo project (same with npx command):
+
+```bash
+npx degit ThorQin/thor-web-demo my-project
+```
+
+2. Create a full featured project that using Vue3 build front-end web pages:
+
+```bash
+npx degit ThorQin/thor-web-vue my-project
+```
+
+## Build project
+
+```bash
+npm run build
 ```
 
 ## Start the project
-```
-node .
-```
-or
-```
+```bash
 npm start
 ```
 
@@ -41,7 +40,7 @@ npm start
 npm run debug
 ```
 
-# Middlewares
+# Features
 
 * Session: Control user login status
 * Security: Control access authorization
@@ -50,4 +49,4 @@ npm run debug
 * Static: Provide static resources access
 * Template: Provide js template render method (Powered by thor-tpl)
 * WebSocket: Provide WebSocket communication
-
+* Auto generate api-docs page (See vue3 project's demonstration)

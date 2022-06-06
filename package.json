@@ -17,13 +17,12 @@
 	"author": "Thor Qin",
 	"license": "MIT",
 	"private": false,
-	"dependencies": {
+	"peerDependencies": {
 		"iconv-lite": "^0.6.3",
 		"mime": "^3.0.0",
-		"svelte-material-icons": "^2.0.0",
 		"thor-time": "^1.1.1",
 		"thor-tpl": "^1.1.8",
-		"thor-validation": "^1.1.10",
+		"thor-validation": "^1.1.11",
 		"uuid": "^8.3.2",
 		"websocket": "^1.0.34"
 	},
@@ -52,10 +51,10 @@
 		"svelte-check": "^2.0.0",
 		"svelte-preprocess": "^4.0.0",
 		"tslib": "^2.0.0",
-		"typescript": "^4.5.5"
+		"typescript": "^4.5.5",
+		"svelte-material-icons": "^2.0.0"
 	},
 	"scripts": {
-		"start": "",
 		"build-doc": "rollup -c",
 		"watch-doc": "rollup -c -w",
 		"build-cjs": "tsc -P tsconfig.json",

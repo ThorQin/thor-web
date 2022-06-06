@@ -1,7 +1,7 @@
 import path from 'path';
 import mime from 'mime';
 import zlib from 'zlib';
-import stream from 'stream';
+import stream, { Readable } from 'stream';
 import http from 'http';
 import { createReadStream, access, PathLike, constants } from 'fs';
 import { promisify } from 'util';
@@ -393,10 +393,12 @@ export default class Context {
 	 * Send content to client
 	 */
 	send(data: string | Buffer, contentType?: string): Promise<void> {
-		this.rsp.writeHead(200, {
+		const options: http.OutgoingHttpHeaders = {};
+		if (!this.rsp.hasHeader('content-type')) {
 			// eslint-disable-next-line prettier/prettier
-			'Content-Type': contentType ? contentType : typeof data === 'string' ? 'text/plain; charset=utf-8': 'application/octet-stream',
-		});
+			options['Content-Type'] = contentType ? contentType : typeof data === 'string' ? 'text/plain; charset=utf-8' : 'application/octet-stream';
+		}
+		this.rsp.writeHead(200, options);
 		return this.end(data);
 	}
 
@@ -414,15 +416,11 @@ export default class Context {
 		return this.send(JSON.stringify(obj), 'application/json; charset=utf-8');
 	}
 
-	/**
-	 * @param {string} file File path
+	/** Send file content to client
+	 * @param {string | NodeJS.ReadableStream | Buffer} file File path
 	 * @param {SendFileOption} options File download options
 	 */
-	async sendFile(file: string, options: SendFileOption): Promise<void> {
-		if (!(await isReadableFile(file))) {
-			throw new HttpError(404, 'File not found');
-		}
-
+	async sendFile(file: string | NodeJS.ReadableStream | Buffer, options: SendFileOption): Promise<void> {
 		if (!options) {
 			options = {};
 		}
@@ -430,7 +428,10 @@ export default class Context {
 			options.statusCode = 200;
 		}
 		if (!options.filename) {
-			options.filename = path.basename(file);
+			options.filename =
+				typeof file === 'string'
+					? path.basename(file)
+					: `data.${mime.getExtension(options.contentType || 'application/octet-stream') ?? 'bin'}`;
 		}
 		if (!/^[^/]+\/[^/]+$/.test(options.contentType || '')) {
 			const ct = mime.getType(options.filename);
@@ -451,7 +452,20 @@ export default class Context {
 			hs['Content-Disposition'] = "attachment; filename*=utf-8''" + encodeURIComponent(options.filename);
 		}
 		hs['Transfer-Encoding'] = 'chunked';
-		const fileStream = createReadStream(file);
+
+		let fileStream: NodeJS.ReadableStream;
+		if (typeof file === 'string') {
+			if (!(await isReadableFile(file))) {
+				throw new HttpError(404, 'File not found');
+			}
+			fileStream = createReadStream(file);
+		} else if (file instanceof Readable) {
+			fileStream = file;
+		} else if (file instanceof Buffer) {
+			fileStream = Readable.from(file);
+		} else {
+			throw new HttpError(404, 'Invalid parameters: only file path, readable stream and a buffer are accepted!');
+		}
 		try {
 			if (options.gzip) {
 				hs['Content-Encoding'] = 'gzip';
@@ -463,7 +477,6 @@ export default class Context {
 				await pipeline(fileStream, this.rsp);
 			}
 		} finally {
-			fileStream.close();
 			await this.end();
 		}
 	}

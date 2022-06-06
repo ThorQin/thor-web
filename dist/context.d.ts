@@ -121,11 +121,11 @@ export default class Context {
 	 * Send JSON content to client
 	 */
 	sendJson(obj: unknown): Promise<void>;
-	/**
-	 * @param {string} file File path
+	/** Send file content to client
+	 * @param {string | NodeJS.ReadableStream | Buffer} file File path
 	 * @param {SendFileOption} options File download options
 	 */
-	sendFile(file: string, options: SendFileOption): Promise<void>;
+	sendFile(file: string | NodeJS.ReadableStream | Buffer, options: SendFileOption): Promise<void>;
 	/**
 	 * Send 302 redirection
 	 * @param url Redirection URL

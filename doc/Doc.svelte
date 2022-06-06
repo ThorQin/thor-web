@@ -5,6 +5,7 @@
 	import Subject from './Subject.svelte';
 	import Rule from './Rule.svelte';
 	export let item: ApiEntry;
+	export let onTest: ((method: ApiDefine & {path: string, method: string}) => void) | undefined;
 	const ORDER = {
 		get: 0,
 		head: 1,
@@ -20,6 +21,11 @@
 		let title = item.title ?? (key === 'default' ? '任意方法' : null);
 		return title ? title + ' (' + key.toUpperCase() + ')' : key.toUpperCase() + ' 方法';
 	}
+	function doTest(method: ApiDefine & {path: string, method: string}) {
+		if (typeof onTest === 'function') {
+			onTest(method)
+		}
+	}
 </script>
 
 <div class="main">
@@ -32,7 +38,8 @@
 		<div class="method">
 			<IconStarBox color="#f080a8" />
 			<span style="margin-left: 10px;flex:1">{getMethodName(key, method)}</span>
-			<Icon size={'1.2rem'} /><a style="margin-left:8px;font-size:1.2rem" href="javascript:void(0)">测试一下</a>
+			<!-- svelte-ignore a11y-invalid-attribute -->
+			<Icon color="#80a8f0" size={'1.2rem'} /><a style="margin-left:8px;font-size:1.2rem" href="doTest" on:click|preventDefault="{() => doTest({...method, path: item.path, method: key})}">测试</a>
 		</div>
 		{#if method.desc}
 		<div>

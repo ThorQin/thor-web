@@ -2,8 +2,12 @@
 	import type { ApiEntry, ApiFolder } from './api';
 	import IconMenuRight from 'svelte-material-icons/MenuRight.svelte';
 	import IconMenuDown from 'svelte-material-icons/MenuDown.svelte';
-	import IconFolder from 'svelte-material-icons/Folder.svelte';
+	import IconFolderSolid from 'svelte-material-icons/Folder.svelte';
+	import IconFolder from 'svelte-material-icons/FolderOutline.svelte';
 	import IconFile from 'svelte-material-icons/FileOutline.svelte';
+	import IconPlayOutline from 'svelte-material-icons/PlayCircleOutline.svelte';
+	import IconPlay from 'svelte-material-icons/PlayCircle.svelte';
+
 	export let item: ApiFolder | ApiEntry;
 	export let level: number = 0;
 	export let multiLine: boolean = false;
@@ -31,11 +35,11 @@
 				<IconMenuRight />
 			{/if}
 			<span class="margin"></span>
-			<IconFolder color="#f09060"/>
+			<IconFolder color="#ff9060"/><!--#f09060-->
 		{:else}
 			<svg width="1em" height="1em"></svg>
 			<span class="margin"></span>
-			<IconFile color="#888"/>
+			<IconPlay color="#ff9060"/>
 		{/if}
 
 		{#if item.title}

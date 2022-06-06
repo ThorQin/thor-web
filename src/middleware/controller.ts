@@ -141,7 +141,7 @@ class ControllerFactory implements MiddlewareFactory<ControllerCreateOptions> {
 		let docs: (ApiFolder | ApiEntry)[];
 		let docServer: Middleware;
 		if (apiDocPath) {
-			docs = loadApi(baseDir, '/');
+			docs = loadApi(baseDir, rootPath);
 			docServer = staticFactory.create(app, {
 				baseDir: path.normalize(__dirname + '/../../html'),
 				rootPath: apiDocPath,

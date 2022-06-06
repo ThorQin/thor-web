@@ -97,6 +97,40 @@ export function getRuleCheckDesc(r: PrimitiveRule | NeedRule | UnionRule): strin
 	}
 }
 
+export function getRuleExample(r: any): any {
+	if (r.type === 'need') {
+		return getRuleExample(r.rule);
+	} else if (r.type === 'union') {
+		return getRuleExample(r.rules.filter((f) => f.type !== 'mismatch')[0]);
+	} else if (r.type === 'object') {
+		const obj = {};
+		r.rules
+			.filter((f) => f.type === 'prop')
+			.forEach((p) => {
+				obj[p.name] = getRuleExample(p.rule);
+			});
+		return obj;
+	} else if (r.type === 'array') {
+		const arr = [];
+		r.rules
+			.filter((f) => f.type === 'item')
+			.forEach((p) => {
+				arr.push(getRuleExample(p.rule));
+			});
+		return arr;
+	} else if (r.type === 'boolean') {
+		return false;
+	} else if (r.type === 'string') {
+		return '';
+	} else if (r.type === 'number') {
+		return 0;
+	} else if (r.type === 'date') {
+		return new Date();
+	} else {
+		return undefined;
+	}
+}
+
 export function getRuleTypeName(r: Rule): string {
 	if (r.type === 'need') {
 		return (r as NeedRule).rule ? getRuleTypeName(any((r as NeedRule).rule)) : '未指定类型';

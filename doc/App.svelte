@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { ApiEntry, ApiFolder } from './api';
+	import type { ApiDefine, ApiEntry, ApiFolder } from './api';
 	import ListItem from './ListItem.svelte';
 	import IconDoc from 'svelte-material-icons/FileDocument.svelte';
 	import IconSearch from 'svelte-material-icons/Magnify.svelte';
 	import IconClose from 'svelte-material-icons/Close.svelte';
 	import Doc from './Doc.svelte';
+import Test from './Test.svelte';
 	let api: (ApiFolder | ApiEntry)[] = [];
 	let isFocused: boolean = false;
 	let entryList: ApiEntry[] = [];
@@ -58,6 +59,38 @@
 			(item.title && (item.title + '').toLowerCase().indexOf(searchText.trim().toLowerCase()) >= 0 )
 		});
 	}
+	let testMethod: (ApiDefine & {path: string, method: string}) | undefined;
+	function onTest(method: ApiDefine & {path: string, method: string}) {
+		testMethod = method;
+	}
+	function onCloseTest() {
+		testMethod = undefined;
+	}
+	let listDiv: HTMLDivElement;
+	function onDragStart(ev: PointerEvent) {
+		let listWidth = listDiv.offsetWidth;
+		let mask = document.createElement('div');
+		mask.className = 'drag-mask';
+		document.body.appendChild(mask);
+		let activeId = ev.pointerId;
+		mask.setPointerCapture(activeId);
+		let x = ev.clientX;
+		mask.onpointerup = (ev: PointerEvent) => {
+			ev.preventDefault();
+			mask.releasePointerCapture(activeId);
+			document.body.removeChild(mask);
+		}
+		mask.onpointerdown = mask.onpointerup;
+		mask.oncontextmenu = mask.onpointerdown;
+		mask.onmousedown = mask.onpointerdown;
+		mask.onpointermove = (ev: PointerEvent) => {
+			if (ev.pointerId !== activeId) {
+				return;
+			}
+			let offsetX = ev.clientX - x;
+			listDiv.style.width = (listWidth + offsetX) + 'px';
+		}
+	}
 </script>
 
 <main>
@@ -71,7 +104,7 @@
 		</div>
 	</div>
 	<div class="doc">
-		<div class="list">
+		<div class="list" bind:this={listDiv}>
 			{#if searchText}
 				{#each entryList as item}
 				<ListItem item={item} showPath={true} setActive={setActive}/>
@@ -82,15 +115,18 @@
 				{/each}
 			{/if}
 		</div>
-		<div class="drag"></div>
+		<div class="drag" on:pointerdown|preventDefault={onDragStart}></div>
 		<div class="content">
 			{#if activeItem}
-				<Doc item={activeItem} />
+				<Doc item={activeItem} {onTest}/>
 			{:else}
 				<div class="doc-free"><span>Welcome !</span></div>
 			{/if}
 		</div>
 	</div>
+	{#if testMethod }
+	<Test {testMethod} onClose={onCloseTest} />
+	{/if}
 </main>
 
 <style>
@@ -99,6 +135,11 @@
 		flex: 1;
 		display: flex;
 		flex-direction: column;
+	}
+
+	main>div.doc>div.drag {
+		width: 10px;
+		cursor: ew-resize;
 	}
 	div.title {
 		display: flex;
@@ -119,6 +160,8 @@
 	}
 	div.list {
 		overflow: auto;
+		display: grid;
+		grid-auto-rows: 40px;
 		padding: 20px 0px;
 		background-color: #f8f8f8;
 	}

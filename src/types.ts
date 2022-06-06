@@ -5,6 +5,7 @@ import { connection, request, server, Message, frame } from 'websocket';
 import { Rule } from 'thor-validation';
 
 export type WebSocketConnection = connection;
+export type WebSocketRequest = request;
 export type WebSocketServer = server;
 export type WebSocketMessage = Message;
 export type WebSocketFrame = frame;
@@ -161,7 +162,7 @@ export interface SocketHandler {
 }
 
 export interface SocketHandlerV2 {
-	(request: request, app: Application): void;
+	(request: WebSocketRequest, app: Application): void;
 }
 
 export interface Renderer {

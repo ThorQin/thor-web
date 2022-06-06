@@ -66,9 +66,18 @@ function loadScript(baseDir, api) {
 						.then(() => __importStar(require(modulePath)))
 						.then((fn) => {
 							if (fn && typeof fn === 'function') {
-								return resolve(fn);
-							} else if (fn && typeof fn === 'object' && typeof fn.default === 'function') {
-								return resolve(fn.default);
+								return resolve({ handler: fn, type: 'v1' });
+							} else if (fn && typeof fn === 'object') {
+								if (typeof fn.default === 'function') {
+									return resolve({ handler: fn.default, type: 'v1' });
+								} else if (typeof fn.connect === 'function') {
+									return resolve({ handler: fn.connect, type: 'v2' });
+								} else {
+									console.error(
+										'Invalid WebSocket handler: must export a default function or a function named "connect"'
+									);
+									resolve(null);
+								}
 							} else {
 								console.error('Invalid WebSocket handler: must export a function');
 								resolve(null);
@@ -163,9 +172,13 @@ class WebSocketFactory {
 			}
 			page = page.substring(rootPath.length - 1);
 			const fn = await loadScript(baseDir, page);
-			if (typeof fn === 'function') {
-				const connection = request.accept();
-				fn(connection, app);
+			if (fn) {
+				if (fn.type === 'v1') {
+					const connection = request.accept();
+					fn.handler(connection, app);
+				} else {
+					fn.handler(request, app);
+				}
 			} else {
 				console.warn('WebSocket connection to ' + request.resource + ' was rejected: WS handler not found!');
 				request.reject(404, 'Not Found');

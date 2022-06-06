@@ -1,6 +1,6 @@
 import { createReadStream, promises as fs, ReadStream } from 'fs';
 import path from 'path';
-import tools, { FileStat } from '../utils/tools';
+import tools, { Counter, FileStat } from '../utils/tools';
 import time from 'thor-time';
 import mime from 'mime';
 import zlib from 'zlib';
@@ -90,9 +90,14 @@ export type StaticOptions = {
 };
 
 type CacheData = {
-	mtime: Date | null;
+	mtime?: number | null;
 	data: Buffer;
 	gzipData: Buffer | null;
+};
+
+type SizeCache = {
+	mtime?: number | null;
+	size: number;
 };
 
 class StaticFactory implements MiddlewareFactory<StaticOptions> {
@@ -124,12 +129,14 @@ class StaticFactory implements MiddlewareFactory<StaticOptions> {
 		}
 
 		const cache = new Map<string, Promise<CacheData>>();
+		const zipedSizeCache = new Map<string, SizeCache>();
+		const fileSizeCache = new Map<string, SizeCache>();
 
 		async function loadCache(file: string, stat: FileStat, canGzip: boolean): Promise<CacheData> {
 			const fd = await fs.open(file, 'r');
 			try {
 				const data = await fd.readFile();
-				const cacheItem: CacheData = { mtime: stat.mtime, data: data, gzipData: null };
+				const cacheItem: CacheData = { mtime: stat.mtime?.getTime(), data: data, gzipData: null };
 				if (stat.size >= enableGzipSize && canGzip) {
 					const gziped = await gzip(data);
 					cacheItem.gzipData = gziped;
@@ -189,23 +196,25 @@ class StaticFactory implements MiddlewareFactory<StaticOptions> {
 							}
 						}
 
-						if (cache.has(file)) {
+						const cachedPromise = cache.get(file);
+						if (cachedPromise) {
 							let cachedFile;
 							try {
-								cachedFile = (await cache.get(file)) as CacheData;
+								cachedFile = (await cachedPromise) as CacheData;
 							} catch (e) {
 								cache.delete(file);
 								throw e;
 							}
-							if (cachedFile.mtime && stat.mtime && cachedFile.mtime >= stat.mtime) {
+							if (cachedFile.mtime && stat.mtime && cachedFile.mtime == stat.mtime.getTime()) {
 								const canGzip = compressible(m[1]);
-								if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
+								if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip && cachedFile.gzipData) {
 									ctx.writeHead(200, {
 										'Cache-Control': 'no-cache',
 										'Content-Type': contentType,
 										'Last-Modified': stat.mtime.toUTCString(),
 										'Content-Encoding': 'gzip',
-										'Transfer-Encoding': 'chunked',
+										'Content-Length': cachedFile.gzipData.byteLength,
+										// 'Transfer-Encoding': 'chunked',
 									});
 									// Send Gzip Data
 									await ctx.end(cachedFile.gzipData);
@@ -214,6 +223,7 @@ class StaticFactory implements MiddlewareFactory<StaticOptions> {
 										'Cache-Control': 'no-cache',
 										'Content-Type': contentType,
 										'Last-Modified': stat.mtime.toUTCString(),
+										'Content-Length': cachedFile.data.byteLength,
 									});
 									await ctx.end(cachedFile.data);
 								}
@@ -230,13 +240,14 @@ class StaticFactory implements MiddlewareFactory<StaticOptions> {
 								const promise = loadCache(file, stat, canGzip);
 								cache.set(file, promise);
 								const cacheItem = await promise;
-								if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
+								if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip && cacheItem.gzipData) {
 									ctx.writeHead(200, {
 										'Cache-Control': 'no-cache',
 										'Content-Type': contentType,
 										'Last-Modified': mtime.toUTCString(),
 										'Content-Encoding': 'gzip',
-										'Transfer-Encoding': 'chunked',
+										'Content-Length': cacheItem.gzipData.byteLength,
+										// 'Transfer-Encoding': 'chunked',
 									});
 									// Send Gzip Data
 									await ctx.end(cacheItem.gzipData);
@@ -245,6 +256,7 @@ class StaticFactory implements MiddlewareFactory<StaticOptions> {
 										'Cache-Control': 'no-cache',
 										'Content-Type': contentType,
 										'Last-Modified': mtime.toUTCString(),
+										'Content-Length': cacheItem.data.byteLength,
 									});
 									await ctx.end(cacheItem.data);
 								}
@@ -253,22 +265,40 @@ class StaticFactory implements MiddlewareFactory<StaticOptions> {
 								fileStream = createReadStream(file);
 								if (ctx.supportGZip() && stat.size >= enableGzipSize && canGzip) {
 									const zstream = zlib.createGzip();
-									ctx.writeHead(200, {
+									const headers: { [key: string]: string | number } = {
 										'Cache-Control': 'no-cache',
 										'Content-Type': contentType,
 										'Last-Modified': mtime.toUTCString(),
 										'Content-Encoding': 'gzip',
-										'Transfer-Encoding': 'chunked',
-									});
-									await pipeline(fileStream, zstream, ctx.rsp);
+									};
+									const sizeInfo = zipedSizeCache.get(file);
+									if (sizeInfo && sizeInfo.mtime == stat.mtime?.getTime()) {
+										headers['Content-Length'] = sizeInfo.size;
+										ctx.writeHead(200, headers);
+										await pipeline(fileStream, zstream, ctx.rsp);
+									} else {
+										ctx.writeHead(200, headers);
+										const sizeCounter = new Counter();
+										await pipeline(fileStream, zstream, sizeCounter, ctx.rsp);
+										zipedSizeCache.set(file, { mtime: stat.mtime?.getTime(), size: sizeCounter.size });
+									}
 								} else {
-									ctx.writeHead(200, {
+									const headers: { [key: string]: string | number } = {
 										'Cache-Control': 'no-cache',
 										'Content-Type': contentType,
 										'Last-Modified': mtime.toUTCString(),
-										'Transfer-Encoding': 'chunked',
-									});
-									await pipeline(fileStream, ctx.rsp);
+									};
+									const sizeInfo = fileSizeCache.get(file);
+									if (sizeInfo && sizeInfo.mtime == stat.mtime?.getTime()) {
+										headers['Content-Length'] = sizeInfo.size;
+										ctx.writeHead(200, headers);
+										await pipeline(fileStream, ctx.rsp);
+									} else {
+										ctx.writeHead(200, headers);
+										const sizeCounter = new Counter();
+										await pipeline(fileStream, sizeCounter, ctx.rsp);
+										fileSizeCache.set(file, { mtime: stat.mtime?.getTime(), size: sizeCounter.size });
+									}
 								}
 								await ctx.end();
 								return true;
