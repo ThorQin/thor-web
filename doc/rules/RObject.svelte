@@ -103,6 +103,7 @@ function getSubTypeNoNeed(r: PropRule): string {
 	div.table {
 		display: flex;
 		flex-direction: column;
+		border-left: 1px solid #ccc;
 	}
 	div.line {
 		display: flex;
