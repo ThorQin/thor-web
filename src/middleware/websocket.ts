@@ -1,12 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import path from 'path';
 import tools from '../utils/tools';
-import { Application, SocketHandler, Middleware, MiddlewareFactory } from '../types';
+import { Application, SocketHandler, Middleware, MiddlewareFactory, SocketHandlerV2 } from '../types';
 import { server as WebSocketServer } from 'websocket';
 import http from 'http';
 import Context from '../context';
 
-type ScriptDefinition = SocketHandler | null;
+interface SocketHandlerInfoV1 {
+	handler: SocketHandler;
+	type: 'v1';
+}
+
+interface SocketHandlerInfoV2 {
+	handler: SocketHandlerV2;
+	type: 'v2';
+}
+
+type ScriptDefinition = SocketHandlerInfoV1 | SocketHandlerInfoV2 | null;
 
 const API: { [key: string]: Promise<ScriptDefinition> } = {};
 
@@ -27,9 +37,18 @@ function loadScript(baseDir: string, api: string): Promise<ScriptDefinition> {
 					import(modulePath)
 						.then((fn) => {
 							if (fn && typeof fn === 'function') {
-								return resolve(fn);
-							} else if (fn && typeof fn === 'object' && typeof fn.default === 'function') {
-								return resolve(fn.default);
+								return resolve({ handler: fn, type: 'v1' });
+							} else if (fn && typeof fn === 'object') {
+								if (typeof fn.default === 'function') {
+									return resolve({ handler: fn.default, type: 'v1' });
+								} else if (typeof fn.connect === 'function') {
+									return resolve({ handler: fn.connect, type: 'v2' });
+								} else {
+									console.error(
+										'Invalid WebSocket handler: must export a default function or a function named "connect"'
+									);
+									resolve(null);
+								}
 							} else {
 								console.error('Invalid WebSocket handler: must export a function');
 								resolve(null);
@@ -143,9 +162,13 @@ class WebSocketFactory implements MiddlewareFactory<WebSocketCreateOptions> {
 
 			page = page.substring(rootPath.length - 1);
 			const fn = await loadScript(baseDir as string, page);
-			if (typeof fn === 'function') {
-				const connection = request.accept();
-				fn(connection, app);
+			if (fn) {
+				if (fn.type === 'v1') {
+					const connection = request.accept();
+					fn.handler(connection, app);
+				} else {
+					fn.handler(request, app);
+				}
 			} else {
 				console.warn('WebSocket connection to ' + request.resource + ' was rejected: WS handler not found!');
 				request.reject(404, 'Not Found');

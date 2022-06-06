@@ -1,7 +1,7 @@
 import http from 'http';
 import { Schema } from 'thor-validation';
 import Context from './context';
-import { connection, server, Message, frame } from 'websocket';
+import { connection, request, server, Message, frame } from 'websocket';
 import { Rule } from 'thor-validation';
 
 export type WebSocketConnection = connection;
@@ -158,6 +158,10 @@ export interface Controller {
 
 export interface SocketHandler {
 	(connection: WebSocketConnection, app: Application): void;
+}
+
+export interface SocketHandlerV2 {
+	(request: request, app: Application): void;
 }
 
 export interface Renderer {
