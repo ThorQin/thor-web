@@ -10,7 +10,7 @@
 	export let need: boolean;
 	export let level: number;
 </script>
-<div style="margin-left: {level * 40}px">
+<div style="margin-left: {level * 40}px; border-left: 1px solid #ccc">
 	<div class="type">
 		{#if rule.type === 'string'}
 		<IconText />
@@ -34,7 +34,7 @@
 <style>
 	div.line {
 		display: flex;
-		border-bottom: 1px solid #888;
+		border-bottom: 1px solid #ccc;
 		padding: 4px 10px;
 	}
 </style>

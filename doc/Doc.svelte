@@ -83,6 +83,7 @@
 		color: #a080ff;
 		border-bottom: 1px solid #a080ff;
 		font-size: 2.4rem;
+		font-family: ui-monospace;
 	}
 	div.method {
 		padding: 20px 0;

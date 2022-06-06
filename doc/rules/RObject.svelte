@@ -107,7 +107,7 @@ function getSubTypeNoNeed(r: PropRule): string {
 	}
 	div.line {
 		display: flex;
-		border-bottom: 1px solid #888;
+		border-bottom: 1px solid #ccc;
 		padding: 4px 10px;
 	}
 	div.line > span {

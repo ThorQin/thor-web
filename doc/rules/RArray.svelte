@@ -23,7 +23,7 @@
 	let subType = itemRule ? getSubType(itemRule) : '未指定';
 </script>
 
-<div style="margin-left: {level * 40}px">
+<div style="margin-left: {level * 40}px;border-left:1px solid #ccc">
 	<div class="type">
 		<Icon />
 		<span style="margin-left:10px">数组</span>

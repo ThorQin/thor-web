@@ -12,7 +12,7 @@
 	{#if rule.rules.length > 0}
 		{#each rule.rules.filter(r => r.type !== 'mismatch') as subRule, index}
 			{#if index > 0}
-			<div class="or"><span>or:</span></div>
+			<div class="or"><span>OR</span></div>
 			{/if}
 			{#if subRule.type === 'object'}
 			<RObject rule={subRule} need={need} level={0}/>
@@ -36,7 +36,7 @@
 </div>
 <style>
 	div.union-box {
-		border-left: 1px dotted #ddd;
+		border-left: none;
 	}
 	div.error {
 		color: red;
@@ -46,9 +46,9 @@
 		text-align: left;
 	}
 	div.or>span {
-    font-size: 1.2rem;
+    font-size: 1.4rem;
 		font-weight: bold;
-    line-height: 1.2rem;
+    line-height: 1.4rem;
     border-radius: 30px;
 		padding: 10px;
     color: #29f;
