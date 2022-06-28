@@ -198,13 +198,13 @@ class App implements Application {
 			}
 		}
 		app.start({
-			port: port || 8080,
+			port: port,
 			hostname: hostname || undefined,
 		});
 		app.use(session, {
 			serverKey: serverKey,
 			cookieName: cookieName,
-			maxAge: maxAge || 1800,
+			maxAge: maxAge,
 			expireCheck: expireCheck,
 			intervalCheck: intervalCheck,
 			renew: renew,

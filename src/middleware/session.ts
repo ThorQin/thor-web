@@ -61,11 +61,9 @@ async function getSessionInfo(
 		}
 
 		if (intervalCheck) {
-			const checkIntervalTime = (time.add(
-				sessionInfo.accessTime,
-				intervalCheck.value,
-				intervalCheck.unit
-			) as Date).getTime();
+			const checkIntervalTime = (
+				time.add(sessionInfo.accessTime, intervalCheck.value, intervalCheck.unit) as Date
+			).getTime();
 			if (now.getTime() >= checkIntervalTime) {
 				if (intervalCheck.action === 'renew') {
 					needRenew = true;
