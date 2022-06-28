@@ -23,8 +23,12 @@ export async function isFile(file: PathLike): Promise<boolean> {
 	return stat.isFile;
 }
 
+function getPathFromParam(): string | undefined {
+	return process.argv.find((value, index) => !value.startsWith('-') && index > 0);
+}
+
 export function getRootDir(): string {
-	const js = process.argv[1];
+	const js = getPathFromParam();
 	if (!js) {
 		return process.cwd();
 	}

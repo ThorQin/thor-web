@@ -142,13 +142,20 @@ class App implements Application {
 					console.error('processRequest exception: ', e);
 				}
 			})
-			.listen(port, hostname);
-
-		if (hostname) {
-			console.log(`Server listening on: ${hostname}:${port}`);
-		} else {
-			console.log(`Server listening on: ${port}`);
-		}
+			.listen(port, hostname)
+			.once('listening', () => {
+				if (this.server) {
+					const addr = this.server?.address();
+					if (!addr) {
+						return;
+					}
+					if (typeof addr === 'object') {
+						console.log(`Server listening on: ${addr.address}:${addr.port}`);
+					} else {
+						console.log(`Server listening on: ${addr}`);
+					}
+				}
+			});
 		console.log(`Current work dir: ${getRootDir()}`);
 		return this;
 	}

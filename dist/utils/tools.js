@@ -23,8 +23,11 @@ async function isFile(file) {
 	return stat.isFile;
 }
 exports.isFile = isFile;
+function getPathFromParam() {
+	return process.argv.find((value, index) => !value.startsWith('-') && index > 0);
+}
 function getRootDir() {
-	const js = process.argv[1];
+	const js = getPathFromParam();
 	if (!js) {
 		return process.cwd();
 	}
