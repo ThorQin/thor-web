@@ -7,7 +7,7 @@ import { Application, Controller, Middleware, MiddlewareFactory } from '../types
 import fs from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import Context from '../context';
-import { ApiEntry, ApiFolder, loadApi, renderDoc } from './docs';
+import { ApiDefine, ApiEntry, ApiFolder, loadApi, renderDoc } from './docs';
 import staticFactory from './static-server';
 
 type ScriptDefinition = Controller | { [key: string]: Controller } | null;
@@ -27,14 +27,20 @@ export class HttpError extends Error {
 	}
 }
 
+export type ControllerType = Controller | { [key: string]: Controller };
+
 export type ControllerCreateOptions = {
 	baseDir?: string;
 	rootPath?: string;
+	controllers?: Record<string, ControllerType>;
 	apiDocPath?: string;
 };
 
 class ControllerFactory implements MiddlewareFactory<ControllerCreateOptions> {
-	create(app: Application, { baseDir, rootPath = '/', apiDocPath }: ControllerCreateOptions = {}): Middleware {
+	create(
+		app: Application,
+		{ baseDir, rootPath = '/', controllers, apiDocPath }: ControllerCreateOptions = {}
+	): Middleware {
 		if (!rootPath) {
 			rootPath = '/';
 		}
@@ -94,6 +100,11 @@ class ControllerFactory implements MiddlewareFactory<ControllerCreateOptions> {
 		loadRouter(baseDir + '.d');
 
 		const API: { [key: string]: Promise<ScriptDefinition> } = {};
+		if (controllers) {
+			Object.entries(controllers).forEach(([k, v]) => {
+				API[k] = Promise.resolve(v);
+			});
+		}
 		function loadScript(baseDir: string, api: string): Promise<ScriptDefinition> {
 			let p = API[api];
 			if (p) {

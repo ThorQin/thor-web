@@ -106,6 +106,7 @@ class App {
 		templateDir,
 		controllerDir,
 		controllerPath,
+		controllers,
 		apiDocPath,
 		wsDir,
 		wsPath,
@@ -155,6 +156,7 @@ class App {
 		app.use(index_1.controller, {
 			baseDir: controllerDir,
 			rootPath: controllerPath,
+			controllers,
 			apiDocPath: apiDocPath,
 		});
 		app.use(index_1.webSocket, {

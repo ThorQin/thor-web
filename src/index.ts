@@ -87,13 +87,17 @@ type StartOptions = {
 	 */
 	templateDir?: string;
 	/**
-	 * 接口物理存放位置
+	 * 接口物理位置（自动扫描并加载接口模块）
 	 */
 	controllerDir?: string;
 	/**
-	 * 接口web访问路径
+	 * 接口访问路径
 	 */
 	controllerPath?: string;
+	/**
+	 * 静态引入的接口模块
+	 */
+	controllers?: Record<string, ControllerType>;
 	/**
 	 * 接口文档路径，不指定路径就不启用接口文档
 	 */
@@ -191,6 +195,7 @@ class App implements Application {
 		templateDir,
 		controllerDir,
 		controllerPath,
+		controllers,
 		apiDocPath,
 		wsDir,
 		wsPath,
@@ -240,6 +245,7 @@ class App implements Application {
 		app.use(controller, {
 			baseDir: controllerDir,
 			rootPath: controllerPath,
+			controllers,
 			apiDocPath: apiDocPath,
 		});
 		app.use(webSocket, {
@@ -253,7 +259,7 @@ class App implements Application {
 
 import enc from './utils/enc.js';
 import { WebSocketCreateOptions } from './middleware/websocket';
-import { HttpError } from './middleware/controller';
+import { ControllerType, HttpError } from './middleware/controller';
 import { TimeCheck } from './middleware/session';
 import { getRootDir } from './utils/tools';
 

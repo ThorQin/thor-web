@@ -58,7 +58,7 @@ class HttpError extends Error {
 }
 exports.HttpError = HttpError;
 class ControllerFactory {
-	create(app, { baseDir, rootPath = '/', apiDocPath } = {}) {
+	create(app, { baseDir, rootPath = '/', controllers, apiDocPath } = {}) {
 		if (!rootPath) {
 			rootPath = '/';
 		}
@@ -117,6 +117,11 @@ class ControllerFactory {
 		}
 		loadRouter(baseDir + '.d');
 		const API = {};
+		if (controllers) {
+			Object.entries(controllers).forEach(([k, v]) => {
+				API[k] = Promise.resolve(v);
+			});
+		}
 		function loadScript(baseDir, api) {
 			let p = API[api];
 			if (p) {

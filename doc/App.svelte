@@ -120,7 +120,7 @@ import Test from './Test.svelte';
 			{#if activeItem}
 				<Doc item={activeItem} {onTest}/>
 			{:else}
-				<div class="doc-free"><span>Welcome !</span></div>
+				<div class="doc-free"><span>Welcome</span></div>
 			{/if}
 		</div>
 	</div>
@@ -181,8 +181,8 @@ import Test from './Test.svelte';
 		font-style: italic;
     font-weight: bold;
     color: #fff;
-    text-shadow: 0px 0px 4px #ddd;
-    font-size: 4rem;
+    text-shadow: 0px 0px 4px #ccc;
+    font-size: 8rem;
 		user-select: none;
 	}
 
