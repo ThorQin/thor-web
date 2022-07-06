@@ -49,7 +49,7 @@ type StartOptions = {
 	hostname?: string;
 	cookieName?: string;
 	/**
-	 * 保存 Session 的 Cookie 的有效期，默认 1800 秒，设置为 -1 为永久保存
+	 * 保存 Session 的 Cookie 的有效期（单位秒），默认 1800 秒，设置为 0 为会话 cookie (关闭浏览器丢失)，负数为立即过期（没什么意义），设置为永不过期请使用 Number.MAX_SAFE_INTEGER
 	 */
 	maxAge?: number;
 	/**

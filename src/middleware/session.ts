@@ -130,7 +130,7 @@ function createSession(
 	{
 		serverKey,
 		cookieName,
-		maxAge = -1,
+		maxAge = 0,
 		path = '/',
 		domain,
 		httpOnly = true,
@@ -174,7 +174,7 @@ function createSession(
 			!ctx.isWebSocket && this.save();
 		},
 		save: function (opt?: SaveOptions | number) {
-			if (typeof opt === 'number') {
+			if (typeof opt === 'number' && !isNaN(opt)) {
 				opt = {
 					maxAge: opt,
 				} as SaveOptions;
@@ -183,7 +183,11 @@ function createSession(
 			}
 			const token = this.toString();
 			const options: { [key: string]: string | number | null } = {};
-			options['Max-Age'] = typeof opt.maxAge === 'number' ? opt.maxAge : maxAge;
+			const age = typeof opt.maxAge === 'number' && !isNaN(opt.maxAge) ? opt.maxAge : maxAge;
+			if (age != 0) {
+				// '0' means session cookie
+				options['Max-Age'] = age;
+			}
 			const dm = opt.domain || domain;
 			if (dm) {
 				options.Domain = dm;
