@@ -157,6 +157,13 @@ export interface Controller {
 	desc?: string;
 }
 
+export interface RouterDef {
+	path: RegExp;
+	method: string | null;
+	fn: Controller;
+	cacheable: boolean;
+}
+
 export interface SocketHandler {
 	(connection: WebSocketConnection, app: Application): void;
 }
@@ -190,3 +197,29 @@ export interface PrivilegeContext extends Context {
 }
 
 export type DefaultContext = RenderContext & SessionContext & BodyContext & AppContext & PrivilegeContext;
+
+export function isRenderContext(ctx: Context): ctx is RenderContext {
+	return !!ctx.render;
+}
+
+export function isSessionContext(ctx: Context): ctx is SessionContext {
+	return !!ctx.session;
+}
+
+export function isBodyContext(ctx: Context): ctx is BodyContext {
+	return !!ctx.body;
+}
+
+export function isAppContext(ctx: Context): ctx is AppContext {
+	return !!ctx.app;
+}
+
+export function isPrivilegeContext(ctx: Context): ctx is PrivilegeContext {
+	return !!ctx.checkPrivilege;
+}
+
+export function isDefaultContext(ctx: Context): ctx is DefaultContext {
+	return (
+		isRenderContext(ctx) && isSessionContext(ctx) && isBodyContext(ctx) && isAppContext(ctx) && isPrivilegeContext(ctx)
+	);
+}

@@ -169,3 +169,9 @@ export interface PrivilegeContext extends Context {
 	checkPrivilege: PrivilegeCheck;
 }
 export declare type DefaultContext = RenderContext & SessionContext & BodyContext & AppContext & PrivilegeContext;
+export declare function isRenderContext(ctx: Context): ctx is RenderContext;
+export declare function isSessionContext(ctx: Context): ctx is SessionContext;
+export declare function isBodyContext(ctx: Context): ctx is BodyContext;
+export declare function isAppContext(ctx: Context): ctx is AppContext;
+export declare function isPrivilegeContext(ctx: Context): ctx is PrivilegeContext;
+export declare function isDefaultContext(ctx: Context): ctx is DefaultContext;

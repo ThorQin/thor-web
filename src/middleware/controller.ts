@@ -3,21 +3,14 @@ import path from 'path';
 import tools from '../utils/tools';
 import { ValidationError } from 'thor-validation';
 import { SecurityError } from './security';
-import { Application, Controller, Middleware, MiddlewareFactory } from '../types';
+import { Application, Controller, RouterDef, Middleware, MiddlewareFactory } from '../types';
 import fs from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import Context from '../context';
-import { ApiDefine, ApiEntry, ApiFolder, loadApi, renderDoc } from './docs';
+import { ApiEntry, ApiFolder, loadApi, renderDoc } from './docs';
 import staticFactory from './static-server';
 
 type ScriptDefinition = Controller | { [key: string]: Controller } | null;
-
-interface RouterDef {
-	path: RegExp;
-	method: string | null;
-	fn: Controller;
-	cacheable: boolean;
-}
 
 export class HttpError extends Error {
 	code: number;
@@ -33,13 +26,14 @@ export type ControllerCreateOptions = {
 	baseDir?: string;
 	rootPath?: string;
 	controllers?: Record<string, ControllerType>;
+	routers?: RouterDef[];
 	apiDocPath?: string;
 };
 
 class ControllerFactory implements MiddlewareFactory<ControllerCreateOptions> {
 	create(
 		app: Application,
-		{ baseDir, rootPath = '/', controllers, apiDocPath }: ControllerCreateOptions = {}
+		{ baseDir, rootPath = '/', controllers, routers, apiDocPath }: ControllerCreateOptions = {}
 	): Middleware {
 		if (!rootPath) {
 			rootPath = '/';
@@ -98,6 +92,9 @@ class ControllerFactory implements MiddlewareFactory<ControllerCreateOptions> {
 			});
 		}
 		loadRouter(baseDir + '.d');
+		if (Array.isArray(routers)) {
+			ROUTER.splice(0, 0, ...routers);
+		}
 
 		const API: { [key: string]: Promise<ScriptDefinition> } = {};
 		if (controllers) {

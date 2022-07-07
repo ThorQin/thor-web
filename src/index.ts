@@ -10,6 +10,7 @@ import {
 	MiddlewareOptions,
 	PermissionHandler,
 	SessionInfo,
+	RouterDef,
 } from './types';
 import { session, staticServer, controller, bodyParser, security, template, webSocket } from './middleware/index';
 
@@ -98,6 +99,10 @@ type StartOptions = {
 	 * 静态引入的接口模块
 	 */
 	controllers?: Record<string, ControllerType>;
+	/**
+	 * 静态引入的路由模块
+	 */
+	routers?: RouterDef[];
 	/**
 	 * 接口文档路径，不指定路径就不启用接口文档
 	 */
@@ -196,6 +201,7 @@ class App implements Application {
 		controllerDir,
 		controllerPath,
 		controllers,
+		routers,
 		apiDocPath,
 		wsDir,
 		wsPath,
@@ -246,6 +252,7 @@ class App implements Application {
 			baseDir: controllerDir,
 			rootPath: controllerPath,
 			controllers,
+			routers,
 			apiDocPath: apiDocPath,
 		});
 		app.use(webSocket, {
