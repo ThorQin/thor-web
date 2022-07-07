@@ -9,6 +9,7 @@ import {
 	MiddlewareOptions,
 	PermissionHandler,
 	SessionInfo,
+	RouterDef,
 } from './types';
 declare type StartOptions = {
 	port?: number;
@@ -67,6 +68,10 @@ declare type StartOptions = {
 	 */
 	controllers?: Record<string, ControllerType>;
 	/**
+	 * 静态引入的路由模块
+	 */
+	routers?: RouterDef[];
+	/**
 	 * 接口文档路径，不指定路径就不启用接口文档
 	 */
 	apiDocPath?: string;
@@ -119,6 +124,7 @@ declare class App implements Application {
 		controllerDir,
 		controllerPath,
 		controllers,
+		routers,
 		apiDocPath,
 		wsDir,
 		wsPath,

@@ -107,6 +107,7 @@ class App {
 		controllerDir,
 		controllerPath,
 		controllers,
+		routers,
 		apiDocPath,
 		wsDir,
 		wsPath,
@@ -157,6 +158,7 @@ class App {
 			baseDir: controllerDir,
 			rootPath: controllerPath,
 			controllers,
+			routers,
 			apiDocPath: apiDocPath,
 		});
 		app.use(index_1.webSocket, {

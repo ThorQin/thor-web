@@ -144,6 +144,12 @@ export interface Controller {
 	params?: Rule;
 	desc?: string;
 }
+export interface RouterDef {
+	path: RegExp;
+	method: string | null;
+	fn: Controller;
+	cacheable: boolean;
+}
 export interface SocketHandler {
 	(connection: WebSocketConnection, app: Application): void;
 }

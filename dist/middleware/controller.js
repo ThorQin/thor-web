@@ -58,7 +58,7 @@ class HttpError extends Error {
 }
 exports.HttpError = HttpError;
 class ControllerFactory {
-	create(app, { baseDir, rootPath = '/', controllers, apiDocPath } = {}) {
+	create(app, { baseDir, rootPath = '/', controllers, routers, apiDocPath } = {}) {
 		if (!rootPath) {
 			rootPath = '/';
 		}
@@ -116,6 +116,9 @@ class ControllerFactory {
 			});
 		}
 		loadRouter(baseDir + '.d');
+		if (Array.isArray(routers)) {
+			ROUTER.splice(0, 0, ...routers);
+		}
 		const API = {};
 		if (controllers) {
 			Object.entries(controllers).forEach(([k, v]) => {
