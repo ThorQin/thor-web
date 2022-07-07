@@ -122,7 +122,7 @@ class ControllerFactory {
 		const API = {};
 		if (controllers) {
 			Object.entries(controllers).forEach(([k, v]) => {
-				API[k] = Promise.resolve(v);
+				API[k.startsWith('/') ? k : '/' + k] = Promise.resolve(v);
 			});
 		}
 		function loadScript(baseDir, api) {

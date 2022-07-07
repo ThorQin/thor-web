@@ -99,7 +99,7 @@ class ControllerFactory implements MiddlewareFactory<ControllerCreateOptions> {
 		const API: { [key: string]: Promise<ScriptDefinition> } = {};
 		if (controllers) {
 			Object.entries(controllers).forEach(([k, v]) => {
-				API[k] = Promise.resolve(v);
+				API[k.startsWith('/') ? k : '/' + k] = Promise.resolve(v);
 			});
 		}
 		function loadScript(baseDir: string, api: string): Promise<ScriptDefinition> {
