@@ -125,7 +125,7 @@ export default class Context {
 	 * @param {string | NodeJS.ReadableStream | Buffer} file File path
 	 * @param {SendFileOption} options File download options
 	 */
-	sendFile(file: string | NodeJS.ReadableStream | Buffer, options: SendFileOption): Promise<void>;
+	sendFile(file: string | NodeJS.ReadableStream | Buffer, options?: SendFileOption): Promise<void>;
 	/**
 	 * Send 302 redirection
 	 * @param url Redirection URL

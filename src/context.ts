@@ -420,7 +420,7 @@ export default class Context {
 	 * @param {string | NodeJS.ReadableStream | Buffer} file File path
 	 * @param {SendFileOption} options File download options
 	 */
-	async sendFile(file: string | NodeJS.ReadableStream | Buffer, options: SendFileOption): Promise<void> {
+	async sendFile(file: string | NodeJS.ReadableStream | Buffer, options?: SendFileOption): Promise<void> {
 		if (!options) {
 			options = {};
 		}
