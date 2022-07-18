@@ -24,6 +24,7 @@ export function defaultSuffix(): string[] {
 		'woff2',
 		'ttf',
 		'bmp',
+		'ico',
 		'gif',
 		'png',
 		'jpg',
