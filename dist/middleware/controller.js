@@ -183,7 +183,7 @@ class ControllerFactory {
 				const result = await fn(ctx, req, rsp);
 				if (typeof result !== 'undefined') {
 					await ctx.sendJson(result);
-				} else if (!rsp.writableEnded) {
+				} else if (!rsp.writableEnded && !fn.eventStream) {
 					await ctx.end();
 				}
 			} catch (e) {

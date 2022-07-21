@@ -65,6 +65,7 @@ function defaultSuffix() {
 		'woff2',
 		'ttf',
 		'bmp',
+		'ico',
 		'gif',
 		'png',
 		'jpg',

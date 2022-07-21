@@ -155,6 +155,7 @@ export interface Controller {
 	body?: Rule;
 	params?: Rule;
 	desc?: string;
+	eventStream?: boolean;
 }
 
 export interface RouterDef {
