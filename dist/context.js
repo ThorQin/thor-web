@@ -131,6 +131,49 @@ var OriginType;
 	OriginType[(OriginType['PUBLIC'] = 0)] = 'PUBLIC';
 	OriginType[(OriginType['ANY'] = 1)] = 'ANY';
 })((OriginType = exports.OriginType || (exports.OriginType = {})));
+class EventStreamClient {
+	constructor(context, headers, heartbeatInterval = 30 * 1000) {
+		this.context = context;
+		this.closed = false;
+		const head = { 'content-type': 'text/event-stream; charset=utf-8' };
+		if (headers) {
+			Object.keys(headers)
+				.filter((k) => k.trim().toLowerCase() !== 'content-type')
+				.forEach((k) => {
+					head[k] = headers[k];
+				});
+		}
+		context.writeHead(200, 'OK', head);
+		this.heartbeat = setInterval(() => {
+			this.sendEvent(
+				'ping',
+				Intl.DateTimeFormat('zh-CN', {
+					year: 'numeric',
+					month: 'numeric',
+					day: 'numeric',
+					hour: '2-digit',
+					minute: '2-digit',
+					second: '2-digit',
+				}).format(new Date())
+			);
+		}, heartbeatInterval);
+	}
+	async sendEvent(event, data) {
+		await this.context.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+	}
+	onClosed(callback) {
+		if (!this.closed) {
+			this.closed = true;
+			clearInterval(this.heartbeat);
+			this.context.rsp.addListener('close', callback.bind(this));
+		}
+	}
+	close() {
+		this.closed = true;
+		clearInterval(this.heartbeat);
+		this.context.close();
+	}
+}
 class Context {
 	constructor(req, rsp) {
 		this.isWebSocket = false;
@@ -581,6 +624,9 @@ class Context {
 	 */
 	close(error) {
 		this.req.socket.destroy(error);
+	}
+	eventStream(headers, heartbeatInterval = 30 * 1000) {
+		return new EventStreamClient(this, headers, heartbeatInterval);
 	}
 }
 exports.default = Context;

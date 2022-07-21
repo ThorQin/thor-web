@@ -136,6 +136,50 @@ export type CORSOptions = {
 	allowCredential?: boolean;
 };
 
+class EventStreamClient {
+	private heartbeat: NodeJS.Timeout;
+	private closed = false;
+	constructor(public context: Context, headers?: http.OutgoingHttpHeaders, heartbeatInterval = 30 * 1000) {
+		const head: http.OutgoingHttpHeaders = { 'content-type': 'text/event-stream; charset=utf-8' };
+		if (headers) {
+			Object.keys(headers)
+				.filter((k) => k.trim().toLowerCase() !== 'content-type')
+				.forEach((k) => {
+					head[k] = headers[k];
+				});
+		}
+		context.writeHead(200, 'OK', head);
+		this.heartbeat = setInterval(() => {
+			this.sendEvent(
+				'ping',
+				Intl.DateTimeFormat('zh-CN', {
+					year: 'numeric',
+					month: 'numeric',
+					day: 'numeric',
+					hour: '2-digit',
+					minute: '2-digit',
+					second: '2-digit',
+				}).format(new Date())
+			);
+		}, heartbeatInterval);
+	}
+	async sendEvent(event: string, data: string): Promise<void> {
+		await this.context.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+	}
+	onClosed(callback: () => void) {
+		if (!this.closed) {
+			this.closed = true;
+			clearInterval(this.heartbeat);
+			this.context.rsp.addListener('close', callback.bind(this));
+		}
+	}
+	close() {
+		this.closed = true;
+		clearInterval(this.heartbeat);
+		this.context.close();
+	}
+}
+
 export default class Context {
 	readonly req: http.IncomingMessage;
 	readonly rsp: http.ServerResponse;
@@ -636,5 +680,9 @@ export default class Context {
 	 */
 	close(error?: Error): void {
 		this.req.socket.destroy(error);
+	}
+
+	eventStream(headers?: http.OutgoingHttpHeaders, heartbeatInterval = 30 * 1000): EventStreamClient {
+		return new EventStreamClient(this, headers, heartbeatInterval);
 	}
 }
