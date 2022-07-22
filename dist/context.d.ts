@@ -46,14 +46,11 @@ export declare type CORSOptions = {
 	 */
 	allowCredential?: boolean;
 };
-declare class EventStreamClient {
-	context: Context;
-	private heartbeat;
-	private closed;
-	constructor(context: Context, headers?: http.OutgoingHttpHeaders, heartbeatInterval?: number);
+export interface EventStream {
 	sendEvent(event: string, data: string): Promise<void>;
 	onClosed(callback: () => void): void;
 	close(): void;
+	readonly context: Context;
 }
 export default class Context {
 	readonly req: http.IncomingMessage;
@@ -73,6 +70,8 @@ export default class Context {
 	checkPermission?: PermissionCheck;
 	render?: Renderer;
 	isWebSocket: boolean;
+	private _isEventStream;
+	get isEventStream(): boolean;
 	constructor(req: http.IncomingMessage, rsp: http.ServerResponse);
 	get clientIP(): string | undefined;
 	get clientPort(): number | undefined;
@@ -196,6 +195,5 @@ export default class Context {
 	 * Close underlying socket connection
 	 */
 	close(error?: Error): void;
-	eventStream(headers?: http.OutgoingHttpHeaders, heartbeatInterval?: number): EventStreamClient;
+	eventStream(headers?: http.OutgoingHttpHeaders, heartbeatInterval?: number): EventStream;
 }
-export {};

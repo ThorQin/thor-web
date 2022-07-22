@@ -136,10 +136,17 @@ export type CORSOptions = {
 	allowCredential?: boolean;
 };
 
-class EventStreamClient {
-	private heartbeat: NodeJS.Timeout;
+export interface EventStream {
+	sendEvent(event: string, data: string): Promise<void>;
+	onClosed(callback: () => void): void;
+	close(): void;
+	readonly context: Context;
+}
+
+class EventStreamClient implements EventStream {
+	private heartbeat: NodeJS.Timeout | null;
 	private closed = false;
-	constructor(public context: Context, headers?: http.OutgoingHttpHeaders, heartbeatInterval = 30 * 1000) {
+	constructor(public readonly context: Context, headers?: http.OutgoingHttpHeaders, heartbeatInterval = 30 * 1000) {
 		const head: http.OutgoingHttpHeaders = { 'content-type': 'text/event-stream; charset=utf-8' };
 		if (headers) {
 			Object.keys(headers)
@@ -149,33 +156,38 @@ class EventStreamClient {
 				});
 		}
 		context.writeHead(200, 'OK', head);
-		this.heartbeat = setInterval(() => {
-			this.sendEvent(
-				'ping',
-				Intl.DateTimeFormat('zh-CN', {
-					year: 'numeric',
-					month: 'numeric',
-					day: 'numeric',
-					hour: '2-digit',
-					minute: '2-digit',
-					second: '2-digit',
-				}).format(new Date())
-			);
-		}, heartbeatInterval);
+		if (heartbeatInterval > 0) {
+			this.heartbeat = setInterval(() => {
+				this.sendEvent(
+					'ping',
+					Intl.DateTimeFormat('zh-CN', {
+						year: 'numeric',
+						month: 'numeric',
+						day: 'numeric',
+						hour: '2-digit',
+						minute: '2-digit',
+						second: '2-digit',
+					}).format(new Date())
+				);
+			}, heartbeatInterval);
+		} else {
+			this.heartbeat = null;
+		}
 	}
 	async sendEvent(event: string, data: string): Promise<void> {
+		if (this.closed) return;
 		await this.context.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 	}
 	onClosed(callback: () => void) {
 		if (!this.closed) {
 			this.closed = true;
-			clearInterval(this.heartbeat);
+			this.heartbeat && clearInterval(this.heartbeat);
 			this.context.rsp.addListener('close', callback.bind(this));
 		}
 	}
 	close() {
 		this.closed = true;
-		clearInterval(this.heartbeat);
+		this.heartbeat && clearInterval(this.heartbeat);
 		this.context.close();
 	}
 }
@@ -198,6 +210,10 @@ export default class Context {
 	checkPermission?: PermissionCheck;
 	render?: Renderer;
 	isWebSocket = false;
+	private _isEventStream = false;
+	get isEventStream() {
+		return this._isEventStream;
+	}
 
 	constructor(req: http.IncomingMessage, rsp: http.ServerResponse) {
 		this.req = req;
@@ -682,7 +698,8 @@ export default class Context {
 		this.req.socket.destroy(error);
 	}
 
-	eventStream(headers?: http.OutgoingHttpHeaders, heartbeatInterval = 30 * 1000): EventStreamClient {
+	eventStream(headers?: http.OutgoingHttpHeaders, heartbeatInterval = 30 * 1000): EventStream {
+		this._isEventStream = true;
 		return new EventStreamClient(this, headers, heartbeatInterval);
 	}
 }

@@ -144,39 +144,45 @@ class EventStreamClient {
 				});
 		}
 		context.writeHead(200, 'OK', head);
-		this.heartbeat = setInterval(() => {
-			this.sendEvent(
-				'ping',
-				Intl.DateTimeFormat('zh-CN', {
-					year: 'numeric',
-					month: 'numeric',
-					day: 'numeric',
-					hour: '2-digit',
-					minute: '2-digit',
-					second: '2-digit',
-				}).format(new Date())
-			);
-		}, heartbeatInterval);
+		if (heartbeatInterval > 0) {
+			this.heartbeat = setInterval(() => {
+				this.sendEvent(
+					'ping',
+					Intl.DateTimeFormat('zh-CN', {
+						year: 'numeric',
+						month: 'numeric',
+						day: 'numeric',
+						hour: '2-digit',
+						minute: '2-digit',
+						second: '2-digit',
+					}).format(new Date())
+				);
+			}, heartbeatInterval);
+		} else {
+			this.heartbeat = null;
+		}
 	}
 	async sendEvent(event, data) {
+		if (this.closed) return;
 		await this.context.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 	}
 	onClosed(callback) {
 		if (!this.closed) {
 			this.closed = true;
-			clearInterval(this.heartbeat);
+			this.heartbeat && clearInterval(this.heartbeat);
 			this.context.rsp.addListener('close', callback.bind(this));
 		}
 	}
 	close() {
 		this.closed = true;
-		clearInterval(this.heartbeat);
+		this.heartbeat && clearInterval(this.heartbeat);
 		this.context.close();
 	}
 }
 class Context {
 	constructor(req, rsp) {
 		this.isWebSocket = false;
+		this._isEventStream = false;
 		this.req = req;
 		Object.defineProperty(this, 'req', {
 			writable: false,
@@ -212,6 +218,9 @@ class Context {
 			writable: false,
 			configurable: false,
 		});
+	}
+	get isEventStream() {
+		return this._isEventStream;
 	}
 	get clientIP() {
 		return this.req.socket.remoteAddress;
@@ -626,6 +635,7 @@ class Context {
 		this.req.socket.destroy(error);
 	}
 	eventStream(headers, heartbeatInterval = 30 * 1000) {
+		this._isEventStream = true;
 		return new EventStreamClient(this, headers, heartbeatInterval);
 	}
 }
