@@ -48,7 +48,8 @@ export declare type CORSOptions = {
 };
 export interface EventStream {
 	sendEvent(event: string, data: string): Promise<void>;
-	onClosed(callback: () => void): void;
+	on(event: 'close', callback: () => void): void;
+	off(event: 'close', callback: () => void): void;
 	close(): void;
 	readonly context: Context;
 }

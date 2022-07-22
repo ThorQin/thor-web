@@ -135,6 +135,7 @@ class EventStreamClient {
 	constructor(context, headers, heartbeatInterval = 30 * 1000) {
 		this.context = context;
 		this.closed = false;
+		this.events = new Map();
 		const head = { 'content-type': 'text/event-stream; charset=utf-8' };
 		if (headers) {
 			Object.keys(headers)
@@ -161,16 +162,37 @@ class EventStreamClient {
 		} else {
 			this.heartbeat = null;
 		}
+		this.context.rsp.addListener('close', () => {
+			if (!this.closed) {
+				this.closed = true;
+				this.heartbeat && clearInterval(this.heartbeat);
+				const arr = this.events.get('close') ?? [];
+				arr.forEach((fn) => fn());
+			}
+		});
 	}
 	async sendEvent(event, data) {
 		if (this.closed) return;
 		await this.context.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 	}
-	onClosed(callback) {
-		if (!this.closed) {
-			this.closed = true;
-			this.heartbeat && clearInterval(this.heartbeat);
-			this.context.rsp.addListener('close', callback.bind(this));
+	on(event, callback) {
+		const callbackList = this.events.get(event);
+		if (callbackList) {
+			callbackList.push(callback);
+		} else {
+			this.events.set(event, [callback.bind(this)]);
+		}
+	}
+	off(event, callback) {
+		const callbackList = this.events.get(event);
+		if (callbackList) {
+			const pos = callbackList.indexOf(callback);
+			if (pos >= 0) {
+				callbackList.splice(pos, 1);
+			}
+			if (callbackList.length === 0) {
+				this.events.delete(event);
+			}
 		}
 	}
 	close() {
