@@ -215,6 +215,14 @@ class EventStreamClient implements EventStream {
 	}
 }
 
+interface EventStreamOption {
+	headers?: http.OutgoingHttpHeaders;
+	/**
+	 * default value is 30,000(ms)
+	 */
+	heartbeatInterval?: number;
+}
+
 export default class Context {
 	readonly req: http.IncomingMessage;
 	readonly rsp: http.ServerResponse;
@@ -721,7 +729,7 @@ export default class Context {
 		this.req.socket.destroy(error);
 	}
 
-	eventStream(headers?: http.OutgoingHttpHeaders, heartbeatInterval = 30 * 1000): EventStream {
+	eventStream({ headers, heartbeatInterval = 30 * 1000 }: EventStreamOption = {}): EventStream {
 		this._isEventStream = true;
 		return new EventStreamClient(this, headers, heartbeatInterval);
 	}

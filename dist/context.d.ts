@@ -53,6 +53,13 @@ export interface EventStream {
 	close(): void;
 	readonly context: Context;
 }
+interface EventStreamOption {
+	headers?: http.OutgoingHttpHeaders;
+	/**
+	 * default value is 30,000(ms)
+	 */
+	heartbeatInterval?: number;
+}
 export default class Context {
 	readonly req: http.IncomingMessage;
 	readonly rsp: http.ServerResponse;
@@ -196,5 +203,6 @@ export default class Context {
 	 * Close underlying socket connection
 	 */
 	close(error?: Error): void;
-	eventStream(headers?: http.OutgoingHttpHeaders, heartbeatInterval?: number): EventStream;
+	eventStream({ headers, heartbeatInterval }?: EventStreamOption): EventStream;
 }
+export {};

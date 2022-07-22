@@ -656,7 +656,7 @@ class Context {
 	close(error) {
 		this.req.socket.destroy(error);
 	}
-	eventStream(headers, heartbeatInterval = 30 * 1000) {
+	eventStream({ headers, heartbeatInterval = 30 * 1000 } = {}) {
 		this._isEventStream = true;
 		return new EventStreamClient(this, headers, heartbeatInterval);
 	}
