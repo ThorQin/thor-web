@@ -138,7 +138,8 @@ export type CORSOptions = {
 
 export interface EventStream {
 	sendEvent(event: string, data: string): Promise<void>;
-	onClosed(callback: () => void): void;
+	on(event: 'close', callback: () => void): void;
+	off(event: 'close', callback: () => void): void;
 	close(): void;
 	readonly context: Context;
 }
@@ -146,6 +147,7 @@ export interface EventStream {
 class EventStreamClient implements EventStream {
 	private heartbeat: NodeJS.Timeout | null;
 	private closed = false;
+	private events = new Map<string, (() => void)[]>();
 	constructor(public readonly context: Context, headers?: http.OutgoingHttpHeaders, heartbeatInterval = 30 * 1000) {
 		const head: http.OutgoingHttpHeaders = { 'content-type': 'text/event-stream; charset=utf-8' };
 		if (headers) {
@@ -173,16 +175,37 @@ class EventStreamClient implements EventStream {
 		} else {
 			this.heartbeat = null;
 		}
+		this.context.rsp.addListener('close', () => {
+			if (!this.closed) {
+				this.closed = true;
+				this.heartbeat && clearInterval(this.heartbeat);
+				const arr = this.events.get('close') ?? [];
+				arr.forEach((fn) => fn());
+			}
+		});
 	}
 	async sendEvent(event: string, data: string): Promise<void> {
 		if (this.closed) return;
 		await this.context.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 	}
-	onClosed(callback: () => void) {
-		if (!this.closed) {
-			this.closed = true;
-			this.heartbeat && clearInterval(this.heartbeat);
-			this.context.rsp.addListener('close', callback.bind(this));
+	on(event: string, callback: () => void) {
+		const callbackList = this.events.get(event);
+		if (callbackList) {
+			callbackList.push(callback);
+		} else {
+			this.events.set(event, [callback.bind(this)]);
+		}
+	}
+	off(event: string, callback: () => void) {
+		const callbackList = this.events.get(event);
+		if (callbackList) {
+			const pos = callbackList.indexOf(callback);
+			if (pos >= 0) {
+				callbackList.splice(pos, 1);
+			}
+			if (callbackList.length === 0) {
+				this.events.delete(event);
+			}
 		}
 	}
 	close() {
