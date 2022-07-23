@@ -1,6 +1,6 @@
 import { createReadStream, promises as fs, ReadStream } from 'fs';
 import path from 'path';
-import tools, { Counter, FileStat } from '../utils/tools';
+import tools, { Counter, FileStat, normalizeHeaders } from '../utils/tools';
 import time from 'thor-time';
 import mime from 'mime';
 import zlib from 'zlib';
@@ -166,19 +166,11 @@ class StaticFactory implements MiddlewareFactory<StaticOptions> {
 		}
 
 		Object.keys(mimeHeaders).forEach((k) => {
-			const headers: OutgoingHttpHeaders = {};
-			Object.keys(mimeHeaders[k]).forEach((h) => {
-				headers[h.toLowerCase()] = mimeHeaders[k][h];
-			});
-			mimeHeaders[k] = headers;
+			mimeHeaders[k] = normalizeHeaders(mimeHeaders[k]);
 		});
 
 		Object.keys(fileHeaders).forEach((k) => {
-			const headers: OutgoingHttpHeaders = {};
-			Object.keys(fileHeaders[k]).forEach((h) => {
-				headers[h.toLowerCase()] = fileHeaders[k][h];
-			});
-			fileHeaders[k] = headers;
+			fileHeaders[k] = normalizeHeaders(fileHeaders[k]);
 		});
 
 		function applyHeaders(page: string, contentType: string, outHeaders: OutgoingHttpHeaders) {
@@ -234,7 +226,7 @@ class StaticFactory implements MiddlewareFactory<StaticOptions> {
 							if (lastTime) {
 								const v = time.parse(mtime.toUTCString());
 								if (v && v.getTime() <= lastTime.getTime()) {
-									await ctx.notModified();
+									await ctx.notModified(applyHeaders(page, contentType, {}));
 									return true;
 								}
 							}

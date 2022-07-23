@@ -156,18 +156,10 @@ class StaticFactory {
 			}
 		}
 		Object.keys(mimeHeaders).forEach((k) => {
-			const headers = {};
-			Object.keys(mimeHeaders[k]).forEach((h) => {
-				headers[h.toLowerCase()] = mimeHeaders[k][h];
-			});
-			mimeHeaders[k] = headers;
+			mimeHeaders[k] = (0, tools_1.normalizeHeaders)(mimeHeaders[k]);
 		});
 		Object.keys(fileHeaders).forEach((k) => {
-			const headers = {};
-			Object.keys(fileHeaders[k]).forEach((h) => {
-				headers[h.toLowerCase()] = fileHeaders[k][h];
-			});
-			fileHeaders[k] = headers;
+			fileHeaders[k] = (0, tools_1.normalizeHeaders)(fileHeaders[k]);
 		});
 		function applyHeaders(page, contentType, outHeaders) {
 			const mhs = mimeHeaders[contentType] ?? mimeHeaders['*'] ?? {};
@@ -217,7 +209,7 @@ class StaticFactory {
 							if (lastTime) {
 								const v = thor_time_1.default.parse(mtime.toUTCString());
 								if (v && v.getTime() <= lastTime.getTime()) {
-									await ctx.notModified();
+									await ctx.notModified(applyHeaders(page, contentType, {}));
 									return true;
 								}
 							}

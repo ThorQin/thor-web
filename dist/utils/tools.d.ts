@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import { PathLike } from 'fs';
+import { OutgoingHttpHeaders } from 'http';
 import { Transform, TransformCallback } from 'stream';
 export interface FileStat {
 	isFile: boolean;
@@ -20,3 +21,5 @@ declare const _default: {
 	isFile: typeof isFile;
 };
 export default _default;
+export declare function normalizeHeaders(headers: OutgoingHttpHeaders): OutgoingHttpHeaders;
+export declare function beautifyHeaders(headers: OutgoingHttpHeaders): OutgoingHttpHeaders;

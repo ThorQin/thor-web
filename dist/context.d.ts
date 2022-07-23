@@ -2,6 +2,7 @@
 import http from 'http';
 import { Application, BasicBodyParser, PermissionCheck, PrivilegeCheck, Renderer, Session } from './types';
 import { Schema } from 'thor-validation';
+import { OutgoingHttpHeaders } from 'http2';
 export declare type SendFileOption = {
 	statusCode?: number;
 	contentType?: string;
@@ -128,15 +129,15 @@ export default class Context {
 	/**
 	 * Send content to client
 	 */
-	send(data: string | Buffer, contentType?: string): Promise<void>;
+	send(data: string | Buffer, contentType?: string, headers?: OutgoingHttpHeaders): Promise<void>;
 	/**
 	 * Send HTML content to client
 	 */
-	sendHtml(html: string): Promise<void>;
+	sendHtml(html: string, headers?: OutgoingHttpHeaders): Promise<void>;
 	/**
 	 * Send JSON content to client
 	 */
-	sendJson(obj: unknown): Promise<void>;
+	sendJson(obj: unknown, headers?: OutgoingHttpHeaders): Promise<void>;
 	/** Send file content to client
 	 * @param {string | NodeJS.ReadableStream | Buffer} file File path
 	 * @param {SendFileOption} options File download options
@@ -146,18 +147,18 @@ export default class Context {
 	 * Send 302 redirection
 	 * @param url Redirection URL
 	 */
-	redirect(url: string): Promise<void>;
+	redirect(url: string, headers?: OutgoingHttpHeaders): Promise<void>;
 	/**
 	 * Send 401 need authentication
 	 * @param {string} domain Http basic authentication domain name
 	 */
-	needBasicAuth(domain: string): Promise<void>;
+	needBasicAuth(domain: string, headers?: OutgoingHttpHeaders): Promise<void>;
 	/**
 	 * Verify http basic authentication
 	 * @param authCallback Callback handler function
 	 */
 	checkBasicAuth(authCallback: (username: string, password: string) => boolean): boolean;
-	notModified(): Promise<void>;
+	notModified(headers?: OutgoingHttpHeaders): Promise<void>;
 	/**
 	 * Send 400 bad request
 	 * @param {string} message

@@ -1,4 +1,5 @@
 import { PathLike, promises as fs } from 'fs';
+import { OutgoingHttpHeaders } from 'http';
 import path from 'path';
 import { Transform, TransformCallback } from 'stream';
 
@@ -53,3 +54,23 @@ export default {
 	fileStat: fileStat,
 	isFile: isFile,
 };
+
+export function normalizeHeaders(headers: OutgoingHttpHeaders): OutgoingHttpHeaders {
+	const out: OutgoingHttpHeaders = {};
+	Object.keys(headers).forEach((h) => {
+		out[h.toLowerCase()] = headers[h];
+	});
+	return out;
+}
+
+export function beautifyHeaders(headers: OutgoingHttpHeaders): OutgoingHttpHeaders {
+	const out: OutgoingHttpHeaders = {};
+	Object.keys(headers).forEach((h) => {
+		const k = h
+			.trim()
+			.toLowerCase()
+			.replace(/(?<=^|-)./g, (c) => c.toUpperCase());
+		out[k] = headers[h];
+	});
+	return out;
+}

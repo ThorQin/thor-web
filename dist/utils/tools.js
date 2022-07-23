@@ -5,7 +5,13 @@ var __importDefault =
 		return mod && mod.__esModule ? mod : { default: mod };
 	};
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.Counter = exports.getRootDir = exports.isFile = exports.fileStat = void 0;
+exports.beautifyHeaders =
+	exports.normalizeHeaders =
+	exports.Counter =
+	exports.getRootDir =
+	exports.isFile =
+	exports.fileStat =
+		void 0;
 const fs_1 = require('fs');
 const path_1 = __importDefault(require('path'));
 const stream_1 = require('stream');
@@ -55,4 +61,24 @@ exports.default = {
 	fileStat: fileStat,
 	isFile: isFile,
 };
+function normalizeHeaders(headers) {
+	const out = {};
+	Object.keys(headers).forEach((h) => {
+		out[h.toLowerCase()] = headers[h];
+	});
+	return out;
+}
+exports.normalizeHeaders = normalizeHeaders;
+function beautifyHeaders(headers) {
+	const out = {};
+	Object.keys(headers).forEach((h) => {
+		const k = h
+			.trim()
+			.toLowerCase()
+			.replace(/(?<=^|-)./g, (c) => c.toUpperCase());
+		out[k] = headers[h];
+	});
+	return out;
+}
+exports.beautifyHeaders = beautifyHeaders;
 //# sourceMappingURL=tools.js.map

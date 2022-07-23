@@ -8,6 +8,8 @@ import { promisify } from 'util';
 import { Application, BasicBodyParser, PermissionCheck, PrivilegeCheck, Renderer, Session } from './types';
 import { Schema } from 'thor-validation';
 import { HttpError } from './middleware/controller';
+import { OutgoingHttpHeaders } from 'http2';
+import { beautifyHeaders, normalizeHeaders } from './utils/tools';
 
 const pipeline = promisify(stream.pipeline);
 const isReadableFile = function (path: PathLike): Promise<boolean> {
@@ -333,7 +335,13 @@ export default class Context {
 	}
 
 	setResponseHeader(key: string, value: string | number | readonly string[]): this {
-		this.rsp.setHeader(key, value);
+		this.rsp.setHeader(
+			key
+				.trim()
+				.toLowerCase()
+				.replace(/(?<=^|-)./g, (c) => c.toUpperCase()),
+			value
+		);
 		return this;
 	}
 
@@ -388,9 +396,9 @@ export default class Context {
 		if (args.length === 0) {
 			this.rsp.writeHead(statusCode);
 		} else if (args.length === 1) {
-			this.rsp.writeHead(statusCode, args[0] as http.OutgoingHttpHeaders);
+			this.rsp.writeHead(statusCode, beautifyHeaders(args[0] as http.OutgoingHttpHeaders));
 		} else {
-			this.rsp.writeHead(statusCode, args[0] as string, args[1] as http.OutgoingHttpHeaders);
+			this.rsp.writeHead(statusCode, args[0] as string, beautifyHeaders(args[1] as http.OutgoingHttpHeaders));
 		}
 		return this;
 	}
@@ -483,28 +491,28 @@ export default class Context {
 	/**
 	 * Send content to client
 	 */
-	send(data: string | Buffer, contentType?: string): Promise<void> {
-		const options: http.OutgoingHttpHeaders = {};
+	send(data: string | Buffer, contentType?: string, headers?: OutgoingHttpHeaders): Promise<void> {
+		const options: http.OutgoingHttpHeaders = { ...normalizeHeaders(headers ?? {}) };
 		if (!this.rsp.hasHeader('content-type')) {
 			// eslint-disable-next-line prettier/prettier
-			options['Content-Type'] = contentType ? contentType : typeof data === 'string' ? 'text/plain; charset=utf-8' : 'application/octet-stream';
+			options['content-type'] = contentType ? contentType : typeof data === 'string' ? 'text/plain; charset=utf-8' : 'application/octet-stream';
 		}
-		this.rsp.writeHead(200, options);
+		this.writeHead(200, options);
 		return this.end(data);
 	}
 
 	/**
 	 * Send HTML content to client
 	 */
-	sendHtml(html: string): Promise<void> {
-		return this.send(html, 'text/html; charset=utf-8');
+	sendHtml(html: string, headers?: OutgoingHttpHeaders): Promise<void> {
+		return this.send(html, 'text/html; charset=utf-8', headers);
 	}
 
 	/**
 	 * Send JSON content to client
 	 */
-	sendJson(obj: unknown): Promise<void> {
-		return this.send(JSON.stringify(obj), 'application/json; charset=utf-8');
+	sendJson(obj: unknown, headers?: OutgoingHttpHeaders): Promise<void> {
+		return this.send(JSON.stringify(obj), 'application/json; charset=utf-8', headers);
 	}
 
 	/** Send file content to client
@@ -529,13 +537,7 @@ export default class Context {
 			options.contentType = ct || 'application/octet-stream';
 		}
 		const headers = options.headers || {};
-		const hs: { [key: string]: string } = {};
-		Object.keys(headers).forEach((k) => {
-			const v = headers[k];
-			const key = k.replace(/(?<=^|-)./g, (c) => c.toUpperCase());
-			hs[key] = v;
-		});
-
+		const hs: OutgoingHttpHeaders = { ...beautifyHeaders(headers) };
 		hs['Content-Type'] = options.contentType || 'application/octet-stream';
 		if (options.inline) {
 			hs['Content-Disposition'] = 'inline';
@@ -560,11 +562,11 @@ export default class Context {
 		try {
 			if (options.gzip) {
 				hs['Content-Encoding'] = 'gzip';
-				this.rsp.writeHead(options.statusCode, hs);
+				this.writeHead(options.statusCode, hs);
 				const zstream = zlib.createGzip();
 				await pipeline(fileStream, zstream, this.rsp);
 			} else {
-				this.rsp.writeHead(options.statusCode, hs);
+				this.writeHead(options.statusCode, hs);
 				await pipeline(fileStream, this.rsp);
 			}
 		} finally {
@@ -576,9 +578,10 @@ export default class Context {
 	 * Send 302 redirection
 	 * @param url Redirection URL
 	 */
-	redirect(url: string): Promise<void> {
-		this.rsp.writeHead(302, {
-			Location: url,
+	redirect(url: string, headers?: OutgoingHttpHeaders): Promise<void> {
+		this.writeHead(302, {
+			...normalizeHeaders(headers ?? {}),
+			location: url,
 		});
 		return this.end();
 	}
@@ -587,10 +590,11 @@ export default class Context {
 	 * Send 401 need authentication
 	 * @param {string} domain Http basic authentication domain name
 	 */
-	needBasicAuth(domain: string): Promise<void> {
-		this.rsp.writeHead(401, {
-			'Content-Type': 'text/plain; charset=utf-8',
-			'WWW-Authenticate': `Basic realm=${JSON.stringify(domain)}`,
+	needBasicAuth(domain: string, headers?: OutgoingHttpHeaders): Promise<void> {
+		this.writeHead(401, {
+			...normalizeHeaders(headers ?? {}),
+			'content-type': 'text/plain; charset=utf-8',
+			'www-authenticate': `Basic realm=${JSON.stringify(domain)}`,
 		});
 		return this.end();
 	}
@@ -619,8 +623,8 @@ export default class Context {
 		}
 	}
 
-	notModified(): Promise<void> {
-		this.rsp.writeHead(304, 'Not Modified');
+	notModified(headers?: OutgoingHttpHeaders): Promise<void> {
+		this.writeHead(304, 'Not Modified', headers);
 		return this.end();
 	}
 
@@ -697,7 +701,7 @@ export default class Context {
 			code = 500;
 		}
 		if (!this.rsp.headersSent) {
-			this.rsp.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' });
+			this.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' });
 		}
 		return this.end(message);
 	}

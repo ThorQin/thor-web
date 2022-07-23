@@ -49,6 +49,7 @@ const stream_1 = __importStar(require('stream'));
 const fs_1 = require('fs');
 const util_1 = require('util');
 const controller_1 = require('./middleware/controller');
+const tools_1 = require('./utils/tools');
 const pipeline = (0, util_1.promisify)(stream_1.default.pipeline);
 const isReadableFile = function (path) {
 	return new Promise((resolve) => {
@@ -285,7 +286,13 @@ class Context {
 		}
 	}
 	setResponseHeader(key, value) {
-		this.rsp.setHeader(key, value);
+		this.rsp.setHeader(
+			key
+				.trim()
+				.toLowerCase()
+				.replace(/(?<=^|-)./g, (c) => c.toUpperCase()),
+			value
+		);
 		return this;
 	}
 	enableCORS({
@@ -336,9 +343,9 @@ class Context {
 		if (args.length === 0) {
 			this.rsp.writeHead(statusCode);
 		} else if (args.length === 1) {
-			this.rsp.writeHead(statusCode, args[0]);
+			this.rsp.writeHead(statusCode, (0, tools_1.beautifyHeaders)(args[0]));
 		} else {
-			this.rsp.writeHead(statusCode, args[0], args[1]);
+			this.rsp.writeHead(statusCode, args[0], (0, tools_1.beautifyHeaders)(args[1]));
 		}
 		return this;
 	}
@@ -424,30 +431,30 @@ class Context {
 	/**
 	 * Send content to client
 	 */
-	send(data, contentType) {
-		const options = {};
+	send(data, contentType, headers) {
+		const options = { ...(0, tools_1.normalizeHeaders)(headers ?? {}) };
 		if (!this.rsp.hasHeader('content-type')) {
 			// eslint-disable-next-line prettier/prettier
-			options['Content-Type'] = contentType
+			options['content-type'] = contentType
 				? contentType
 				: typeof data === 'string'
 				? 'text/plain; charset=utf-8'
 				: 'application/octet-stream';
 		}
-		this.rsp.writeHead(200, options);
+		this.writeHead(200, options);
 		return this.end(data);
 	}
 	/**
 	 * Send HTML content to client
 	 */
-	sendHtml(html) {
-		return this.send(html, 'text/html; charset=utf-8');
+	sendHtml(html, headers) {
+		return this.send(html, 'text/html; charset=utf-8', headers);
 	}
 	/**
 	 * Send JSON content to client
 	 */
-	sendJson(obj) {
-		return this.send(JSON.stringify(obj), 'application/json; charset=utf-8');
+	sendJson(obj, headers) {
+		return this.send(JSON.stringify(obj), 'application/json; charset=utf-8', headers);
 	}
 	/** Send file content to client
 	 * @param {string | NodeJS.ReadableStream | Buffer} file File path
@@ -471,12 +478,7 @@ class Context {
 			options.contentType = ct || 'application/octet-stream';
 		}
 		const headers = options.headers || {};
-		const hs = {};
-		Object.keys(headers).forEach((k) => {
-			const v = headers[k];
-			const key = k.replace(/(?<=^|-)./g, (c) => c.toUpperCase());
-			hs[key] = v;
-		});
+		const hs = { ...(0, tools_1.beautifyHeaders)(headers) };
 		hs['Content-Type'] = options.contentType || 'application/octet-stream';
 		if (options.inline) {
 			hs['Content-Disposition'] = 'inline';
@@ -503,11 +505,11 @@ class Context {
 		try {
 			if (options.gzip) {
 				hs['Content-Encoding'] = 'gzip';
-				this.rsp.writeHead(options.statusCode, hs);
+				this.writeHead(options.statusCode, hs);
 				const zstream = zlib_1.default.createGzip();
 				await pipeline(fileStream, zstream, this.rsp);
 			} else {
-				this.rsp.writeHead(options.statusCode, hs);
+				this.writeHead(options.statusCode, hs);
 				await pipeline(fileStream, this.rsp);
 			}
 		} finally {
@@ -518,9 +520,10 @@ class Context {
 	 * Send 302 redirection
 	 * @param url Redirection URL
 	 */
-	redirect(url) {
-		this.rsp.writeHead(302, {
-			Location: url,
+	redirect(url, headers) {
+		this.writeHead(302, {
+			...(0, tools_1.normalizeHeaders)(headers ?? {}),
+			location: url,
 		});
 		return this.end();
 	}
@@ -528,10 +531,11 @@ class Context {
 	 * Send 401 need authentication
 	 * @param {string} domain Http basic authentication domain name
 	 */
-	needBasicAuth(domain) {
-		this.rsp.writeHead(401, {
-			'Content-Type': 'text/plain; charset=utf-8',
-			'WWW-Authenticate': `Basic realm=${JSON.stringify(domain)}`,
+	needBasicAuth(domain, headers) {
+		this.writeHead(401, {
+			...(0, tools_1.normalizeHeaders)(headers ?? {}),
+			'content-type': 'text/plain; charset=utf-8',
+			'www-authenticate': `Basic realm=${JSON.stringify(domain)}`,
 		});
 		return this.end();
 	}
@@ -558,8 +562,8 @@ class Context {
 			}
 		}
 	}
-	notModified() {
-		this.rsp.writeHead(304, 'Not Modified');
+	notModified(headers) {
+		this.writeHead(304, 'Not Modified', headers);
 		return this.end();
 	}
 	/**
@@ -627,7 +631,7 @@ class Context {
 			code = 500;
 		}
 		if (!this.rsp.headersSent) {
-			this.rsp.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' });
+			this.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' });
 		}
 		return this.end(message);
 	}
