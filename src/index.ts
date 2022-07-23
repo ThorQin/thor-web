@@ -294,7 +294,10 @@ export const middlewares: {
 	webSocket,
 };
 
-export const  = '';
+export const SHARED_ARRAY_BUFFER_SUPPORT_HEADERS = {
+	'Cross-Origin-Opener-Policy': 'same-origin',
+	'Cross-Origin-Embedder-Policy': 'require-corp',
+};
 
 export { enc, HttpError };
 export default App;

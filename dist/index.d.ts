@@ -52,7 +52,11 @@ declare type StartOptions = {
 	 */
 	staticPath?: string;
 	/**
-	 * Callback routine to provide some extra response headers
+	 * provide some extra response headers by file content type
+	 */
+	staticMimeHeaders?: Record<string, OutgoingHttpHeaders>;
+	/**
+	 * provide some extra response headers by url path
 	 */
 	staticFileHeaders?: Record<string, OutgoingHttpHeaders>;
 	/**
@@ -124,6 +128,7 @@ declare class App implements Application {
 		env,
 		staticDir,
 		staticPath,
+		staticMimeHeaders,
 		staticFileHeaders,
 		templateDir,
 		controllerDir,
@@ -141,6 +146,10 @@ import { ControllerType, HttpError } from './middleware/controller';
 import { TimeCheck } from './middleware/session';
 export declare const middlewares: {
 	[key: string]: MiddlewareFactory<MiddlewareOptions>;
+};
+export declare const SHARED_ARRAY_BUFFER_SUPPORT_HEADERS: {
+	'Cross-Origin-Opener-Policy': string;
+	'Cross-Origin-Embedder-Policy': string;
 };
 export { enc, HttpError };
 export default App;

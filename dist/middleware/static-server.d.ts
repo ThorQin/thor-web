@@ -24,14 +24,18 @@ export declare type StaticOptions = {
 	 */
 	enableGzipSize?: number;
 	/**
-	 * provide some extra response headers
+	 * provide some extra response headers by content type
+	 */
+	mimeHeaders?: Record<string, OutgoingHttpHeaders>;
+	/**
+	 * provide some extra response headers by url path
 	 */
 	fileHeaders?: Record<string, OutgoingHttpHeaders>;
 };
 declare class StaticFactory implements MiddlewareFactory<StaticOptions> {
 	create(
 		app: Application,
-		{ baseDir, rootPath, suffix, cachedFileSize, enableGzipSize, fileHeaders }?: StaticOptions
+		{ baseDir, rootPath, suffix, cachedFileSize, enableGzipSize, mimeHeaders, fileHeaders }?: StaticOptions
 	): Middleware;
 }
 declare const staticFactory: StaticFactory;

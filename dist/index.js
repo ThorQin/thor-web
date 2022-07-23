@@ -5,7 +5,7 @@ var __importDefault =
 		return mod && mod.__esModule ? mod : { default: mod };
 	};
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.HttpError = exports.enc = exports.middlewares = void 0;
+exports.HttpError = exports.enc = exports.SHARED_ARRAY_BUFFER_SUPPORT_HEADERS = exports.middlewares = void 0;
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const http_1 = __importDefault(require('http'));
 const context_1 = __importDefault(require('./context'));
@@ -103,6 +103,7 @@ class App {
 		env = {},
 		staticDir,
 		staticPath,
+		staticMimeHeaders,
 		staticFileHeaders,
 		templateDir,
 		controllerDir,
@@ -150,6 +151,7 @@ class App {
 			suffix: suffix,
 			baseDir: staticDir,
 			rootPath: staticPath,
+			mimeHeaders: staticMimeHeaders,
 			fileHeaders: staticFileHeaders,
 		});
 		app.use(index_1.bodyParser);
@@ -189,6 +191,10 @@ exports.middlewares = {
 	security: index_1.security,
 	template: index_1.template,
 	webSocket: index_1.webSocket,
+};
+exports.SHARED_ARRAY_BUFFER_SUPPORT_HEADERS = {
+	'Cross-Origin-Opener-Policy': 'same-origin',
+	'Cross-Origin-Embedder-Policy': 'require-corp',
 };
 exports.default = App;
 //# sourceMappingURL=index.js.map
