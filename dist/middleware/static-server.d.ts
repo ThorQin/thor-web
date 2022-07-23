@@ -1,4 +1,6 @@
+/// <reference types="node" />
 import { Application, Middleware, MiddlewareFactory } from '../types';
+import { OutgoingHttpHeaders } from 'http';
 export declare function defaultSuffix(): string[];
 export declare type StaticOptions = {
 	/**
@@ -21,9 +23,16 @@ export declare type StaticOptions = {
 	 * File will be gziped when size larger then this setting, default is 50K (50 * 1024)
 	 */
 	enableGzipSize?: number;
+	/**
+	 * provide some extra response headers
+	 */
+	fileHeaders?: Record<string, OutgoingHttpHeaders>;
 };
 declare class StaticFactory implements MiddlewareFactory<StaticOptions> {
-	create(app: Application, { baseDir, rootPath, suffix, cachedFileSize, enableGzipSize }?: StaticOptions): Middleware;
+	create(
+		app: Application,
+		{ baseDir, rootPath, suffix, cachedFileSize, enableGzipSize, fileHeaders }?: StaticOptions
+	): Middleware;
 }
 declare const staticFactory: StaticFactory;
 export default staticFactory;

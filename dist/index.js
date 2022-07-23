@@ -103,6 +103,7 @@ class App {
 		env = {},
 		staticDir,
 		staticPath,
+		staticFileHeaders,
 		templateDir,
 		controllerDir,
 		controllerPath,
@@ -149,6 +150,7 @@ class App {
 			suffix: suffix,
 			baseDir: staticDir,
 			rootPath: staticPath,
+			fileHeaders: staticFileHeaders,
 		});
 		app.use(index_1.bodyParser);
 		app.use(index_1.template, {

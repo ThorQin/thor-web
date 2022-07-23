@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import http from 'http';
+import http, { OutgoingHttpHeaders } from 'http';
 import Context from './context';
 import {
 	Middleware,
@@ -83,6 +83,14 @@ type StartOptions = {
 	 * 静态资源web访问路径
 	 */
 	staticPath?: string;
+	/**
+	 * provide some extra response headers by file content type
+	 */
+	staticMimeHeaders?: Record<string, OutgoingHttpHeaders>;
+	/**
+	 * provide some extra response headers by url path
+	 */
+	staticFileHeaders?: Record<string, OutgoingHttpHeaders>;
 	/**
 	 * 模板物理存放位置
 	 */
@@ -197,6 +205,8 @@ class App implements Application {
 		env = {},
 		staticDir,
 		staticPath,
+		staticMimeHeaders,
+		staticFileHeaders,
 		templateDir,
 		controllerDir,
 		controllerPath,
@@ -243,6 +253,8 @@ class App implements Application {
 			suffix: suffix,
 			baseDir: staticDir,
 			rootPath: staticPath,
+			mimeHeaders: staticMimeHeaders,
+			fileHeaders: staticFileHeaders,
 		});
 		app.use(bodyParser);
 		app.use(template, {
@@ -281,6 +293,8 @@ export const middlewares: {
 	template,
 	webSocket,
 };
+
+export const  = '';
 
 export { enc, HttpError };
 export default App;

@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import http from 'http';
+import http, { OutgoingHttpHeaders } from 'http';
 import {
 	Middleware,
 	Application,
@@ -51,6 +51,10 @@ declare type StartOptions = {
 	 * 静态资源web访问路径
 	 */
 	staticPath?: string;
+	/**
+	 * Callback routine to provide some extra response headers
+	 */
+	staticFileHeaders?: Record<string, OutgoingHttpHeaders>;
 	/**
 	 * 模板物理存放位置
 	 */
@@ -120,6 +124,7 @@ declare class App implements Application {
 		env,
 		staticDir,
 		staticPath,
+		staticFileHeaders,
 		templateDir,
 		controllerDir,
 		controllerPath,
