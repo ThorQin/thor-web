@@ -294,7 +294,7 @@ export const middlewares: {
 	webSocket,
 };
 
-export const SHARED_ARRAY_BUFFER_SUPPORT_HEADERS = {
+export const SUPPORT_SHARED_ARRAY_BUFFER_HEADERS = {
 	'Cross-Origin-Opener-Policy': 'same-origin',
 	'Cross-Origin-Embedder-Policy': 'require-corp',
 };

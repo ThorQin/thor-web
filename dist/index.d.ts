@@ -147,7 +147,7 @@ import { TimeCheck } from './middleware/session';
 export declare const middlewares: {
 	[key: string]: MiddlewareFactory<MiddlewareOptions>;
 };
-export declare const SHARED_ARRAY_BUFFER_SUPPORT_HEADERS: {
+export declare const SUPPORT_SHARED_ARRAY_BUFFER_HEADERS: {
 	'Cross-Origin-Opener-Policy': string;
 	'Cross-Origin-Embedder-Policy': string;
 };

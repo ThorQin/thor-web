@@ -5,7 +5,7 @@ var __importDefault =
 		return mod && mod.__esModule ? mod : { default: mod };
 	};
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.HttpError = exports.enc = exports.SHARED_ARRAY_BUFFER_SUPPORT_HEADERS = exports.middlewares = void 0;
+exports.HttpError = exports.enc = exports.SUPPORT_SHARED_ARRAY_BUFFER_HEADERS = exports.middlewares = void 0;
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const http_1 = __importDefault(require('http'));
 const context_1 = __importDefault(require('./context'));
@@ -192,7 +192,7 @@ exports.middlewares = {
 	template: index_1.template,
 	webSocket: index_1.webSocket,
 };
-exports.SHARED_ARRAY_BUFFER_SUPPORT_HEADERS = {
+exports.SUPPORT_SHARED_ARRAY_BUFFER_HEADERS = {
 	'Cross-Origin-Opener-Policy': 'same-origin',
 	'Cross-Origin-Embedder-Policy': 'require-corp',
 };
