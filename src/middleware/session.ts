@@ -312,7 +312,7 @@ class SessionFactory implements MiddlewareFactory<SessionOptions> {
 			});
 
 			if (ctx.session) {
-				if (!ctx.isWebSocket) {
+				if (!ctx.isWebSocket && ctx.method !== 'OPTIONS') {
 					ctx.session.save();
 				}
 			}

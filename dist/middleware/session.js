@@ -253,7 +253,7 @@ class SessionFactory {
 				sameSite: sameSite,
 			});
 			if (ctx.session) {
-				if (!ctx.isWebSocket) {
+				if (!ctx.isWebSocket && ctx.method !== 'OPTIONS') {
 					ctx.session.save();
 				}
 			}
