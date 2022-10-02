@@ -3,6 +3,8 @@ import { Schema } from 'thor-validation';
 import Context from './context';
 import { connection, request, server, Message, frame } from 'websocket';
 import { Rule } from 'thor-validation';
+import busboy from 'busboy';
+import internal from 'stream';
 
 export type WebSocketConnection = connection;
 export type WebSocketRequest = request;
@@ -99,27 +101,43 @@ export interface PermissionCheck {
 
 export interface PartInfo {
 	length: number;
-	name: string | null;
-	filename: string | null;
-	contentType: string | null;
-	charset: string | null;
-	file: string | null;
-	fd?: number;
-	buffer: Buffer | null;
-	over?: boolean;
+	name: string;
+	filename?: string;
+	contentType: string;
+	charset: string;
+	file?: string;
+	buffer?: Buffer;
+	value?: string;
+}
+
+export interface PartInfo2 {
+	type: 'field' | 'file';
+	name: string;
+	mimeType: string;
+	encoding: string;
+}
+
+export interface FieldPart extends PartInfo2 {
+	value: string;
+}
+
+export interface FilePart extends PartInfo2 {
+	filename: string;
+	stream: internal.Readable;
 }
 
 export interface BasicBodyParser {
-	isJSON: () => boolean;
-	isForm: () => boolean;
-	isMultipart: () => boolean;
-	getCharset: () => string;
-	getMultipartBoundary: () => string | null;
-	raw: () => Promise<Buffer>;
-	text: () => Promise<string>;
-	json: (schema?: Schema) => Promise<unknown>;
-	form: () => Promise<NodeJS.Dict<string | string[]>>;
-	multipart: (storeDir?: string | null, maxLength?: number) => Promise<PartInfo[]>;
+	isJSON(): boolean;
+	isForm(): boolean;
+	isMultipart(): boolean;
+	getCharset(): string;
+	getMultipartBoundary(): string | null;
+	raw(): Promise<Buffer>;
+	text(): Promise<string>;
+	json(schema?: Schema): Promise<unknown>;
+	form(): Promise<URLSearchParams>;
+	multipart2(limits: busboy.Limits): AsyncGenerator<FilePart | FieldPart>;
+	multipart: (storeDir?: string | null, maxFileLength?: number) => Promise<PartInfo[]>;
 }
 
 export interface SaveOptions {
