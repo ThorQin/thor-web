@@ -688,11 +688,13 @@ export default class Context {
 	 * @param {number|string} code Default is 500
 	 * @param {string} message Default is 'Unexpected Server Error!'
 	 */
-	error(code = 500, message?: string): Promise<void> {
-		if (typeof message === 'undefined' || message === null) {
+	async error(message?: string): Promise<void>;
+	async error(code: number, message?: string): Promise<void>;
+	async error(code: string | number = 500, message?: string): Promise<void> {
+		if (typeof message === 'undefined') {
 			if (typeof code === 'number') {
 				message = 'Unexpected server error!\n';
-			} else if (typeof code === 'string') {
+			} else {
 				message = code;
 				code = 500;
 			}
@@ -703,7 +705,7 @@ export default class Context {
 		if (!this.rsp.headersSent) {
 			this.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' });
 		}
-		return this.end(message);
+		await this.end(message);
 	}
 
 	/**

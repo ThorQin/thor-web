@@ -126,6 +126,10 @@ export interface FilePart extends PartInfo2 {
 	stream: internal.Readable;
 }
 
+export interface MultipartOption extends busboy.Limits {
+	breakOnFileSizeLimitReached?: boolean;
+}
+
 export interface BasicBodyParser {
 	isJSON(): boolean;
 	isForm(): boolean;
@@ -136,7 +140,7 @@ export interface BasicBodyParser {
 	text(): Promise<string>;
 	json(schema?: Schema): Promise<unknown>;
 	form(): Promise<URLSearchParams>;
-	multipart2(limits: busboy.Limits): AsyncGenerator<FilePart | FieldPart>;
+	multipart2(options: MultipartOption): AsyncIterable<FilePart | FieldPart>;
 	multipart: (storeDir?: string | null, maxFileLength?: number) => Promise<PartInfo[]>;
 }
 

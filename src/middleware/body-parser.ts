@@ -1,13 +1,23 @@
 import iconv from 'iconv-lite';
 import fs, { promises as pfs } from 'fs';
 import { Schema, ValidationError } from 'thor-validation';
-import { BasicBodyParser, FieldPart, MiddlewareFactory, FilePart, PartInfo, PartInfo2 } from '../types';
+import {
+	BasicBodyParser,
+	FieldPart,
+	MiddlewareFactory,
+	FilePart,
+	PartInfo,
+	PartInfo2,
+	MultipartOption,
+} from '../types';
 import Context from '../context';
 import http from 'http';
 import internal, { pipeline } from 'stream';
 import { promisify } from 'util';
 import busboy from 'busboy';
 import { v1 as uuidv1 } from 'uuid';
+import Path from 'path';
+import { HttpError } from './controller';
 
 const DEFAULT_MAX_FILE_SIZE = 1024 * 1024 * 10;
 
@@ -23,52 +33,90 @@ class BufferStream extends internal.Writable {
 
 async function generateFile(storeDir: string): Promise<string> {
 	const id = uuidv1().replace(/-/g, '');
-	const path =
-		storeDir +
+	const path = Path.join(
+		storeDir,
 		id.substring(0, 6).replace(/.{3}/g, function (v) {
 			return v + '/';
-		});
+		})
+	);
 	await pfs.mkdir(path, { recursive: true });
 	return path + id.substring(6) + '.data';
 }
 
-async function* generateParts(req: http.IncomingMessage, limits: busboy.Limits): AsyncGenerator<FilePart | FieldPart> {
+function generateParts(
+	ctx: Context,
+	req: http.IncomingMessage,
+	options: MultipartOption
+): AsyncIterator<FilePart | FieldPart> {
 	const bb = busboy({
+		defParamCharset: 'utf-8',
 		headers: req.headers,
-		limits,
+		limits: options,
 	});
-	const result = await new Promise<FilePart | FieldPart | undefined>((resolve, reject) => {
-		bb.on('error', (err) => {
-			reject(err);
-		});
-		bb.on('field', (name: string, value: string, info: busboy.FieldInfo) => {
-			resolve({
-				type: 'field',
-				name,
-				encoding: info.encoding,
-				mimeType: info.mimeType,
-				value,
-			} as FieldPart);
-		});
-		bb.on('file', (name: string, stream: internal.Readable, info: busboy.FileInfo) => {
-			resolve({
-				type: 'file',
-				name,
-				encoding: info.encoding,
-				mimeType: info.mimeType,
-				stream,
-				filename: info.filename,
-			} as FilePart);
-		});
-		bb.on('finish', () => {
-			resolve(undefined);
-		});
+	const result: (FilePart | FieldPart)[] = [];
+	let error: unknown = null;
+	let done = false;
+	let cb: (() => void) | null = null;
+	bb.on('error', (err: unknown) => {
+		error = err;
+		cb?.();
 	});
-	if (result) {
-		yield result;
-	} else {
-		return;
-	}
+	bb.on('field', (name: string, value: string, info: busboy.FieldInfo) => {
+		result.push({
+			type: 'field',
+			name,
+			encoding: info.encoding,
+			mimeType: info.mimeType,
+			value,
+		} as FieldPart);
+		cb?.();
+	});
+	bb.on('file', (name: string, stream: internal.Readable, info: busboy.FileInfo) => {
+		result.push({
+			type: 'file',
+			name,
+			encoding: info.encoding,
+			mimeType: info.mimeType,
+			filename: info.filename,
+			stream,
+		} as FilePart);
+		cb?.();
+	});
+	bb.on('close', () => {
+		done = true;
+		cb?.();
+	});
+	req.pipe(bb);
+	return {
+		next(): Promise<IteratorResult<FilePart | FieldPart>> {
+			return new Promise<IteratorResult<FilePart | FieldPart>>((resolve, reject) => {
+				function checkYield() {
+					if (error) {
+						reject(error);
+						return true;
+					} else if (result.length > 0) {
+						resolve({
+							value: result.shift(),
+						} as IteratorYieldResult<FilePart | FieldPart>);
+						return true;
+					} else if (done) {
+						resolve({
+							done,
+						} as IteratorReturnResult<FilePart | FieldPart>);
+						return true;
+					} else {
+						return false;
+					}
+				}
+				if (!checkYield()) {
+					cb = () => {
+						cb = null;
+						checkYield();
+					};
+				}
+			});
+		},
+	};
 }
 
 const ONLY_ONCE = 'Body can only be read once!';
@@ -77,7 +125,7 @@ function isFieldPart(part: PartInfo2): part is FieldPart {
 	return part.type === 'field';
 }
 
-function createParser(req: http.IncomingMessage): BasicBodyParser {
+function createParser(ctx: Context, req: http.IncomingMessage): BasicBodyParser {
 	let readed = false;
 	// let cl = req.headers['content-length'];
 	return {
@@ -162,7 +210,7 @@ function createParser(req: http.IncomingMessage): BasicBodyParser {
 			});
 			return new URLSearchParams(formStr);
 		},
-		multipart2(limits: busboy.Limits = {}): AsyncGenerator<FilePart | FieldPart> {
+		multipart2(options: MultipartOption = {}): AsyncIterable<FilePart | FieldPart> {
 			if (readed) {
 				throw new Error(ONLY_ONCE);
 			}
@@ -170,10 +218,15 @@ function createParser(req: http.IncomingMessage): BasicBodyParser {
 			if (!this.isMultipart()) {
 				throw new Error('Not a multipart data!');
 			}
-			limits.fileSize = limits.fileSize ?? DEFAULT_MAX_FILE_SIZE;
-			return generateParts(req, limits);
+			options.fileSize = options.fileSize ?? DEFAULT_MAX_FILE_SIZE;
+			return {
+				[Symbol.asyncIterator]() {
+					return generateParts(ctx, req, options);
+				},
+			};
 		},
 		async multipart(storeDir: string | null = null, maxFileLength = DEFAULT_MAX_FILE_SIZE): Promise<PartInfo[]> {
+			const parts: PartInfo[] = [];
 			if (typeof storeDir === 'string') {
 				if (!storeDir.endsWith('/')) {
 					storeDir += '/';
@@ -181,9 +234,10 @@ function createParser(req: http.IncomingMessage): BasicBodyParser {
 			} else {
 				storeDir = null;
 			}
-			const parts: PartInfo[] = [];
+			const limitReached: string[] = [];
 			for await (const part of this.multipart2({
 				fileSize: maxFileLength,
+				breakOnFileSizeLimitReached: true,
 			})) {
 				if (isFieldPart(part)) {
 					parts.push({
@@ -198,6 +252,10 @@ function createParser(req: http.IncomingMessage): BasicBodyParser {
 						const file = await generateFile(storeDir);
 						const outFileStream = fs.createWriteStream(file);
 						await pipe(part.stream, outFileStream);
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						if ((part.stream as any).truncated) {
+							limitReached.push(part.filename);
+						}
 						const size = (await pfs.stat(file)).size;
 						parts.push({
 							length: size,
@@ -210,6 +268,10 @@ function createParser(req: http.IncomingMessage): BasicBodyParser {
 					} else {
 						const memStream = new BufferStream();
 						await pipe(part.stream, memStream);
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						if ((part.stream as any).truncated) {
+							limitReached.push(part.filename);
+						}
 						parts.push({
 							length: memStream.buffer.length,
 							name: part.name,
@@ -220,6 +282,9 @@ function createParser(req: http.IncomingMessage): BasicBodyParser {
 						});
 					}
 				}
+			}
+			if (limitReached.length > 0) {
+				throw new HttpError(413, 'File size limit reached: ' + limitReached);
 			}
 			return parts;
 		},
@@ -232,7 +297,7 @@ function createParser(req: http.IncomingMessage): BasicBodyParser {
 class BodyParserFactory implements MiddlewareFactory<undefined> {
 	create() {
 		return async function (ctx: Context, req: http.IncomingMessage) {
-			ctx.body = createParser(req);
+			ctx.body = createParser(ctx, req);
 			return false;
 		};
 	}
